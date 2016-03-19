@@ -5,6 +5,8 @@
 
 let
   isGo14 = go.meta.branch == "1.4";
+  isGo15 = go.meta.branch == "1.5";
+  isGo16 = go.meta.branch == "1.6";
 
   self = _self // overrides; _self = with self; {
 
@@ -268,6 +270,13 @@ let
     buildInputs = [ oglematchers ];
     propagatedBuildInputs = [ goconvey ];
     doCheck = false;
+  };
+
+  astrotime = buildFromGitHub {
+    rev = "9c7d514efdb561775030eaf8f1a9ae6bddb3a2ca";
+    owner = "cpucycle";
+    repo = "astrotime";
+    sha256 = "024sc7g55v4s54irssm5wsn74sr2k2ynsm6z16w47q66cxhgvby1";
   };
 
   aws-sdk-go = buildFromGitHub {
@@ -1671,6 +1680,21 @@ let
     owner  = "soundcloud";
     repo   = "go-runit";
     sha256 = "00f2rfhsaqj2wjanh5qp73phx7x12a5pwd7lc0rjfv68l6sgpg2v";
+  };
+
+  go-sct = buildFromGitHub {
+    rev = "b82c2f81727357c45a47a43965c50ed5da5a2e74";
+    date = "2016-01-11";
+    owner = "d4l3k";
+    repo = "go-sct";
+    sha256 = "13hgmpv2c8ll5ap8fn1n480bdv1j21n86jjwcssd36kh2i933anl";
+    buildInputs = [ astrotime pkgs.xorg.libX11 pkgs.xorg.libXrandr ];
+    meta = with stdenv.lib; {
+      description = "Color temperature setting library and CLI that operates in a similar way to f.lux and Redshift";
+      license = licenses.mit;
+      maintainers = with maintainers; [ cstrahan ];
+      platforms = platforms.unix;
+    };
   };
 
   go-simplejson = buildFromGitHub {
@@ -3457,6 +3481,16 @@ let
     };
 
     subPackages = [ "./" ]; # prevent building _demos
+  };
+
+  terraform = buildFromGitHub {
+    rev = "v0.6.13";
+    owner = "hashicorp";
+    repo = "terraform";
+    disabled = isGo14 || isGo15;
+    sha256 = "1f1xm5pyz1hxqm2k74psanirpydf71pmxixplyc2x2w68hgjzi2l";
+
+    buildInputs = [ ];
   };
 
   testify = buildGoPackage rec {

@@ -166,13 +166,16 @@ let self = _self // overrides; _self = with self; {
     propagatedBuildInputs = [ Mouse ];
   };
 
-  ApacheLogFormatCompiler = buildPerlModule {
-    name = "Apache-LogFormat-Compiler-0.13";
+  ApacheLogFormatCompiler = buildPerlModule rec {
+    name = "Apache-LogFormat-Compiler-0.33";
     src = fetchurl {
-      url = mirror://cpan/authors/id/K/KA/KAZEBURO/Apache-LogFormat-Compiler-0.13.tar.gz;
-      sha256 = "b4185125501e288efbc664da8b723ff86f0b69eb57d3c7c69c7d2069aab0efb0";
+      url = "mirror://cpan/authors/id/K/KA/KAZEBURO/${name}.tar.gz";
+      sha256 = "17blk3zhp05azgypn25ydxf3d7fyfgr9bxyiv7xkchhqma96vwqv";
     };
-    buildInputs = [ HTTPMessage TestRequires TryTiny URI ];
+    buildInputs = [ HTTPMessage TestRequires TryTiny URI TestMockTime
+      POSIXstrftimeCompiler ];
+    # We cannot change the timezone on the fly.
+    prePatch = "rm t/04_tz.t";
     meta = {
       homepage = https://github.com/kazeburo/Apache-LogFormat-Compiler;
       description = "Compile a log format string to perl-code";
@@ -274,11 +277,11 @@ let self = _self // overrides; _self = with self; {
   };
 
   AppSqitch = buildPerlModule rec {
-    version = "0.9993";
+    version = "0.9994";
     name = "App-Sqitch-${version}";
     src = fetchurl {
       url = "mirror://cpan/authors/id/D/DW/DWHEELER/${name}.tar.gz";
-      sha256 = "0pf7gvssldhify9dn3sxyi6av5gld4h27d3krdpcql3hbv886gcc";
+      sha256 = "0in602z40s50fdlmws4g0a1pb8p7yn0wx8jgsacz26a4i1q7gpi4";
     };
     buildInputs = [
       CaptureTiny PathClass TestDeep TestDir TestException
@@ -5468,12 +5471,17 @@ let self = _self // overrides; _self = with self; {
   };
 
   HookLexWrap = buildPerlPackage rec {
-    name = "Hook-LexWrap-0.24";
+    name = "Hook-LexWrap-0.25";
     src = fetchurl {
-      url = "mirror://cpan/authors/id/C/CH/CHORNY/${name}.tar.gz";
-      sha256 = "0nyfirbdrgs2cknifqr1pf8xd5q9xnv91gy7jha4crp1hjqvihj4";
+      url = "mirror://cpan/authors/id/E/ET/ETHER/${name}.tar.gz";
+      sha256 = "08ab9af6bd9b4560702d9d994ad9d905af0c2fd24090d1480ff640f137c1430d";
     };
-    buildInputs = [ pkgs.unzip ];
+    buildInputs = [ ModuleBuildTiny pkgs.unzip ];
+    meta = {
+      homepage = https://github.com/chorny/Hook-LexWrap;
+      description = "Lexically scoped subroutine wrappers";
+      license = with stdenv.lib.licenses; [ artistic1 gpl1Plus ];
+    };
   };
 
   HTMLElementExtended = buildPerlPackage {
@@ -9904,6 +9912,21 @@ let self = _self // overrides; _self = with self; {
     src = fetchurl {
       url = "mirror://cpan/authors/id/K/KW/KWILLIAMS/${name}.tar.gz";
       sha256 = "0c9wiaz0mqqknafr4jdr0g2gdzxnn539182z0icqaqvp5qgd5r6r";
+    };
+  };
+
+  POSIXstrftimeCompiler = buildPerlModule rec {
+    name = "POSIX-strftime-Compiler-0.41";
+    src = fetchurl {
+      url = "mirror://cpan/authors/id/K/KA/KAZEBURO/${name}.tar.gz";
+      sha256 = "670b89e11500f3808c9e21b1c300089622f68906ff12b1cbfba8e30d3a1c3739";
+    };
+    # We cannot change timezones on the fly.
+    prePatch = "rm t/04_tzset.t";
+    meta = {
+      homepage = https://github.com/kazeburo/POSIX-strftime-Compiler;
+      description = "GNU C library compatible strftime for loggers and servers";
+      license = with stdenv.lib.licenses; [ artistic1 gpl1Plus ];
     };
   };
 
