@@ -8,6 +8,8 @@ stdenv.mkDerivation rec {
     sha256 = "0xa6xagah5rywkywn19rzvbvhfvkmylhcxr6z9z7bz29cpiwk0l8";
   };
 
+  hardeningDisable = [ "stackprotector" ];
+
   buildInputs = [ gmp ];
 
   enableParallelBuilding = true;
