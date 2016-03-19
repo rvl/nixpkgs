@@ -2232,12 +2232,10 @@ let
 
   nodejs-5_x = callPackage ../development/web/nodejs/v5.nix {
     libtool = darwin.cctools;
-    openssl = openssl_1_0_2;
   };
 
   nodejs-4_x = callPackage ../development/web/nodejs/v4.nix {
     libtool = darwin.cctools;
-    openssl = openssl_1_0_2;
   };
 
   nodejs-0_10 = callPackage ../development/web/nodejs/v0_10.nix {
@@ -4108,7 +4106,7 @@ let
 
   gambit = callPackage ../development/compilers/gambit { };
 
-  gcc = gcc49;
+  gcc = gcc5;
 
   gcc_multi =
     if system == "x86_64-linux" then lowPrio (
@@ -4168,13 +4166,6 @@ let
     binutils = binutilsCross;
     cross = crossSystem;
   };
-
-  gcc44 = lowPrio (wrapCC (makeOverridable (import ../development/compilers/gcc/4.4) {
-    inherit fetchurl stdenv gmp mpfr /* ppl cloogppl */
-      gettext which noSysDirs;
-    texinfo = texinfo4;
-    profiledCompiler = true;
-  }));
 
   gcc45 = lowPrio (wrapCC (callPackage ../development/compilers/gcc/4.5 {
     inherit noSysDirs;
@@ -4329,17 +4320,6 @@ let
     langC = true;
     langGo = true;
     profiledCompiler = false;
-  });
-
-  ghdl = wrapCC (import ../development/compilers/gcc/4.3 {
-    inherit stdenv fetchurl gmp mpfr noSysDirs gnat;
-    texinfo = texinfo4;
-    name = "ghdl";
-    langVhdl = true;
-    langCC = false;
-    langC = false;
-    profiledCompiler = false;
-    enableMultilib = false;
   });
 
   ghdl_mcode = callPackage ../development/compilers/ghdl { };
@@ -8357,7 +8337,7 @@ let
 
   wolfssl = callPackage ../development/libraries/wolfssl { };
 
-  openssl = openssl_1_0_1;
+  openssl = openssl_1_0_2;
 
   inherit (callPackages ../development/libraries/openssl {
       fetchurl = fetchurlBoot;
