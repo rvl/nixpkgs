@@ -11227,11 +11227,11 @@ in modules // {
   };
 
   llfuse = buildPythonPackage rec {
-    name = "llfuse-0.40";
+    name = "llfuse-1.0";
 
     src = pkgs.fetchurl {
       url = "https://pypi.python.org/packages/source/l/llfuse/${name}.tar.bz2";
-      sha256 = "0mx87n6j2g63mgiimjqn0gj6jgqfdkc04xkxc56r1azjlqji32zf";
+      md5 = "6e71af191381da135a222e3c0e7569a1";
     };
 
     buildInputs = [ pkgs.pkgconfig pkgs.fuse pkgs.attr ];
@@ -24238,13 +24238,13 @@ in modules // {
   };
 
   libvirt = let
-    version = "1.3.0";
+    version = "1.3.2";
   in assert version == pkgs.libvirt.version; pkgs.stdenv.mkDerivation rec {
     name = "libvirt-python-${version}";
 
     src = pkgs.fetchurl {
       url = "http://libvirt.org/sources/python/${name}.tar.gz";
-      sha256 = "0z7w79mkx7w322d2mf9d4bz56mmfic3nx0q4bc6fa063aay42z89";
+      sha256 = "1y0b2sglc6q43pw1sr0by5wx8037kvrp2969p69k6mq1g2gawdbd";
     };
 
     buildInputs = with self; [ python pkgs.pkgconfig pkgs.libvirt lxml ];
@@ -24257,25 +24257,29 @@ in modules // {
       homepage = http://www.libvirt.org/;
       description = "libvirt Python bindings";
       license = licenses.lgpl2;
+      maintainers = [ maintainers.fpletz ];
     };
   };
 
   searx = buildPythonPackage rec {
-    name = "searx-0.7.0";
+    name = "searx-0.8.1";
 
     src = pkgs.fetchurl {
-      url = "https://github.com/asciimoo/searx/archive/v0.7.0.tar.gz";
-      sha256 = "0vq2zjdr1c8mr3zkycqq3732zf4pybbbrs3kzplqgf851k9zfpbw";
+      url = "https://github.com/asciimoo/searx/archive/v0.8.1.tar.gz";
+      sha256 = "0z0s9n8iblrw7y5xrh2apzsazkgm4vzmxn0ckw4yfiya9am8zk32";
     };
 
-    propagatedBuildInputs = with self; [ pyyaml lxml grequests flaskbabel flask requests
-      gevent speaklater Babel pytz dateutil pygments ];
+    propagatedBuildInputs = with self; [
+      pyyaml lxml grequests flaskbabel flask requests2
+      gevent speaklater Babel pytz dateutil pygments
+      pyasn1 pyasn1-modules ndg-httpsclient certifi
+    ];
 
     meta = {
       homepage = https://github.com/asciimoo/searx;
       description = "A privacy-respecting, hackable metasearch engine";
       license = licenses.agpl3Plus;
-      maintainers = with maintainers; [ matejc ];
+      maintainers = with maintainers; [ matejc fpletz ];
     };
   };
 

@@ -1780,17 +1780,11 @@ let
   gnupatch = callPackage ../tools/text/gnupatch { };
 
   gnupg1orig = callPackage ../tools/security/gnupg/1.nix { };
-
   gnupg1compat = callPackage ../tools/security/gnupg/1compat.nix { };
-
-  # use config.packageOverrides if you prefer original gnupg1
-  gnupg1 = gnupg1compat;
-
+  gnupg1 = gnupg1compat;    # use config.packageOverrides if you prefer original gnupg1
   gnupg20 = callPackage ../tools/security/gnupg/20.nix { };
-
-  gnupg21 = lowPrio (callPackage ../tools/security/gnupg/21.nix { });
-
-  gnupg = gnupg20;
+  gnupg21 = callPackage ../tools/security/gnupg/21.nix { };
+  gnupg = gnupg21;
 
   gnuplot = callPackage ../tools/graphics/gnuplot { qt = qt4; };
 
@@ -3645,6 +3639,8 @@ let
   wolfebin = callPackage ../tools/networking/wolfebin {
     python = python2;
   };
+
+  xautoclick = callPackage ../applications/misc/xautoclick {};
 
   xl2tpd = callPackage ../tools/networking/xl2tpd { };
 
@@ -5533,14 +5529,11 @@ let
   pixie = callPackage ../development/interpreters/pixie { };
   dust = callPackage ../development/interpreters/pixie/dust.nix { };
 
-  bundix = callPackage ../development/interpreters/ruby/bundix {
-    ruby = ruby_2_1;
-  };
-  bundler = callPackage ../development/interpreters/ruby/bundler.nix { };
-  bundler_HEAD = bundler;
-  defaultGemConfig = callPackage ../development/interpreters/ruby/gemconfig/default.nix { };
-  buildRubyGem = callPackage ../development/interpreters/ruby/build-ruby-gem { };
-  bundlerEnv = callPackage ../development/interpreters/ruby/bundler-env { };
+  buildRubyGem = callPackage ../development/ruby-modules/gem { };
+  defaultGemConfig = callPackage ../development/ruby-modules/gem-config { };
+  bundix = callPackage ../development/ruby-modules/bundix { };
+  bundler = callPackage ../development/ruby-modules/bundler { };
+  bundlerEnv = callPackage ../development/ruby-modules/bundler-env { };
 
   inherit (callPackage ../development/interpreters/ruby {})
     ruby_1_9_3
@@ -10226,7 +10219,9 @@ let
     inherit (linuxPackages) kernel;
   };
 
-  fuse = callPackage ../os-specific/linux/fuse { };
+  fuse = callPackage ../os-specific/linux/fuse {
+    utillinux = utillinuxMinimal;
+  };
 
   fusionio-util = callPackage ../os-specific/linux/fusionio/util.nix { };
 
@@ -14208,10 +14203,12 @@ let
       ([]
       ++ optional (config.kodi.enableAdvancedLauncher or false) advanced-launcher
       ++ optional (config.kodi.enableGenesis or false) genesis
+      ++ optionals (config.kodi.enableHyperLauncher or false)
+           (with hyper-launcher; [ plugin service pdfreader ])
+      ++ optionals (config.kodi.enableSALTS or false) [salts urlresolver t0mm0-common]
       ++ optional (config.kodi.enableSVTPlay or false) svtplay
       ++ optional (config.kodi.enableSteamLauncher or false) steam-launcher
       ++ optional (config.kodi.enablePVRHTS or false) pvr-hts
-      ++ optionals (config.kodi.enableSALTS or false) [salts urlresolver t0mm0-common]
       );
   };
 
