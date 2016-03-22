@@ -1431,10 +1431,10 @@ let self = _self // overrides; _self = with self; {
   };
 
   CGI = buildPerlPackage rec {
-    name = "CGI-4.27";
+    name = "CGI-4.28";
     src = fetchurl {
       url = "mirror://cpan/authors/id/L/LE/LEEJO/${name}.tar.gz";
-      sha256 = "0rjif2z44lnfk4hkf95mq52nsgvlgjdigabjpx3v697lfibhx37c";
+      sha256 = "1297d3ed6616cacb4eb57860e3e743f3890111e7a63ca08849930f42f1360532";
     };
     buildInputs = [ TestDeep TestWarn ];
     propagatedBuildInputs = [ HTMLParser ];
@@ -4847,6 +4847,21 @@ let self = _self // overrides; _self = with self; {
     };
   };
 
+  FileHandleUnget = buildPerlPackage rec {
+    name = "FileHandle-Unget-0.1628";
+    src = fetchurl {
+      url = "mirror://cpan/authors/id/D/DC/DCOPPIT/${name}.tar.gz";
+      sha256 = "9ef4eb765ddfdc35b350905d8dd0a1e12139eabc586652811bfab41972100fdf";
+    };
+    buildInputs = [ FileSlurp URI ];
+    meta = {
+      homepage = https://github.com/coppit/filehandle-unget/;
+      description = "FileHandle which supports multi-byte unget";
+      license = stdenv.lib.licenses.gpl2;
+      maintainers = with maintainers; [ romildo ];
+    };
+  };
+
   FileHomeDir = buildPerlPackage {
     name = "File-HomeDir-1.00";
     src = fetchurl {
@@ -5346,6 +5361,22 @@ let self = _self // overrides; _self = with self; {
       description = "Perl interface to the GraphViz graphing tool";
       license = licenses.artistic2;
       maintainers = [ ];
+    };
+  };
+
+  grepmail = buildPerlPackage rec {
+    name = "grepmail-5.3104";
+    src = fetchurl {
+      url = "mirror://cpan/authors/id/D/DC/DCOPPIT/${name}.tar.gz";
+      sha256 = "7969e569ec54b2f569a5af56ac4d884c630ad850974658219b0b6953e97b5d3d";
+    };
+    buildInputs = [ FileSlurp URI ];
+    propagatedBuildInputs = [ DateManip DigestMD5 MailMboxMessageParser TimeDate ];
+    meta = {
+      homepage = https://github.com/coppit/grepmail;
+      description = "Search mailboxes for mail matching a regular expression";
+      license = stdenv.lib.licenses.gpl2;
+      maintainers = with maintainers; [ romildo ];
     };
   };
 
@@ -6907,11 +6938,11 @@ let self = _self // overrides; _self = with self; {
     };
   };
 
-  Log4Perl = buildPerlPackage rec {
-    name = "Log-Log4perl-1.46";
+  LogLog4perl = buildPerlPackage rec {
+    name = "Log-Log4perl-1.47";
     src = fetchurl {
       url = "mirror://cpan/authors/id/M/MS/MSCHILLI/${name}.tar.gz";
-      sha256 = "31011a17c04e78016e73eaa4865d0481d2ffc3dc22813c61065d90ad73c64e6f";
+      sha256 = "9001dded011226538b9a50c7856815bb0dba72a1e6218fdcaba56f651356b96f";
     };
     meta = {
       homepage = https://mschilli.github.io/log4perl/;
@@ -6920,6 +6951,9 @@ let self = _self // overrides; _self = with self; {
       maintainers = [ maintainers.rycee ];
     };
   };
+
+  # For backwards compatibility.
+  Log4Perl = self.LogLog4perl;
 
   LogDispatchArray = buildPerlPackage {
     name = "Log-Dispatch-Array-1.003";
@@ -7079,6 +7113,22 @@ let self = _self // overrides; _self = with self; {
 
   maatkit = import ../development/perl-modules/maatkit {
     inherit fetchurl buildPerlPackage stdenv DBDmysql;
+  };
+
+  MailMboxMessageParser = buildPerlPackage rec {
+    name = "Mail-Mbox-MessageParser-1.5105";
+    src = fetchurl {
+      url = "mirror://cpan/authors/id/D/DC/DCOPPIT/${name}.tar.gz";
+      sha256 = "641edd8b7ab74de671ab4931311413c1bd037a1c3eaa0a0c97451cd7b104f2d8";
+    };
+    buildInputs = [ FileSlurp TextDiff URI ];
+    propagatedBuildInputs = [ FileHandleUnget ];
+    meta = {
+      homepage = https://github.com/coppit/mail-mbox-messageparser;
+      description = "A fast and simple mbox folder reader";
+      license = stdenv.lib.licenses.gpl2;
+      maintainers = with maintainers; [ romildo ];
+    };
   };
 
   MailDKIM = buildPerlPackage rec {
@@ -10877,13 +10927,13 @@ let self = _self // overrides; _self = with self; {
   };
 
   SubName = buildPerlPackage rec {
-    name = "Sub-Name-0.14";
+    name = "Sub-Name-0.15";
     src = fetchurl {
       url = "mirror://cpan/authors/id/E/ET/ETHER/${name}.tar.gz";
-      sha256 = "9276412677b445e7e9bdf6ab3a034a05a860e5c5dc560dd9272967745eeb3f17";
+      sha256 = "dabc9a4abcbe067d120ce005b4203b8a44291cbda013900152ba19a1e7c1c8c8";
     };
     meta = {
-      homepage = https://github.com/karenetheridge/Sub-Name;
+      homepage = https://github.com/p5sagit/Sub-Name;
       description = "(re)name a sub";
       license = with stdenv.lib.licenses; [ artistic1 gpl1Plus ];
       maintainers = [ maintainers.rycee ];
