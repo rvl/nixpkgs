@@ -533,7 +533,7 @@ in modules // {
     name = "almir-0.1.8";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/a/almir/${name}.zip";
+      url = "https://pypi.python.org/packages/source/a/almir/${name}.zip";
       sha256 = "5dc0b8a5071f3ff46cd2d92608f567ba446e4c733c063b17d89703caeb9868fe";
     };
 
@@ -627,14 +627,14 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/a/anyjson/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/a/anyjson/${name}.tar.gz";
       sha256 = "37812d863c9ad3e35c0734c42e0bf0320ce8c3bed82cd20ad54cb34d158157ba";
     };
 
     buildInputs = with self; [ self.nose ];
 
     meta = {
-      homepage = http://pypi.python.org/pypi/anyjson/;
+      homepage = https://pypi.python.org/pypi/anyjson/;
       description = "Wrapper that selects the best available JSON implementation";
     };
   };
@@ -886,7 +886,7 @@ in modules // {
 
     meta = with pkgs.stdenv.lib; {
       description = "A Python library that lets you schedule your Python code to be executed";
-      homepage = http://pypi.python.org/pypi/APScheduler/;
+      homepage = https://pypi.python.org/pypi/APScheduler/;
       license = licenses.mit;
     };
   };
@@ -1518,7 +1518,7 @@ in modules // {
     };
 
     meta = {
-      homepage = http://pypi.python.org/pypi/babelfish;
+      homepage = https://pypi.python.org/pypi/babelfish;
       description = "A module to work with countries and languages";
       license = licenses.bsd3;
     };
@@ -1604,7 +1604,7 @@ in modules // {
     name = "beautifulsoup4-4.4.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/b/beautifulsoup4/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/b/beautifulsoup4/${name}.tar.gz";
       sha256 = "1d36lc4pfkvl74fmzdib2nqnvknm0jddgf2n9yd7im150qyh3m47";
     };
 
@@ -1626,7 +1626,7 @@ in modules // {
     name = "beautifulsoup4-4.1.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/b/beautifulsoup4/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/b/beautifulsoup4/${name}.tar.gz";
       sha256 = "0cbcml88bkx9gf1wznxa0kqz1wpyakfbyh9gmxw0wljhda1q0zk1";
     };
 
@@ -1647,7 +1647,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/B/Beaker/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/B/Beaker/${name}.tar.gz";
       sha256 = "0vv4y22b3ly1212n9nnhgvc8yz32adlfl7w7s1wj0i5srpjcgvlq";
     };
 
@@ -2123,7 +2123,7 @@ in modules // {
     name = "bitbucket-api-0.4.4";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/b/bitbucket-api/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/b/bitbucket-api/${name}.tar.gz";
       sha256 = "e890bc3893d59a6f203c1eb2bae60e78ac4d3869da7ea4fb104dca588aea85b2";
     };
 
@@ -2651,7 +2651,7 @@ in modules // {
     name = "zc.buildout-2.2.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zc.buildout/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zc.buildout/${name}.tar.gz";
       sha256 = "a6122ea5c06c6c044a9efce4a3df452c8573e1aebfda7b24262655daac894ef5";
     };
 
@@ -2669,7 +2669,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zc.buildout/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zc.buildout/${name}.tar.gz";
       sha256 = "a5c2fafa4d073ad3dabec267c44a996cbc624700a9a49467cd6b1ef63d35e029";
     };
 
@@ -2687,7 +2687,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zc.buildout/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zc.buildout/${name}.tar.gz";
       sha256 = "0ac5a325d3ffbc5a988fb3ba87f4159d4769cc73e3331cb5234edc8839b6506b";
     };
 
@@ -2799,7 +2799,7 @@ in modules // {
     name = "cairosvg-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/C/CairoSVG/CairoSVG-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/C/CairoSVG/CairoSVG-${version}.tar.gz";
       sha256 = "01lpm38qp7xlnv8jv7qg48j44p5088dwfsrcllgs5fz355lrfds1";
     };
 
@@ -2817,7 +2817,7 @@ in modules // {
     name = "carrot-0.10.7";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/c/carrot/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/c/carrot/${name}.tar.gz";
       sha256 = "cb46374f3c883c580d142a79d2609883713a867cc86e0514163adce784ce2468";
     };
 
@@ -2831,7 +2831,7 @@ in modules // {
     doCheck = false; # depends on the network
 
     meta = {
-      homepage = http://pypi.python.org/pypi/carrot;
+      homepage = https://pypi.python.org/pypi/carrot;
       description = "AMQP Messaging Framework for Python";
     };
   };
@@ -2860,7 +2860,7 @@ in modules // {
     name = "cassandra-driver-2.6.0c2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/c/cassandra-driver/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/c/cassandra-driver/${name}.tar.gz";
       sha256 = "00cc2rkvkxaxn7sf2qzy29s6h394fla73rbdh9krxbswp5nvp27r";
     };
 
@@ -2977,7 +2977,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/C/Cheetah/Cheetah-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/C/Cheetah/Cheetah-${version}.tar.gz";
       sha256 = "be308229f0c1e5e5af4f27d7ee06d90bb19e6af3059794e5fd536a6f29a9b550";
     };
 
@@ -3163,7 +3163,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/C/ClientForm/ClientForm-0.2.10.tar.gz";
+      url = "https://pypi.python.org/packages/source/C/ClientForm/ClientForm-0.2.10.tar.gz";
       sha256 = "0dydh3i1sx7rrj6d0gj375wkjpiivm7jjlsimw6hmwv4ck7yf1wm";
     };
 
@@ -3277,7 +3277,7 @@ in modules // {
     name = "coilmq-0.6.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/C/CoilMQ/CoilMQ-0.6.1.tar.gz";
+      url = "https://pypi.python.org/packages/source/C/CoilMQ/CoilMQ-0.6.1.tar.gz";
       sha256 = "9755733bdae33a9d87630232d166a7da2382f68c2cffb3bb81503806e8d310cb";
     };
 
@@ -3305,7 +3305,7 @@ in modules // {
     name = "colander-1.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/c/colander/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/c/colander/${name}.tar.gz";
       sha256 = "7389413266b9e680c9529c16d56284edf87e0d5de557948e75f41d65683c23b3";
     };
 
@@ -3364,7 +3364,7 @@ in modules // {
     name = "configobj-5.0.6";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/c/configobj/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/c/configobj/${name}.tar.gz";
       sha256 = "a2f5650770e1c87fb335af19a9b7eb73fc05ccf22144eb68db7d00cd2bcb0902";
     };
 
@@ -3375,7 +3375,7 @@ in modules // {
 
     meta = {
       description = "Config file reading, writing and validation";
-      homepage = http://pypi.python.org/pypi/configobj;
+      homepage = https://pypi.python.org/pypi/configobj;
       license = licenses.bsd3;
       maintainers = with maintainers; [ garbas ];
     };
@@ -3498,7 +3498,7 @@ in modules // {
     name = "coverage-4.0.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/c/coverage/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/c/coverage/${name}.tar.gz";
       sha256 = "0nrd817pzjw1haaz6gambgwf4jdjnh9kyxkgj6l8qgl6hdxga45w";
     };
 
@@ -3516,7 +3516,7 @@ in modules // {
   covCore = buildPythonPackage rec {
     name = "cov-core-1.15.0";
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/c/cov-core/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/c/cov-core/${name}.tar.gz";
       sha256 = "4a14c67d520fda9d42b0da6134638578caae1d374b9bb462d8de00587dba764c";
     };
     meta = {
@@ -3601,7 +3601,7 @@ in modules // {
     propagatedBuildInputs = with self; [ pbkdf2 modules.crypt ];
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/c/cryptacular/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/c/cryptacular/${name}.tar.gz";
       sha256 = "273f03d03f9b316671ae4f1c1c6b8d3c883da19a5706873e8f3d6543e13dd4a1";
     };
 
@@ -3956,7 +3956,7 @@ in modules // {
     name = "pbkdf2-1.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pbkdf2/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pbkdf2/${name}.tar.gz";
       sha256 = "ac6397369f128212c43064a2b4878038dab78dab41875364554aaf2a684e6979";
     };
 
@@ -3972,7 +3972,7 @@ in modules // {
     name = "bcrypt-2.0.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/b/bcrypt/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/b/bcrypt/${name}.tar.gz";
       sha256 = "8b2d197ef220d10eb74625dde7af3b10daa973ae9a1eadd6366f763fad4387fa";
     };
 
@@ -4013,7 +4013,7 @@ in modules // {
     name = "pycollada-0.4.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pycollada/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pycollada/${name}.tar.gz";
       sha256 = "0i50lh98550pwr95zgzrgiqzsspm09wl52xlv83y5nrsz4mblylv";
     };
 
@@ -4057,7 +4057,7 @@ in modules // {
     version = "2.14";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pycparser/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pycparser/${name}.tar.gz";
       sha256 = "7959b4a74abdc27b312fed1c21e6caf9309ce0b29ea86b591fd2e99ecdf27f73";
     };
 
@@ -4076,7 +4076,7 @@ in modules // {
     name = "pytest-2.7.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pytest/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pytest/${name}.tar.gz";
       sha256 = "1z4yi986f9n0p8qmzmn21m21m8j1x78hk3505f89baqm6pdw7afm";
     };
 
@@ -4101,7 +4101,7 @@ in modules // {
     name = "pytest-2.8.6";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pytest/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pytest/${name}.tar.gz";
       sha256 = "ed38a3725b8e4478555dfdb549a4219ca3ba57955751141a1aaa45b706d84194";
     };
   };
@@ -4143,7 +4143,7 @@ in modules // {
   pytestpep8 = buildPythonPackage rec {
     name = "pytest-pep8";
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pytest-pep8/pytest-pep8-1.0.6.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pytest-pep8/pytest-pep8-1.0.6.tar.gz";
       sha256 = "06032agzhw1i9d9qlhfblnl3dw5hcyxhagn7b120zhrszbjzfbh3";
     };
 
@@ -4319,7 +4319,7 @@ in modules // {
     version = "0.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/t/tinycss/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/t/tinycss/${name}.tar.gz";
       sha256 = "1pichqra4wk86142hqgvy9s5x6c5k5zhy8l9qxr0620pqk8spbd4";
     };
 
@@ -4346,7 +4346,7 @@ in modules // {
     name = "cssselect-${version}";
     version = "0.9.1";
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/c/cssselect/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/c/cssselect/${name}.tar.gz";
       sha256 = "10h623qnp6dp1191jri7lvgmnd4yfkl36k9smqklp1qlf3iafd85";
     };
     # AttributeError: 'module' object has no attribute 'tests'
@@ -4357,7 +4357,7 @@ in modules // {
     name = "cssutils-0.9.9";
 
     src = pkgs.fetchurl {
-      url = http://pypi.python.org/packages/source/c/cssutils/cssutils-0.9.9.zip;
+      url = https://pypi.python.org/packages/source/c/cssutils/cssutils-0.9.9.zip;
       sha256 = "139yfm9yz9k33kgqw4khsljs10rkhhxyywbq9i82bh2r31cil1pp";
     };
 
@@ -4380,7 +4380,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/d/darcsver/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/d/darcsver/${name}.tar.gz";
       sha256 = "1yb1c3jxqvy4r3qiwvnb86qi5plw6018h15r3yk5ji3nk54qdcb6";
     };
 
@@ -4397,7 +4397,7 @@ in modules // {
     meta = {
       description = "Darcsver, generate a version number from Darcs history";
 
-      homepage = http://pypi.python.org/pypi/darcsver;
+      homepage = https://pypi.python.org/pypi/darcsver;
 
       license = "BSD-style";
     };
@@ -4460,7 +4460,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/requests-cache/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/requests-cache/${name}.tar.gz";
       sha256 = "671969d00719fa3e80476b128dc9232025926884d0110d4d235abdd9c3508fc0";
     };
 
@@ -4470,7 +4470,7 @@ in modules // {
 
     meta = {
       description = "Persistent cache for requests library";
-      homepage = http://pypi.python.org/pypi/requests-cache;
+      homepage = https://pypi.python.org/pypi/requests-cache;
       license = licenses.bsd3;
     };
   });
@@ -4480,7 +4480,7 @@ in modules // {
     version = "1.1.7";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/h/howdoi/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/h/howdoi/${name}.tar.gz";
       sha256 = "df4e49a219872324875d588e7699a1a82174a267e8487505e86bfcb180aea9b7";
     };
 
@@ -4488,7 +4488,7 @@ in modules // {
 
     meta = {
       description = "Instant coding answers via the command line";
-      homepage = http://pypi.python.org/pypi/howdoi;
+      homepage = https://pypi.python.org/pypi/howdoi;
       license = licenses.mit;
     };
   });
@@ -4498,7 +4498,7 @@ in modules // {
     version = "0.5.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/n/nose-parameterized/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/n/nose-parameterized/${name}.tar.gz";
       sha256 = "a11c41b0cf8218e7cdc19ab7a1bdf5c141d161cd2350daee819473cc63cd0685";
     };
 
@@ -4515,7 +4515,7 @@ in modules // {
 
     meta = {
       description = "Parameterized testing with any Python test framework";
-      homepage = http://pypi.python.org/pypi/nose-parameterized;
+      homepage = https://pypi.python.org/pypi/nose-parameterized;
       license = licenses.bsd3;
     };
   });
@@ -4525,7 +4525,7 @@ in modules // {
     version = "1.7.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/j/jdatetime/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/j/jdatetime/${name}.tar.gz";
       sha256 = "c08ba5791c2350b26e87ddf478bf223108146e241b6c949538221b54afd633ac";
     };
 
@@ -4533,7 +4533,7 @@ in modules // {
 
     meta = {
       description = "Jalali datetime binding for python";
-      homepage = http://pypi.python.org/pypi/jdatetime;
+      homepage = https://pypi.python.org/pypi/jdatetime;
       license = licenses.psfl;
     };
   });
@@ -4560,7 +4560,7 @@ in modules // {
 
     meta = {
       description = "Date parsing library designed to parse dates from HTML pages";
-      homepage = http://pypi.python.org/pypi/dateparser;
+      homepage = https://pypi.python.org/pypi/dateparser;
       license = licenses.bsd3;
     };
   };
@@ -4570,7 +4570,7 @@ in modules // {
     version = "2.4.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/python-dateutil/python-${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/python-dateutil/python-${name}.tar.gz";
       sha256 = "3e95445c1db500a344079a47b171c45ef18f57d188dffdb0e4165c71bea8eb3d";
     };
 
@@ -4578,7 +4578,7 @@ in modules // {
 
     meta = {
       description = "Powerful extensions to the standard datetime module";
-      homepage = http://pypi.python.org/pypi/python-dateutil;
+      homepage = https://pypi.python.org/pypi/python-dateutil;
       license = "BSD-style";
     };
   });
@@ -4590,7 +4590,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/python-dateutil/python-${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/python-dateutil/python-${name}.tar.gz";
       sha256 = "02dhw57jf5kjcp7ng1if7vdrbnlpb9yjmz7wygwwvf3gni4766bg";
     };
 
@@ -4598,7 +4598,7 @@ in modules // {
 
     meta = {
       description = "Powerful extensions to the standard datetime module";
-      homepage = http://pypi.python.org/pypi/python-dateutil;
+      homepage = https://pypi.python.org/pypi/python-dateutil;
       license = "BSD-style";
     };
   });
@@ -4608,7 +4608,7 @@ in modules // {
     name = "dateutil-2.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/python-dateutil/python-${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/python-dateutil/python-${name}.tar.gz";
       sha256 = "1vlx0lpsxjxz64pz87csx800cwfqznjyr2y7nk3vhmzhkwzyqi2c";
     };
 
@@ -4620,7 +4620,7 @@ in modules // {
 
     meta = {
       description = "Powerful extensions to the standard datetime module";
-      homepage = http://pypi.python.org/pypi/python-dateutil;
+      homepage = https://pypi.python.org/pypi/python-dateutil;
       license = "BSD-style";
     };
   });
@@ -4651,12 +4651,12 @@ in modules // {
     version = "4.0.6";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/d/decorator/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/d/decorator/${name}.tar.gz";
       sha256 = "1c6254597777fd003da2e8fb503c3dbf3d9e8f8d55f054709c0e65be3467209c";
     };
 
     meta = {
-      homepage = http://pypi.python.org/pypi/decorator;
+      homepage = https://pypi.python.org/pypi/decorator;
       description = "Better living through Python with decorators";
       license = licenses.mit;
     };
@@ -4666,7 +4666,7 @@ in modules // {
     name = "deform-2.0a2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/d/deform/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/d/deform/${name}.tar.gz";
       sha256 = "3fa4d287c8da77a83556e4a5686de006ddd69da359272120b915dc8f5a70cabd";
     };
 
@@ -4693,7 +4693,7 @@ in modules // {
     name = "deform-2.0a2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/d/deform/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/d/deform/${name}.tar.gz";
       sha256 = "1gfaf1d8zp0mp4h229srlffxdp86w1nni9g4aqsshxysr23x591z";
     };
 
@@ -4721,7 +4721,7 @@ in modules // {
     name = "deform_bootstrap-0.2.9";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/d/deform_bootstrap/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/d/deform_bootstrap/${name}.tar.gz";
       sha256 = "1hgq3vqsfqdmlyahnlc40w13viawhpzqf4jzigsggdb41x545fda";
     };
 
@@ -5437,7 +5437,7 @@ in modules // {
     buildInputs = with self; [ nose ];
     meta = {
       description = "A Python library for generating fake user data";
-      homepage    = http://pypi.python.org/pypi/Faker;
+      homepage    = https://pypi.python.org/pypi/Faker;
       license     = licenses.mit;
       maintainers = with maintainers; [ lovek323 ];
       platforms   = platforms.unix;
@@ -5737,7 +5737,7 @@ in modules // {
 
     meta = {
       description = "An unofficial API for Google Play Music";
-      homepage = http://pypi.python.org/pypi/gmusicapi/;
+      homepage = https://pypi.python.org/pypi/gmusicapi/;
       license = licenses.bsd3;
     };
   };
@@ -6474,7 +6474,7 @@ in modules // {
     name = "mwlib-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.pediapress.com/packages/mirror/${name}.tar.gz";
+      url = "https://pypi.pediapress.com/packages/mirror/${name}.tar.gz";
       sha256 = "1dnmnkc21zdfaypskbpvkwl0wpkpn0nagj1fc338w64mbxrk8ny7";
     };
 
@@ -6509,7 +6509,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.pediapress.com/packages/mirror/${name}.zip";
+      url = "https://pypi.pediapress.com/packages/mirror/${name}.zip";
       sha256 = "9229193ee719568d482192d9d913b3c4bb96af7c589d6c31ed4a62caf5054278";
     };
 
@@ -6525,7 +6525,7 @@ in modules // {
     name = "mwlib.rl-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.pediapress.com/packages/mirror/${name}.zip";
+      url = "https://pypi.pediapress.com/packages/mirror/${name}.zip";
       sha256 = "7f596fd60eb24d8d3da3ab4880f095294028880eafb653810a7bdaabdb031238";
     };
 
@@ -6737,7 +6737,7 @@ in modules // {
     name = "peppercorn-0.5";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/peppercorn/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/peppercorn/${name}.tar.gz";
       sha256 = "921cba5d51fa211e6da0fbd2120b9a98d663422a80f5bb669ad81ffb0909774b";
     };
 
@@ -6982,7 +6982,7 @@ in modules // {
     name = "pyramid-1.5.7";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyramid/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyramid/${name}.tar.gz";
       sha256 = "1d29fj86724z68zcj9ximl2nrn34pflrlr6v9mwyhcv8rdf2sc61";
     };
 
@@ -7026,7 +7026,7 @@ in modules // {
     name = "pyramid_beaker-0.7";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyramid_beaker/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyramid_beaker/${name}.tar.gz";
       sha256 = "c76578dac3ea717e9ca89c327daf13975987d0b8827d15157319c20614fab74a";
     };
 
@@ -7065,7 +7065,7 @@ in modules // {
     version = "2.5";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyramid_jinja2/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyramid_jinja2/${name}.tar.gz";
       sha256 = "93c86e3103b454301f4d66640191aba047f2ab85ba75647aa18667b7448396bd";
     };
 
@@ -7083,7 +7083,7 @@ in modules // {
     name = "pyramid_debugtoolbar-1.0.9";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyramid_debugtoolbar/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyramid_debugtoolbar/${name}.tar.gz";
       sha256 = "1vnzg1qnnyisv7znxg7pasayfyr3nz7rrs5nqr4fmdgwj9q2pyv0";
     };
 
@@ -7096,7 +7096,7 @@ in modules // {
     name = "pyramid_mako-0.3.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyramid_mako/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyramid_mako/${name}.tar.gz";
       sha256 = "00811djmsc4rz20kpy2paam05fbx6dmrv2i5jf90f6xp6zw4isy6";
     };
 
@@ -7109,7 +7109,7 @@ in modules // {
     name = "pyramid_exclog-0.7";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyramid_exclog/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyramid_exclog/${name}.tar.gz";
       sha256 = "a58c82866c3e1a350684e6b83b440d5dc5e92ca5d23794b56d53aac06fb65a2c";
     };
 
@@ -7126,7 +7126,7 @@ in modules // {
     name = "pyramid_tm-0.10";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyramid_tm/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyramid_tm/${name}.tar.gz";
       sha256 = "99528c54accf2bd5860d10634fe8972e8375b2d0f50ee08f208ed0484ffafc1d";
     };
 
@@ -7191,7 +7191,7 @@ in modules // {
     version = "1.1.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/R/Radicale/Radicale-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/R/Radicale/Radicale-${version}.tar.gz";
       sha256 = "1c5lv8qca21mndkx350wxv34qypqh6gb4rhzms4anr642clq3jg2";
     };
 
@@ -7222,7 +7222,7 @@ in modules // {
     name = "raven-3.4.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/raven/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/raven/${name}.tar.gz";
       sha256 = "c27e40ab3ccf37f30a9f77acb4917370d9341e25abda8e94b9bd48c7127f7d48";
     };
 
@@ -7346,7 +7346,7 @@ in modules // {
     name = "hypatia-0.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/h/hypatia/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/h/hypatia/${name}.tar.gz";
       sha256 = "fb4d394eeac4b06ff2259cada6174aebbe77edd243ffd1deda320cb327f98bd9";
     };
 
@@ -7362,7 +7362,7 @@ in modules // {
     name = "zope.copy-4.0.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.copy/${name}.zip";
+      url = "https://pypi.python.org/packages/source/z/zope.copy/${name}.zip";
       sha256 = "eb2a95866df1377741876a3ee62d8600e80089e6246e1a235e86791b29534457";
     };
 
@@ -7378,7 +7378,7 @@ in modules // {
     name = "ssdeep-3.1.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/ssdeep/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/ssdeep/${name}.tar.gz";
       sha256 = "1p9dpykmnfb73cszdiic5wbz5bmbbmkiih08pb4dah5mwq4n7im6";
     };
 
@@ -7392,7 +7392,7 @@ in modules // {
     version = "3.2.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/statsd/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/statsd/${name}.tar.gz";
       sha256 = "3fa92bf0192af926f7a0d9be031fe3fd0fbaa1992d42cf2f07e68f76ac18288e";
     };
 
@@ -7448,7 +7448,7 @@ in modules // {
     name = "pyramid_zodbconn-0.7";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyramid_zodbconn/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyramid_zodbconn/${name}.tar.gz";
       sha256 = "56cfdb6b13dc87b1c51c7abc1557c63960d6b858e14a2d4c9693c3f7877f5f63";
     };
 
@@ -7468,7 +7468,7 @@ in modules // {
     name = "pyramid_mailer-0.13";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyramid_mailer/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyramid_mailer/${name}.tar.gz";
       sha256 = "4debfad05ee65a05ba6f43e2af913e6e30db75ba42254e4aa0291500c4caa1fc";
     };
 
@@ -7484,7 +7484,7 @@ in modules // {
     name = "pyrtlsdr-0.2.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyrtlsdr/${name}.zip";
+      url = "https://pypi.python.org/packages/source/p/pyrtlsdr/${name}.zip";
       sha256 = "cbb9086efe4320858c48f4856d09f7face191c4156510b1459ef4e5588935b6a";
     };
 
@@ -7506,7 +7506,7 @@ in modules // {
     name = "repoze.sendmail-4.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/repoze.sendmail/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/repoze.sendmail/${name}.tar.gz";
       sha256 = "51813730adc24728d5ce2609038f7bb81aa1632539d7a79045ef4aa6942eaba2";
     };
 
@@ -7522,7 +7522,7 @@ in modules // {
     name = "zodburi-2.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zodburi/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zodburi/${name}.tar.gz";
       sha256 = "c04b9beca032bb7b968a3464417596ba4607a927c5e65929860962ddba1cccc0";
     };
 
@@ -7642,7 +7642,7 @@ in modules // {
     name = "repoze.lru-0.6";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/repoze.lru/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/repoze.lru/${name}.tar.gz";
       sha256 = "0f7a323bf716d3cb6cb3910cd4fccbee0b3d3793322738566ecce163b01bbd31";
     };
 
@@ -7658,7 +7658,7 @@ in modules // {
     name = "repoze.sphinx.autointerface-0.7.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/repoze.sphinx.autointerface/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/repoze.sphinx.autointerface/${name}.tar.gz";
       sha256 = "97ef5fac0ab0a96f1578017f04aea448651fa9f063fc43393a8253bff8d8d504";
     };
 
@@ -7768,7 +7768,7 @@ in modules // {
     name = "zope.deprecation-4.1.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.deprecation/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.deprecation/${name}.tar.gz";
       sha256 = "fed622b51ffc600c13cc5a5b6916b8514c115f34f7ea2730409f30c061eb0b78";
     };
 
@@ -7801,7 +7801,7 @@ in modules // {
     name = "venusian-1.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/v/venusian/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/v/venusian/${name}.tar.gz";
       sha256 = "1720cff2ca9c369c840c1d685a7c7a21da1afa687bfe62edd93cae4bf429ca5a";
     };
 
@@ -7819,7 +7819,7 @@ in modules // {
     name = "Chameleon-2.15";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/C/Chameleon/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/C/Chameleon/${name}.tar.gz";
       sha256 = "bd1dfc96742c2a5b0b2adcab823bdd848e70c45a994dc4e51dd2cc31e2bae3be";
     };
 
@@ -7901,7 +7901,7 @@ in modules // {
     name = "pyxdg-0.25";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyxdg/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyxdg/${name}.tar.gz";
       sha256 = "81e883e0b9517d624e8b0499eb267b82a815c0b7146d5269f364988ae031279d";
     };
 
@@ -7920,7 +7920,7 @@ in modules // {
     name = "chardet-2.3.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/c/chardet/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/c/chardet/${name}.tar.gz";
       sha256 = "e53e38b3a4afe6d1132de62b7400a4ac363452dc5dfcf8d88e8e0cce663c68aa";
     };
 
@@ -8145,7 +8145,7 @@ in modules // {
     name = "django-tagging-0.3.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/d/django-tagging/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/d/django-tagging/${name}.tar.gz";
       sha256 = "e5fbeb7ca6e0c22a9a96239095dff508040ec95171e51c69e6f8ada72ea4bce2";
     };
 
@@ -8166,7 +8166,7 @@ in modules // {
     version = "0.6.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/d/django-classy-tags/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/d/django-classy-tags/${name}.tar.gz";
       md5 = "eb686aa767ad8cf88c1fa0f400a42516";
       sha256 = "0wxvpmjdzk0aajk33y4himn3wqjx7k0aqlka9j8ay3yfav78bdq0";
     };
@@ -8265,7 +8265,7 @@ in modules // {
     version = "4.2.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/d/django-redis/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/d/django-redis/${name}.tar.gz";
       sha256 = "9ad6b299458f7e6bfaefa8905f52560017369d82fb8fb0ed4b41adc048dbf11c";
     };
 
@@ -8289,7 +8289,7 @@ in modules // {
     version = "1.8.5";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/d/django-reversion/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/d/django-reversion/${name}.tar.gz";
       md5 = "2de5a3fe82aaf505c134570f96fcc7a8";
       sha256 = "0z8fxvxgbxfnalr5br74rsw6g42nry2q656rx7rsgmicd8n42v2r";
     };
@@ -8377,7 +8377,7 @@ in modules // {
     version = "1.5.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/d/django-pipeline/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/d/django-pipeline/${name}.tar.gz";
       sha256 = "1y49fa8jj7x9qjj5wzhns3zxwj0s73sggvkrv660cqw5qb7d8hha";
     };
 
@@ -8393,7 +8393,7 @@ in modules // {
   django_pipeline_1_3 = self.django_pipeline.overrideDerivation (super: rec {
     name = "django-pipeline-1.3.27";
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/d/django-pipeline/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/d/django-pipeline/${name}.tar.gz";
       sha256 = "0iva3cmnh5jw54c7w83nx9nqv523hjvkbjchzd2pb6vzilxf557k";
     };
   });
@@ -8505,7 +8505,7 @@ in modules // {
     version = "0.8.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/h/hg-git/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/h/hg-git/${name}.tar.gz";
       sha256 = "0hz0i6qgcn3ic292sny86mdl1psj1bnczcai1b1kzvwcla6z99py";
     };
 
@@ -8558,13 +8558,13 @@ in modules // {
     name = "dtopt-0.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/d/dtopt/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/d/dtopt/${name}.tar.gz";
       sha256 = "06ae07a12294a7ba708abaa63f838017d1a2faf6147a1e7a14ca4fa28f86da7f";
     };
 
     meta = {
       description = "Add options to doctest examples while they are running";
-      homepage = http://pypi.python.org/pypi/dtopt;
+      homepage = https://pypi.python.org/pypi/dtopt;
     };
     # Test contain Python 2 print
     disabled = isPy3k;
@@ -8576,7 +8576,7 @@ in modules // {
     version = "0.13";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/e/ecdsa/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/e/ecdsa/${name}.tar.gz";
       sha256 = "1yj31j0asmrx4an9xvsaj2icdmzy6pw0glfpqrrkrphwdpi1xkv4";
     };
 
@@ -8616,7 +8616,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/e/enum/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/e/enum/${name}.tar.gz";
       sha256 = "9bdfacf543baf2350df7613eb37f598a802f346985ca0dc1548be6494140fdff";
     };
 
@@ -8627,7 +8627,7 @@ in modules // {
     propagatedBuildInputs = with self; [ ];
 
     meta = {
-      homepage = http://pypi.python.org/pypi/enum/;
+      homepage = https://pypi.python.org/pypi/enum/;
       description = "Robust enumerated type support in Python";
     };
   };
@@ -8637,7 +8637,7 @@ in modules // {
     version = "1.0.4";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/e/enum34/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/e/enum34/${name}.tar.gz";
       sha256 = "0iz4jjdvdgvfllnpmd92qxj5fnfxqpgmjpvpik0jjim3lqk9zhfk";
     };
 
@@ -8653,7 +8653,7 @@ in modules // {
   epc = buildPythonPackage rec {
     name = "epc-0.0.3";
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/e/epc/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/e/epc/${name}.tar.gz";
       sha256 = "30b594bd4a4acbd5bda0d3fa3d25b4e8117f2ff8f24d2d1e3e36c90374f3c55e";
     };
 
@@ -8702,7 +8702,7 @@ in modules // {
     name = "eventlet-0.17.4";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/e/eventlet/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/e/eventlet/${name}.tar.gz";
       sha256 = "0vam0qfm8p5jkpp2cv12r5bnpnv902ld7q074h7x5y5g9rqyj8c7";
     };
 
@@ -8713,7 +8713,7 @@ in modules // {
     propagatedBuildInputs = optionals (!isPyPy) [ self.greenlet ];
 
     meta = {
-      homepage = http://pypi.python.org/pypi/eventlet/;
+      homepage = https://pypi.python.org/pypi/eventlet/;
       description = "A concurrent networking library for Python";
     };
   };
@@ -8767,7 +8767,7 @@ in modules // {
     name = "feedparser-5.2.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/f/feedparser/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/f/feedparser/${name}.tar.gz";
       sha256 = "1ycva69bqssalhqg45rbrfipz3l6hmycszy26k0351fhq990c0xx";
     };
 
@@ -8833,7 +8833,7 @@ in modules // {
     name = "filebrowser_safe-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/f/filebrowser_safe/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/f/filebrowser_safe/${name}.tar.gz";
       sha256 = "02bn60fdslvng2ckn65fms3hjbzgsa8qa5161a8lr720wbx8gpj2";
     };
 
@@ -8864,7 +8864,7 @@ in modules // {
     version = "2.5.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/f/flake8/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/f/flake8/${name}.tar.gz";
       sha256 = "448aed48b0671fe6062f47b98c3081f3a4b36fbe99ddb8ac2a3be6e6cb135603";
     };
 
@@ -8873,7 +8873,7 @@ in modules // {
 
     meta = {
       description = "Code checking using pep8 and pyflakes";
-      homepage = http://pypi.python.org/pypi/flake8;
+      homepage = https://pypi.python.org/pypi/flake8;
       license = licenses.mit;
       maintainers = with maintainers; [ garbas ];
     };
@@ -8905,7 +8905,7 @@ in modules // {
     name = "flask-0.10.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/F/Flask/Flask-0.10.1.tar.gz";
+      url = "https://pypi.python.org/packages/source/F/Flask/Flask-0.10.1.tar.gz";
       sha256 = "4c83829ff83d408b5e1d4995472265411d2c414112298f2eb4b359d9e4563373";
     };
 
@@ -9161,7 +9161,7 @@ in modules // {
     name = "grappelli_safe-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/g/grappelli_safe/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/g/grappelli_safe/${name}.tar.gz";
       sha256 = "8b21b4724bce449cc4f22dc74ed0be9b3e841d968f3271850bf4836864304eb6";
     };
 
@@ -9177,7 +9177,7 @@ in modules // {
         grappelli_safe was therefore created to address these specific issues.
       '';
       homepage = https://github.com/stephenmcd/grappelli-safe;
-      downloadPage = http://pypi.python.org/pypi/grappelli_safe/;
+      downloadPage = https://pypi.python.org/pypi/grappelli_safe/;
       license = licenses.free;
       maintainers = with maintainers; [ prikhi ];
       platforms = platforms.linux;
@@ -9436,7 +9436,7 @@ in modules // {
 
     meta = {
       description = "Filesystem abstraction";
-      homepage    = http://pypi.python.org/pypi/fs;
+      homepage    = https://pypi.python.org/pypi/fs;
       license     = licenses.bsd3;
       maintainers = with maintainers; [ lovek323 ];
       platforms   = platforms.unix;
@@ -9567,7 +9567,7 @@ in modules // {
     name = "gcovr-2.4";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/g/gcovr/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/g/gcovr/${name}.tar.gz";
       sha256 = "2c878e03c2eff2282e64035bec0a30532b2b1173aadf08486401883b79e4dab1";
     };
 
@@ -9717,7 +9717,7 @@ in modules // {
     name = "genzshcomp-0.5.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/g/genzshcomp/genzshcomp-0.5.1.tar.gz";
+      url = "https://pypi.python.org/packages/source/g/genzshcomp/genzshcomp-0.5.1.tar.gz";
       sha256 = "c77d007cc32cdff836ecf8df6192371767976c108a75b055e057bb6f4a09cd42";
     };
 
@@ -9749,7 +9749,7 @@ in modules // {
     disabled = !isPy26 && !isPy27;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/g/gipc/${name}.zip";
+      url = "https://pypi.python.org/packages/source/g/gipc/${name}.zip";
       sha256 = "08c35xzv7nr12d9xwlywlbyzzz2igy0yy6y52q2nrkmh5d4slbpc";
     };
 
@@ -9895,7 +9895,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/g/google-apputils/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/g/google-apputils/${name}.tar.gz";
       sha256 = "1sxsm5q9vr44qzynj8l7p3l7ffb0zl1jdqhmmzmalkx941nbnj1b";
     };
 
@@ -9934,7 +9934,7 @@ in modules // {
     '';
 
     meta = {
-      homepage = http://pypi.python.org/pypi/greenlet;
+      homepage = https://pypi.python.org/pypi/greenlet;
       description = "Module for lightweight in-process concurrent programming";
       license     = licenses.lgpl2;
       platforms   = platforms.all;
@@ -10012,7 +10012,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/g/guessit/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/g/guessit/${name}.tar.gz";
       sha256 = "068d3dmyk4v04p2zna0340lsdnpkm10gyza62apd9akgjh9rfs48";
     };
 
@@ -10024,7 +10024,7 @@ in modules // {
     doCheck = false;
 
     meta = {
-      homepage = http://pypi.python.org/pypi/guessit;
+      homepage = https://pypi.python.org/pypi/guessit;
       license = licenses.lgpl3;
       description = "A library for guessing information from video files";
     };
@@ -10034,14 +10034,14 @@ in modules // {
     name = "gunicorn-19.1.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/g/gunicorn/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/g/gunicorn/${name}.tar.gz";
       sha256 = "ae1dd6452f62b3470bc9acaf62cb5301545fbb9c697d863a5bfe35097ed7a0b3";
     };
 
     buildInputs = with self; [ pytest ];
 
     meta = {
-      homepage = http://pypi.python.org/pypi/gunicorn;
+      homepage = https://pypi.python.org/pypi/gunicorn;
       description = "WSGI HTTP Server for UNIX";
     };
   };
@@ -10160,7 +10160,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/h/http_signature/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/h/http_signature/${name}.tar.gz";
       sha256 = "14acc192ef20459d5e11b4e800dd3a4542f6bd2ab191bf5717c696bf30936c62";
     };
 
@@ -10262,7 +10262,7 @@ in modules // {
     doCheck = false;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/h/httpretty/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/h/httpretty/${name}.tar.gz";
       sha256 = "0f295zj272plr9lhf80kgz19dxkargwv3ar83rwavrcy516mgg9n";
     };
 
@@ -10315,7 +10315,7 @@ in modules // {
     disabled = (!isPy26) || isPyPy;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/i/importlib/importlib-1.0.2.tar.gz";
+      url = "https://pypi.python.org/packages/source/i/importlib/importlib-1.0.2.tar.gz";
       md5 = "4aa23397da8bd7c7426864e88e4db7e1";
     };
   };
@@ -10324,7 +10324,7 @@ in modules // {
     name = "influxdb-0.1.12";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/i/influxdb/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/i/influxdb/${name}.tar.gz";
       sha256 = "6b5ea154454b86d14f2a3960d180e666ba9863da964032dacf2b50628e774a33";
     };
 
@@ -10450,7 +10450,7 @@ in modules // {
     name = "iptools-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/i/iptools/iptools-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/i/iptools/iptools-${version}.tar.gz";
       sha256 = "0f03875a5bed740ba4bf44decb6a78679cca914a1ee8a6cc468114485c4d98e3";
     };
 
@@ -10458,7 +10458,7 @@ in modules // {
 
     meta = {
       description = "Utilities for manipulating IP addresses including a class that can be used to include CIDR network blocks in Django's INTERNAL_IPS setting";
-      homepage = http://pypi.python.org/pypi/iptools;
+      homepage = https://pypi.python.org/pypi/iptools;
     };
   };
 
@@ -10468,7 +10468,7 @@ in modules // {
     name = "ipy-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/I/IPy/IPy-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/I/IPy/IPy-${version}.tar.gz";
       sha256 = "5d6abb870c25f946c45c35cf50e66155598660f2765b35cb12e36ed5223c2b89";
     };
 
@@ -10477,7 +10477,7 @@ in modules // {
 
     meta = {
       description = "Class and tools for handling of IPv4 and IPv6 addresses and networks";
-      homepage = http://pypi.python.org/pypi/IPy;
+      homepage = https://pypi.python.org/pypi/IPy;
     };
   };
 
@@ -10621,7 +10621,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/i/ipaddr/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/i/ipaddr/${name}.tar.gz";
       sha256 = "18ycwkfk3ypb1yd09wg20r7j7zq2a73d7j6j10qpgra7a7abzhyj";
     };
 
@@ -10657,7 +10657,7 @@ in modules // {
 
     disabled = isPyPy;  # setupterm: could not find terminfo database
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/i/ipdb/${name}.zip";
+      url = "https://pypi.python.org/packages/source/i/ipdb/${name}.zip";
       sha256 = "1763d1564113f5eb89df77879a8d3213273c4d7ff93dcb37a3070cdf0c34fd7c";
     };
     propagatedBuildInputs = with self; [ ipython ];
@@ -10742,7 +10742,7 @@ in modules // {
     name = "jedi-0.9.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/j/jedi/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/j/jedi/${name}.tar.gz";
       sha256 = "0c8x962ynpx001fdvp07m2q5jk4igkxbj3rmnydavphvlgxijk1v";
     };
 
@@ -10813,7 +10813,7 @@ in modules // {
     name = "Jinja2-2.8";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/J/Jinja2/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/J/Jinja2/${name}.tar.gz";
       sha256 = "1x0v41lp5m1pjix3l46zx02b7lqp2hflgpnxwkywxynvi3zz47xw";
     };
 
@@ -11068,7 +11068,7 @@ in modules // {
     version = "0.5.11";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pylast/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pylast/${name}.tar.gz";
       sha256 = "bf35820be35447d55564d36072d40b09ac8a7fd41a6f1a7a9d408f4d0eaefac4";
     };
 
@@ -11087,7 +11087,7 @@ in modules // {
     version = "1.0.9";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pylru/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pylru/${name}.tar.gz";
       sha256 = "0b0pq0l7xv83dfsajsc49jcxzc99kb9jfx1a1dlx22hzcy962dvi";
     };
 
@@ -11367,7 +11367,7 @@ in modules // {
     # more work is needed before upgrading
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/l/lxml/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/l/lxml/${name}.tar.gz";
       sha256 = "16a0fa97hym9ysdk3rmqz32xdjqmy4w34ld3rm3jf5viqjx65lxk";
     };
 
@@ -11386,7 +11386,7 @@ in modules // {
     name = "python-magic-0.4.10";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/python-magic/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/python-magic/${name}.tar.gz";
       sha256 = "1hx2sjd4fdswswj3yydn2azxb59rjmi9b7jzh94lf1wnxijjizbr";
     };
 
@@ -11434,7 +11434,7 @@ in modules // {
     name = "m2crypto-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/M/M2Crypto/M2Crypto-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/M/M2Crypto/M2Crypto-${version}.tar.gz";
       sha256 = "1ac3b6eafa5ff7e2a0796675316d7569b28aada45a7ab74042ad089d15a9567f";
     };
 
@@ -11457,7 +11457,7 @@ in modules // {
     name = "Mako-1.0.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/M/Mako/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/M/Mako/${name}.tar.gz";
       sha256 = "17k7jy3byi4hj6ksszib6gxbf6n7snnnirnbrdldn848abjc4l15";
     };
 
@@ -11480,7 +11480,7 @@ in modules // {
     version = "0.23";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/M/MarkupSafe/MarkupSafe-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/M/MarkupSafe/MarkupSafe-${version}.tar.gz";
       sha256 = "a4ec1aff59b95a14b45eb2e23761a0179e98319da5a7eb76b56ea8cdc7b871c3";
     };
 
@@ -11497,7 +11497,7 @@ in modules // {
     version = "1.8.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/m/manuel/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/m/manuel/${name}.tar.gz";
       sha256 = "1diyj6a8bvz2cdf9m0g2bbx9z2yjjnn3ylbg1zinpcjj6vldfx59";
     };
 
@@ -11505,7 +11505,7 @@ in modules // {
 
     meta = {
       description = "A documentation builder";
-      homepage = http://pypi.python.org/pypi/manuel;
+      homepage = https://pypi.python.org/pypi/manuel;
       license = licenses.zpt20;
     };
   };
@@ -11515,7 +11515,7 @@ in modules // {
     name = "markdown-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/M/Markdown/Markdown-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/M/Markdown/Markdown-${version}.tar.gz";
       sha256 = "1kll5b35wqkhvniwm2kh6rqc43wakv9ls0qm6g5318pjmbkywdp4";
     };
 
@@ -11583,7 +11583,7 @@ in modules // {
     name = "mccabe-0.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/m/mccabe/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/m/mccabe/${name}.tar.gz";
       sha256 = "3d8ca9bf65c5014f469180544d1dd5bb5b9df709aad6304f9c2e4370ae0a7b7c";
     };
 
@@ -11693,7 +11693,7 @@ in modules // {
 
     meta = {
       description = "A module for monitoring memory usage of a python program";
-      homepage = http://pypi.python.org/pypi/memory_profiler;
+      homepage = https://pypi.python.org/pypi/memory_profiler;
       license = licenses.bsd3;
     };
   };
@@ -11908,7 +11908,7 @@ in modules // {
     name = "mock-1.3.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/m/mock/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/m/mock/${name}.tar.gz";
       sha256 = "1xm0xkaz8d8d26kdk09f2n9vn543ssd03vmpkqlmgq3crjz7s90y";
     };
 
@@ -12110,7 +12110,7 @@ in modules // {
     version = "0.1.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/m/mr.bob/mr.bob-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/m/mr.bob/mr.bob-${version}.tar.gz";
       sha256 = "6737eaf98aaeae85e07ebef844ee5156df2f06a8b28d7c3dcb056f811c588121";
     };
 
@@ -12174,7 +12174,7 @@ in modules // {
     name = "munkres-1.0.6";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/m/munkres/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/m/munkres/${name}.tar.gz";
       sha256 = "c78f803b9b776bfb20a25c9c7bb44adbf0f9202c2024d51aa5969d21e560208d";
     };
 
@@ -12194,7 +12194,7 @@ in modules // {
     name = "musicbrainzngs-0.5";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/m/musicbrainzngs/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/m/musicbrainzngs/${name}.tar.gz";
       sha256 = "281388ab750d2996e9feca4580fd4215d616a698e02cd6719cb9b8562945c489";
     };
 
@@ -12232,7 +12232,7 @@ in modules // {
     name = "mutagen-1.27";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/m/mutagen/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/m/mutagen/${name}.tar.gz";
       sha256 = "cc884fe1e20fe220be7ce7c3b269f4cadc69a8310150a3a41162fba1ca9c88bd";
     };
 
@@ -12402,7 +12402,7 @@ in modules // {
     __propagatedImpureHostDeps = stdenv.lib.optional stdenv.isDarwin "/usr/lib/libc.dylib";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/m/monotonic/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/m/monotonic/${name}.tar.gz";
       sha256 = "1diab6hfh3jpa1f0scpqaqrawk4g97ss4v7gkn2yw8znvdm6abw5";
     };
 
@@ -12421,7 +12421,7 @@ in modules // {
     doCheck = false;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/M/MySQL-python/${name}.zip";
+      url = "https://pypi.python.org/packages/source/M/MySQL-python/${name}.zip";
       sha256 = "0x0c2jg0bb3pp84njaqiic050qkyd7ymwhfvhipnimg58yv40441";
     };
 
@@ -12441,7 +12441,7 @@ in modules // {
     name = "mysql-connector-repackaged-0.3.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/m/mysql-connector-repackaged/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/m/mysql-connector-repackaged/${name}.tar.gz";
       sha256 = "170fbf11c54def1b5fcc919be0a890b760bb2eca81f56123a5dda0c69b5b099e";
     };
 
@@ -12635,7 +12635,7 @@ in modules // {
     name = "netifaces-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/n/netifaces/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/n/netifaces/${name}.tar.gz";
       sha256 = "1plw237a4zib4z8s62g0mrs8gm3kjfrp5sxh6bbk9nl3rdls2mln";
     };
 
@@ -12696,7 +12696,7 @@ in modules // {
     version = "0.11.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/N/Nevow/Nevow-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/N/Nevow/Nevow-${version}.tar.gz";
       sha256 = "1z0y8a5q4fa2nmh0dap7cs9pp5xs3jm6q0g4vpwcw77q7jagdmw9";
       name = "${name}.tar.gz";
     };
@@ -12737,7 +12737,7 @@ in modules // {
     name = "nibabel-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/n/nibabel/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/n/nibabel/${name}.tar.gz";
       sha256 = "e559bcb40ae395c7f75c51079f815a13a94cd8a035a47315fc9fba0d2ae2ecaf";
     };
 
@@ -12774,7 +12774,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/n/nipype/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/n/nipype/${name}.tar.gz";
       sha256 = "7fb143cd4d05f18db1cb7f0b83dba13d3dcf55b4eb3d16df08c97033ccae507b";
     };
 
@@ -12803,7 +12803,7 @@ in modules // {
     name = "nose-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/n/nose/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/n/nose/${name}.tar.gz";
       sha256 = "f1bffef9cbc82628f6e7d7b40d7e255aefaa1adb6a1b1d26c69a8b79e6208a98";
     };
 
@@ -12847,7 +12847,7 @@ in modules // {
     name = "nose-selecttests-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/n/nose-selecttests/${name}.zip";
+      url = "https://pypi.python.org/packages/source/n/nose-selecttests/${name}.zip";
       sha256 = "0lgrfgp3sq8xi8d9grrg0z8jsyk0wl8a3rxw31hb7vdncin5b7n5";
     };
 
@@ -12862,7 +12862,7 @@ in modules // {
   nose2 = if isPy26 then null else (buildPythonPackage rec {
     name = "nose2-0.5.0";
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/n/nose2/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/n/nose2/${name}.tar.gz";
       sha256 = "0595rh6b6dncbj0jigsyrgrh6h8fsl6w1fr69h76mxv9nllv0rlr";
     };
     meta = {
@@ -13269,7 +13269,7 @@ in modules // {
     name = "oauth-1.0.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/o/oauth/oauth-1.0.1.tar.gz";
+      url = "https://pypi.python.org/packages/source/o/oauth/oauth-1.0.1.tar.gz";
       sha256 = "0pdgi35hczsslil4890xqawnbpdazkgf2v1443847h5hy2gq2sg7";
     };
 
@@ -13286,7 +13286,7 @@ in modules // {
     version = "1.9.0.post1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/o/oauth2/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/o/oauth2/${name}.tar.gz";
       sha256 = "c006a85e7c60107c7cc6da1b184b5c719f6dd7202098196dfa6e55df669b59bf";
     };
 
@@ -13479,7 +13479,7 @@ in modules // {
     disabled = !isPy26;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/o/ordereddict/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/o/ordereddict/${name}.tar.gz";
       md5 = "a0ed854ee442051b249bfad0f638bbec";
     };
 
@@ -15051,7 +15051,7 @@ in modules // {
     name = "paramiko-1.15.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/paramiko/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/paramiko/${name}.tar.gz";
       sha256 = "6ed97e2281bb48728692cdc621f6b86a65fdc1d46b178ce250cfec10b977a04c";
     };
 
@@ -15105,7 +15105,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = http://pypi.python.org/packages/source/P/Paste/Paste-1.7.5.1.tar.gz;
+      url = https://pypi.python.org/packages/source/P/Paste/Paste-1.7.5.1.tar.gz;
       sha256 = "11645842ba8ec986ae8cfbe4c6cacff5c35f0f4527abf4f5581ae8b4ad49c0b6";
     };
 
@@ -15125,7 +15125,7 @@ in modules // {
     name = "paste-deploy-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/P/PasteDeploy/PasteDeploy-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/P/PasteDeploy/PasteDeploy-${version}.tar.gz";
       sha256 = "d5858f89a255e6294e63ed46b73613c56e3b9a2d82a42f1df4d06c8421a9e3cb";
     };
 
@@ -15143,7 +15143,7 @@ in modules // {
     name = "PasterScript-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/P/PasteScript/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/P/PasteScript/${name}.tar.gz";
       sha256 = "2b685be69d6ac8bc0fe6f558f119660259db26a15e16a4943c515fbee8093539";
     };
 
@@ -15304,7 +15304,7 @@ in modules // {
     version = "1.7.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pep8/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pep8/${name}.tar.gz";
       sha256 = "a113d5f5ad7a7abacef9df5ec3f2af23a20a28005921577b15dd584d099d5900";
     };
 
@@ -15411,7 +15411,7 @@ in modules // {
     name = "pg8000-1.10.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pg8000/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pg8000/${name}.tar.gz";
       sha256 = "188658db63c2ca931ae1bf0167b34efaac0ecc743b707f0118cc4b87e90ce488";
     };
 
@@ -15502,7 +15502,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/piep/piep-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/piep/piep-${version}.tar.gz";
       sha256 = "1wgkg1kc28jpya5k4zvbc9jmpa60b3d5c3gwxfbp15hw6smyqirj";
     };
 
@@ -15521,7 +15521,7 @@ in modules // {
     name = "pip-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pip/pip-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pip/pip-${version}.tar.gz";
       sha256 = "160pa7xg0vybidhszd1n0ik2xah0yz6gsym5hp8k7dmfd83d6y1y";
     };
 
@@ -15699,7 +15699,7 @@ in modules // {
     name = "Pillow-2.9.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/P/Pillow/${name}.zip";
+      url = "https://pypi.python.org/packages/source/P/Pillow/${name}.zip";
       sha256 = "1mal92cwh85z6zqx7lrmg0dbqb2gw2cbb2fm6xh0fivmszz8vnyi";
     };
 
@@ -15883,7 +15883,7 @@ in modules // {
     name = "prettytable-0.7.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/P/PrettyTable/${name}.tar.bz2";
+      url = "https://pypi.python.org/packages/source/P/PrettyTable/${name}.tar.bz2";
       sha256 = "599bc5b4b9602e28294cf795733c889c26dd934aa7e0ee9cff9b905d4fbad188";
     };
 
@@ -16039,13 +16039,13 @@ in modules // {
     version = "1.0.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/publicsuffix/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/publicsuffix/${name}.tar.gz";
       sha256 = "f6dfcb8a33fb3ac4f09e644cd26f8af6a09d1a45a019d105c8da58e289ca0096";
     };
 
     meta = {
       description = "Allows to get the public suffix of a domain name";
-      homepage = "http://pypi.python.org/pypi/publicsuffix/";
+      homepage = "https://pypi.python.org/pypi/publicsuffix/";
       license = licenses.mit;
     };
   };
@@ -16347,7 +16347,7 @@ in modules // {
     name = "Babel-2.2.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/B/Babel/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/B/Babel/${name}.tar.gz";
       sha256 = "d8cb4c0e78148aee89560f9fe21587aa57739c975bb89ff66b1e842cc697428f";
     };
 
@@ -16523,7 +16523,7 @@ in modules // {
     disabled = isPy3k || isPyPy;  # see https://bitbucket.org/pypy/pypy/issue/1190/
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pycryptopp/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pycryptopp/${name}.tar.gz";
       sha256 = "0n90h1yg7bfvlbhnc54xb6dbqm286ykaksyg04kxlhyjgf8mhq8i";
     };
 
@@ -16622,7 +16622,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pydot/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pydot/${name}.tar.gz";
       sha256 = "80ea01a7ba75671a3b7890375be0ad8d5321b07bfb6f572192c31409062b59f3";
     };
     propagatedBuildInputs = with self; [pyparsing pkgs.graphviz];
@@ -16803,7 +16803,7 @@ in modules // {
     version = "1.0.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyflakes/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyflakes/${name}.tar.gz";
       sha256 = "f39e33a4c03beead8774f005bd3ecf0c3f2f264fa0201de965fce0aff1d34263";
     };
 
@@ -16868,7 +16868,7 @@ in modules // {
     name = "Pygments-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/P/Pygments/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/P/Pygments/${name}.tar.gz";
       sha256 = "0yx4p3w9lw1kw24zr87xnaqxm007mdxgwa5wjpwnrcfpmxgyz80k";
     };
 
@@ -16891,7 +16891,7 @@ in modules // {
     name = "Pygments-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/P/Pygments/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/P/Pygments/${name}.tar.gz";
       sha256 = "7320919084e6dac8f4540638a46447a3bd730fca172afc17d2c03eed22cf4f51";
     };
   };
@@ -17204,7 +17204,7 @@ in modules // {
     name = "pyparsing-2.0.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyparsing/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyparsing/${name}.tar.gz";
       sha256 = "1r742rjbagf2i166k2w0r192adfw7l9lnsqz7wh4mflf00zws1q0";
     };
 
@@ -17222,7 +17222,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyparsing/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyparsing/${name}.tar.gz";
       sha256 = "646e14f90b3689b005c19ac9b6b390c9a39bf976481849993e277d7380e6e79f";
     };
 
@@ -17347,7 +17347,7 @@ in modules // {
     name = "PyStemmer-1.3.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/P/PyStemmer/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/P/PyStemmer/${name}.tar.gz";
       sha256 = "d1ac14eb64978c1697fcfba76e3ac7ebe24357c9428e775390f634648947cb91";
     };
 
@@ -17368,7 +17368,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/P/Pyro/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/P/Pyro/${name}.tar.gz";
       sha256 = "1bed508453ef7a7556b51424a58101af2349b662baab7e7331c5cb85dbe7e578";
     };
 
@@ -17385,7 +17385,7 @@ in modules // {
     name = "pyrsistent-0.11.12";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyrsistent/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyrsistent/${name}.tar.gz";
       sha256 = "0jgyhkkq36wn36rymn4jiyqh2vdslmradq4a2mjkxfbk2cz6wpi5";
     };
 
@@ -17407,7 +17407,7 @@ in modules // {
     name = "PyRSS2Gen-1.0.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/P/PyRSS2Gen/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/P/PyRSS2Gen/${name}.tar.gz";
       sha256 = "4929d022713129401160fd47550d5158931e4ea6a7136b5d8dfe3b13ac16f2f0";
     };
 
@@ -17537,7 +17537,7 @@ in modules // {
     name = "pynzb-0.1.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pynzb/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pynzb/${name}.tar.gz";
       sha256 = "0735b3889a1174bbb65418ee503629d3f5e4a63f04b16f46ffba18253ec3ef17";
     };
 
@@ -17553,7 +17553,7 @@ in modules // {
     name = "progressbar-2.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/progressbar/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/progressbar/${name}.tar.gz";
       sha256 = "dfee5201237ca0e942baa4d451fee8bf8a54065a337fabe7378b8585aeda56a3";
     };
 
@@ -17573,7 +17573,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/python-ldap/python-${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/python-ldap/python-${name}.tar.gz";
       sha256 = "0j5hzaar4d0vhnrlpmkczgwm7ci2wibr99a7zx04xddzrhxdpz82";
     };
 
@@ -17740,7 +17740,7 @@ in modules // {
     version = "3.1.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/P/PyOpenGL/PyOpenGL-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/P/PyOpenGL/PyOpenGL-${version}.tar.gz";
       sha256 = "9b47c5c3a094fa518ca88aeed35ae75834d53e4285512c61879f67a48c94ddaf";
     };
     propagatedBuildInputs = [ pkgs.mesa pkgs.freeglut self.pillow ];
@@ -17791,7 +17791,7 @@ in modules // {
     version = "1.2.9";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyquery/${name}.zip";
+      url = "https://pypi.python.org/packages/source/p/pyquery/${name}.zip";
       sha256 = "00p6f1dfma65192hc72dxd506491lsq3g5wgxqafi1xpg2w1xia6";
     };
 
@@ -17805,7 +17805,7 @@ in modules // {
     name = "pyrax-1.8.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyrax/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyrax/${name}.tar.gz";
       sha256 = "0hvim60bhgfj91m7pp8jfmb49f087xqlgkqa505zw28r7yl0hcfp";
     };
 
@@ -17826,7 +17826,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyreport/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyreport/${name}.tar.gz";
       sha256 = "1584607596b7b310bf0b6ce79f424bd44238a017fd870aede11cd6732dbe0d4d";
     };
 
@@ -17834,7 +17834,7 @@ in modules // {
     doCheck = false;
 
     meta = {
-      homepage = http://pypi.python.org/pypi/pyreport;
+      homepage = https://pypi.python.org/pypi/pyreport;
       license = "BSD";
       description = "Pyreport makes notes out of a python script";
     };
@@ -17864,7 +17864,7 @@ in modules // {
     name = "pyserial-2.7";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyserial/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyserial/${name}.tar.gz";
       sha256 = "3542ec0838793e61d6224e27ff05e8ce4ba5a5c5cc4ec5c6a3e8d49247985477";
     };
 
@@ -17881,7 +17881,7 @@ in modules // {
     name = "pymongo-3.0.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pymongo/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pymongo/${name}.tar.gz";
       sha256 = "3c6b2317f8031bc1e200fd1ea35f00a96f4569e3f3f220a5e66ab6227d96ccaf";
     };
 
@@ -17899,7 +17899,7 @@ in modules // {
     version = "2.9.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pymongo/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pymongo/${name}.tar.gz";
       sha256 = "1nrr1fxyrlxd69bgxl7bvaj2j4z7v3zaciij5sbhxg0vqiz6ny50";
     };
 
@@ -17918,7 +17918,7 @@ in modules // {
     name = "pyperclip-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyperclip/${name}.zip";
+      url = "https://pypi.python.org/packages/source/p/pyperclip/${name}.zip";
       sha256 = "07q8krmi7phizzp192x3j7xbk1gzhc1kc3jp4mxrm32dn84sp1vh";
     };
 
@@ -18074,7 +18074,7 @@ in modules // {
     version = "2015.7";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pytz/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pytz/${name}.tar.gz";
       sha256 = "99266ef30a37e43932deec2b7ca73e83c8dbc3b9ff703ec73eca6b1dae6befea";
     };
 
@@ -18090,7 +18090,7 @@ in modules // {
     name = "pyutil-2.0.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyutil/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyutil/${name}.tar.gz";
       sha256 = "1fsg9yz5mi2sb0h6c1vvcqchx56i89nbvdb5gfgv1ia3b2w5ra8c";
     };
 
@@ -18281,7 +18281,7 @@ in modules // {
     name = "recaptcha-client-1.0.6";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/recaptcha-client/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/recaptcha-client/${name}.tar.gz";
       sha256 = "28c6853c1d13d365b7dc71a6b05e5ffb56471f70a850de318af50d3d7c0dea2f";
     };
 
@@ -18338,7 +18338,7 @@ in modules // {
     name = "reportlab-3.2.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/reportlab/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/reportlab/${name}.tar.gz";
       sha256 = "14v212cq2w3p0j5xydfr8rav8c8qas1q845r0xj7fm6q5dk8grkj";
     };
 
@@ -18369,7 +18369,7 @@ in modules // {
     disabled = !pythonOlder "3.4";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/requests/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/requests/${name}.tar.gz";
       sha256 = "156bf3ec27ba9ec7e0cf8fbe02808718099d218de403eb64a714d73ba1a29ab1";
     };
 
@@ -18385,7 +18385,7 @@ in modules // {
     version = "2.9.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/requests/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/requests/${name}.tar.gz";
       sha256 = "0zsqrzlybf25xscgi7ja4s48y2abf9wvjkn47wh984qgs1fq2xy5";
     };
 
@@ -19032,7 +19032,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/rope/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/rope/${name}.tar.gz";
       sha256 = "0rdlvp8h74qs49wz1hx6qy8mgp2ddwlfs7z13h9139ynq04a3z7z";
     };
 
@@ -19049,7 +19049,7 @@ in modules // {
     name = "ropemacs-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/ropemacs/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/ropemacs/${name}.tar.gz";
       sha256 = "1x5qf1drcdz9jfiiakc60kzqkb3ahsg9j902c5byf3gjfacdrmqj";
     };
 
@@ -19068,7 +19068,7 @@ in modules // {
     name = "ropemode-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/ropemode/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/ropemode/${name}.tar.gz";
       sha256 = "0jw6h1wvk6wk0wknqdf7s9pw76m8472jv546lqdd88jbl2scgcjl";
     };
 
@@ -19088,7 +19088,7 @@ in modules // {
     name = "routes-1.12.3";
 
     src = pkgs.fetchurl {
-      url = http://pypi.python.org/packages/source/R/Routes/Routes-1.12.3.tar.gz;
+      url = https://pypi.python.org/packages/source/R/Routes/Routes-1.12.3.tar.gz;
       sha256 = "eacc0dfb7c883374e698cebaa01a740d8c78d364b6e7f3df0312de042f77aa36";
     };
 
@@ -19453,7 +19453,7 @@ in modules // {
     name = "scripttest-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/scripttest/scripttest-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/scripttest/scripttest-${version}.tar.gz";
       sha256 = "951cfc25219b0cd003493a565f2e621fd791beaae9f9a3bdd7024d8626419c38";
     };
 
@@ -19464,14 +19464,14 @@ in modules // {
 
     meta = {
       description = "A library for testing interactive command-line applications";
-      homepage = http://pypi.python.org/pypi/ScriptTest/;
+      homepage = https://pypi.python.org/pypi/ScriptTest/;
     };
   };
 
   seaborn = buildPythonPackage rec {
     name = "seaborn-0.6.0";
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/seaborn/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/seaborn/${name}.tar.gz";
       sha256 = "e078399b56ed0d53a4aa8bd4d6bd4a9a9deebc0b4acad259d0ef81830affdb68";
     };
 
@@ -19496,7 +19496,7 @@ in modules // {
   selenium = buildPythonPackage rec {
     name = "selenium-2.44.0";
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/selenium/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/selenium/${name}.tar.gz";
       sha256 = "0l70pqwg88imbylcd831vg8nj8ipy4zr331f6qjccss7vn56i2h5";
     };
 
@@ -19533,7 +19533,7 @@ in modules // {
       sha256 = "1cdea91bbe1ec4d52b3e9c451ab32ae6e1f3aa3fd91e90580490a9eb75bea286";
     };
 
-    buildInputs = with self; [ pip ];
+    buildInputs = with self; [  ];
 
     meta = with stdenv.lib; {
       homepage = https://bitbucket.org/pypa/setuptools_scm/;
@@ -19548,7 +19548,7 @@ in modules // {
     version = "1.2.11";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/setuptools_darcs/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/setuptools_darcs/${name}.tar.gz";
       sha256 = "1wsh0g1fn10msqk87l5jrvzs0yj5mp6q9ld3gghz6zrhl9kqzdn1";
     };
 
@@ -19573,7 +19573,7 @@ in modules // {
     name = "setuptools-trial-0.5.12";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/setuptools_trial/setuptools_trial-0.5.12.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/setuptools_trial/setuptools_trial-0.5.12.tar.gz";
       sha256 = "9cc4ca5fd432944eb95e193f28b5a602e8b07201fea4d7077c0976a40f073432";
     };
 
@@ -19631,7 +19631,7 @@ in modules // {
     name = "shouldbe-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/shouldbe/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/shouldbe/${name}.tar.gz";
       sha256 = "07pchxpv1xvjbck0xy44k3a1jrvklg0wbyccn14w0i7d135d4174";
     };
 
@@ -19652,7 +19652,7 @@ in modules // {
     name = "simplejson-3.8.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/simplejson/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/simplejson/${name}.tar.gz";
       sha256 = "14r4l4rcsyf87p2j4ycsbb017n4vzxfmv285rq2gny4w47rwi2j2";
     };
 
@@ -19722,7 +19722,7 @@ in modules // {
     name = "sigal-0.9.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/sigal/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/sigal/${name}.tar.gz";
       sha256 = "0mk3bzaxn9snx9lc0pj9zvgdgdyhkza6b8z5x91772mlv84sfw6c";
     };
 
@@ -19758,7 +19758,7 @@ in modules // {
     name = "snowballstemmer-1.2.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/snowballstemmer/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/snowballstemmer/${name}.tar.gz";
       sha256 = "919f26a68b2c17a7634da993d91339e288964f93c274f1343e3bbbe2096e1128";
     };
 
@@ -19780,7 +19780,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/sqlite3dbm/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/sqlite3dbm/${name}.tar.gz";
       sha256 = "4721607e0b817b89efdba7e79cab881a03164b94777f4cf796ad5dd59a7612c5";
     };
 
@@ -19829,7 +19829,7 @@ in modules // {
     version = "1.5.13";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/S/Shapely/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/S/Shapely/${name}.tar.gz";
       sha256 = "68f8efb43112e8ef1f7e56e2c9eef64e0cbc1c19528c627696fb07345075a348";
     };
 
@@ -19930,7 +19930,7 @@ in modules // {
     name = "stevedore-1.7.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/stevedore/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/stevedore/${name}.tar.gz";
       sha256 = "149pjc0c3z6khjisn4yil3f94qjnzwafz093wc8rrzbw828qdkv8";
     };
 
@@ -20057,7 +20057,7 @@ in modules // {
     name = "pilkit-1.1.4";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pilkit/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pilkit/${name}.tar.gz";
       sha256 = "e00585f5466654ea2cdbf7decef9862cb00e16fd363017fa7ef6623a16b0d2c7";
     };
 
@@ -20079,7 +20079,7 @@ in modules // {
     name = "clint-0.5.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/c/clint/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/c/clint/${name}.tar.gz";
       sha256 = "1an5lkkqk1zha47198p42ji3m94xmzx1a03dn7866m87n4r4q8h5";
     };
 
@@ -20102,7 +20102,7 @@ in modules // {
     name = "argh-0.26.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/a/argh/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/a/argh/${name}.tar.gz";
       sha256 = "1nqham81ihffc9xmw85dz3rg3v90rw7h0dp3dy0bh3qkp4n499q6";
     };
 
@@ -20122,7 +20122,7 @@ in modules // {
     name = "nose-progressive-1.5.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/n/nose-progressive/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/n/nose-progressive/${name}.tar.gz";
       sha256 = "0mfbjv3dcg23q0a130670g7xpfyvgza4wxkj991xxh8w9hs43ga4";
     };
 
@@ -20141,7 +20141,7 @@ in modules // {
     name = "blessings-1.6";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/b/blessings/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/b/blessings/${name}.tar.gz";
       sha256 = "01rhgn2c3xjf9h1lxij9m05iwf2ba6d0vd7nic26c2gic4q73igd";
     };
 
@@ -20214,7 +20214,7 @@ in modules // {
   sexpdata = buildPythonPackage rec {
     name = "sexpdata-0.0.2";
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/sexpdata/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/sexpdata/${name}.tar.gz";
       sha256 = "eb696bc66b35def5fb356de09481447dff4e9a3ed926823134e1d0f35eade428";
     };
 
@@ -20231,7 +20231,7 @@ in modules // {
     name = "sh-1.11";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/sh/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/sh/${name}.tar.gz";
       sha256 = "590fb9b84abf8b1f560df92d73d87965f1e85c6b8330f8a5f6b336b36f0559a4";
     };
 
@@ -20239,7 +20239,7 @@ in modules // {
 
     meta = {
       description = "Python subprocess interface";
-      homepage = http://pypi.python.org/pypi/sh/;
+      homepage = https://pypi.python.org/pypi/sh/;
     };
   };
 
@@ -20263,7 +20263,7 @@ in modules // {
     name = "six-1.10.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/six/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/six/${name}.tar.gz";
       sha256 = "0snmb8xffb3vsma0z67i0h0w2g2dy0p3gsgh9gi4i0kgc5l8spqh";
     };
 
@@ -20275,7 +20275,7 @@ in modules // {
 
     meta = {
       description = "A Python 2 and 3 compatibility library";
-      homepage = http://pypi.python.org/pypi/six/;
+      homepage = https://pypi.python.org/pypi/six/;
     };
   };
 
@@ -20306,7 +20306,7 @@ in modules // {
       # The advertisement says https://developer.skype.com/wiki/Skype4Py
       # but that url does not work. This following web page points to the
       # download link and has some information about the package.
-      homepage = http://pypi.python.org/pypi/Skype4Py/1.0.32.0;
+      homepage = https://pypi.python.org/pypi/Skype4Py/1.0.32.0;
 
       license = "BSD";
     };
@@ -20415,7 +20415,7 @@ in modules // {
     name = "Sphinx-1.3.4";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/S/Sphinx/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/S/Sphinx/${name}.tar.gz";
       sha256 = "0mw06q7bzzjylgwh0wnnaxmwc95hx8w95as4vcgpan579brw7b4a";
     };
 
@@ -20455,7 +20455,7 @@ in modules // {
     name = "sphinx_rtd_theme-0.1.8";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/sphinx_rtd_theme/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/sphinx_rtd_theme/${name}.tar.gz";
       sha256 = "12mnb7qscr07mllmyyqfpx37778sr21m8663b4fivnk17bnk7xkl";
     };
 
@@ -20545,7 +20545,7 @@ in modules // {
     doCheck = !isPyPy;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/S/SQLAlchemy/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/S/SQLAlchemy/${name}.tar.gz";
       sha256 = "0rhxgr85xdhjn467qfs0dkyj8x46zxcv6ad3dfx3w14xbkb3kakp";
     };
 
@@ -20790,7 +20790,7 @@ in modules // {
     disabled = isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/stompclient/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/stompclient/${name}.tar.gz";
       sha256 = "95a4e98dd0bba348714439ea11a25ee8a74acb8953f95a683924b5bf2a527e4e";
     };
 
@@ -20888,7 +20888,7 @@ in modules // {
     disabled = isPyPy;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/sure/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/sure/${name}.tar.gz";
       sha256 = "1lyjq0rvkbv585dppjdq90lbkm6gyvag3wgrggjzyh7cpyh5c12w";
     };
 
@@ -21145,7 +21145,7 @@ in modules // {
     name = "tempita-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/T/Tempita/Tempita-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/T/Tempita/Tempita-${version}.tar.gz";
       sha256 = "cacecf0baa674d356641f1d406b8bff1d756d739c46b869a54de515d08e6fc9c";
     };
 
@@ -21310,7 +21310,7 @@ in modules // {
 
     meta = {
       description = "A set of extensions to the Python standard library's unit testing framework";
-      homepage = http://pypi.python.org/pypi/testtools;
+      homepage = https://pypi.python.org/pypi/testtools;
       license = licenses.mit;
     };
   };
@@ -21442,7 +21442,7 @@ in modules // {
 
     meta = {
       description = "Python implementation of the v3 API for TheMovieDB.org, allowing access to movie and cast information";
-      homepage = http://pypi.python.org/pypi/tmdb3;
+      homepage = https://pypi.python.org/pypi/tmdb3;
       license = licenses.bsd3;
     };
   };
@@ -21548,7 +21548,7 @@ in modules // {
     version = "4.5.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/t/traits/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/t/traits/${name}.tar.gz";
       sha256 = "5293a8786030b0b243e059f52004355b6939d7c0f1be2eb5a605b63cca484c84";
     };
 
@@ -21568,7 +21568,7 @@ in modules // {
 
     meta = {
       description = "explicitly typed attributes for Python";
-      homepage = http://pypi.python.org/pypi/traits;
+      homepage = https://pypi.python.org/pypi/traits;
       license = "BSD";
     };
   };
@@ -21579,7 +21579,7 @@ in modules // {
     version = "1.4.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/t/transaction/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/t/transaction/${name}.tar.gz";
       sha256 = "1b2304a886a85ad014f73d93346c14350fc214ae22a4f565f42f6761cfb9ecc5";
     };
 
@@ -21587,7 +21587,7 @@ in modules // {
 
     meta = {
       description = "Transaction management";
-      homepage = http://pypi.python.org/pypi/transaction;
+      homepage = https://pypi.python.org/pypi/transaction;
       license = licenses.zpt20;
     };
   };
@@ -21605,7 +21605,7 @@ in modules // {
 
     meta = {
       description = "Python implementation of the Transmission bittorent client RPC protocol";
-      homepage = http://pypi.python.org/pypi/transmissionrpc/;
+      homepage = https://pypi.python.org/pypi/transmissionrpc/;
       license = licenses.mit;
     };
   };
@@ -21615,7 +21615,7 @@ in modules // {
      version = "0.4";
 
      src = pkgs.fetchurl {
-       url = "http://pypi.python.org/packages/source/t/tl.eggdeps/tl.${name}.tar.gz";
+       url = "https://pypi.python.org/packages/source/t/tl.eggdeps/tl.${name}.tar.gz";
        sha256 = "a99de5e4652865224daab09b2e2574a4f7c1d0d9a267048f9836aa914a2caf3a";
      };
 
@@ -21636,7 +21636,7 @@ in modules // {
     disabled = isPyPy || isPy3k;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/t/turses/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/t/turses/${name}.tar.gz";
       sha256 = "15mkhm3b5ka42h8qph0mhh8izfc1200v7651c62k7ldcs50ib9j6";
     };
 
@@ -21670,7 +21670,7 @@ in modules // {
     name = "tweepy-3.5.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/t/tweepy/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/t/tweepy/${name}.tar.gz";
       sha256 = "0n2shilamgwhzmvf534xg7f6hrnznbixyl5pw2f5a3f391gwy37h";
     };
 
@@ -21868,7 +21868,7 @@ in modules // {
     name = "unittest2-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/u/unittest2/unittest2-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/u/unittest2/unittest2-${version}.tar.gz";
       sha256 = "0y855kmx7a8rnf81d3lh5lyxai1908xjp0laf4glwa4c8472m212";
     };
 
@@ -21886,7 +21886,7 @@ in modules // {
 
     meta = {
       description = "A backport of the new features added to the unittest testing framework";
-      homepage = http://pypi.python.org/pypi/unittest2;
+      homepage = https://pypi.python.org/pypi/unittest2;
     };
   };
 
@@ -21912,7 +21912,7 @@ in modules // {
     name = "traceback2-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/t/traceback2/traceback2-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/t/traceback2/traceback2-${version}.tar.gz";
       sha256 = "0c1h3jas1jp1fdbn9z2mrgn3jj0hw1x3yhnkxp7jw34q15xcdb05";
     };
 
@@ -22093,7 +22093,7 @@ in modules // {
     name = "virtualenv-13.1.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/v/virtualenv/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/v/virtualenv/${name}.tar.gz";
       sha256 = "1p732accxwqfjbdna39k8w8lp9gyw91vr4kzkhm8mgfxikqqxg5a";
     };
 
@@ -22229,7 +22229,7 @@ in modules // {
     name = "waitress-0.8.9";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/w/waitress/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/w/waitress/${name}.tar.gz";
       sha256 = "826527dc9d334ed4ed76cdae672fdcbbccf614186657db71679ab58df869458a";
     };
 
@@ -22352,7 +22352,7 @@ in modules // {
     name = "webob-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/W/WebOb/WebOb-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/W/WebOb/WebOb-${version}.tar.gz";
       sha256 = "1nz9m6ijf46wfn33zfza13c0k1n4kjnmn3icdlrlgz5yj21vky0j";
     };
 
@@ -22371,7 +22371,7 @@ in modules // {
     name = "websockify-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/w/websockify/websockify-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/w/websockify/websockify-${version}.tar.gz";
       sha256 = "1v6pmamjprv2x55fvbdaml26ppxdw8v6xz8p0sav3368ajwwgcqc";
     };
 
@@ -22389,7 +22389,7 @@ in modules // {
     name = "webtest-${version}";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/W/WebTest/WebTest-${version}.zip";
+      url = "https://pypi.python.org/packages/source/W/WebTest/WebTest-${version}.zip";
       sha256 = "c320adc2cd862ea71ca9e2012e6157eb12f5f8d1632d1541f2eabf984aaa3ecc";
     };
 
@@ -22427,7 +22427,7 @@ in modules // {
     name = "Werkzeug-0.10.4";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/W/Werkzeug/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/W/Werkzeug/${name}.tar.gz";
       sha256 = "9d2771e4c89be127bc4bac056ab7ceaf0e0064c723d6b6e195739c3af4fd5c1d";
     };
 
@@ -22501,7 +22501,7 @@ in modules // {
     name = "WSGIProxy2-0.4.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/W/WSGIProxy2/${name}.zip";
+      url = "https://pypi.python.org/packages/source/W/WSGIProxy2/${name}.zip";
       sha256 = "13kf9bdxrc95y9vriaz0viry3ah11nz4rlrykcfvb8nlqpx3dcm4";
     };
 
@@ -22581,7 +22581,7 @@ in modules // {
     name = "xmltodict-0.9.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/x/xmltodict/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/x/xmltodict/${name}.tar.gz";
       sha256 = "00crqnjh1kbvcgfnn3b8c7vq30lf4ykkxp1xf3pf7mswr5l1wp97";
     };
 
@@ -22656,7 +22656,7 @@ in modules // {
     name = "zbase32-1.1.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zbase32/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zbase32/${name}.tar.gz";
       sha256 = "2f44b338f750bd37b56e7887591bf2f1965bfa79f163b6afcbccf28da642ec56";
     };
 
@@ -22667,7 +22667,7 @@ in modules // {
 
     meta = {
       description = "zbase32, a base32 encoder/decoder";
-      homepage = http://pypi.python.org/pypi/zbase32;
+      homepage = https://pypi.python.org/pypi/zbase32;
       license = "BSD";
     };
   });
@@ -22677,7 +22677,7 @@ in modules // {
     version = "3.0.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/Z/ZConfig/ZConfig-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/Z/ZConfig/ZConfig-${version}.tar.gz";
       sha256 = "6577da957511d8c2f805fefd2e31cacc4117bb5c54aec03ad8ce374020c021f3";
     };
 
@@ -22685,7 +22685,7 @@ in modules // {
 
     meta = {
       description = "Structured Configuration Library";
-      homepage = http://pypi.python.org/pypi/ZConfig;
+      homepage = https://pypi.python.org/pypi/ZConfig;
       license = licenses.zpt20;
       maintainers = with maintainers; [ goibhniu ];
     };
@@ -22697,7 +22697,7 @@ in modules // {
     version = "1.0.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zc.lockfile/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zc.lockfile/${name}.tar.gz";
       sha256 = "96bb2aa0438f3e29a31e4702316f832ec1482837daef729a92e28c202d8fba5c";
     };
 
@@ -22715,7 +22715,7 @@ in modules // {
     version = "4.0.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zdaemon/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zdaemon/${name}.tar.gz";
       sha256 = "82d7eaa4d831ff1ecdcffcb274f3457e095c0cc86e630bc72009a863c341ab9f";
     };
 
@@ -22726,7 +22726,7 @@ in modules // {
 
     meta = {
       description = "A daemon process control library and tools for Unix-based systems";
-      homepage = http://pypi.python.org/pypi/zdaemon;
+      homepage = https://pypi.python.org/pypi/zdaemon;
       license = licenses.zpt20;
       maintainers = with maintainers; [ goibhniu ];
     };
@@ -22738,7 +22738,7 @@ in modules // {
     disabled = isPyPy;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zfec/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zfec/${name}.tar.gz";
       sha256 = "1ks94zlpy7n8sb8380gf90gx85qy0p9073wi1wngg6mccxp9xsg3";
     };
 
@@ -22769,7 +22769,7 @@ in modules // {
     disabled = isPyPy;
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/Z/ZODB3/ZODB3-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/Z/ZODB3/ZODB3-${version}.tar.gz";
       sha256 = "b5767028e732c619f45c27189dd001e14ec155d7984807991fce751b35b4fcb0";
     };
 
@@ -22777,7 +22777,7 @@ in modules // {
 
     meta = {
       description = "An object-oriented database for Python";
-      homepage = http://pypi.python.org/pypi/ZODB3;
+      homepage = https://pypi.python.org/pypi/ZODB3;
       license = licenses.zpt20;
       maintainers = with maintainers; [ goibhniu ];
     };
@@ -22790,7 +22790,7 @@ in modules // {
     version = "4.0.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/Z/ZODB/ZODB-${version}.tar.gz";
+      url = "https://pypi.python.org/packages/source/Z/ZODB/ZODB-${version}.tar.gz";
       sha256 = "c5d8ffcca37ab4d0a9bfffead6228d58c00cf1c78135abc98a8dbf05b8c8fb58";
     };
 
@@ -22804,7 +22804,7 @@ in modules // {
 
     meta = {
       description = "An object-oriented database for Python";
-      homepage = http://pypi.python.org/pypi/ZODB;
+      homepage = https://pypi.python.org/pypi/ZODB;
       license = licenses.zpt20;
       maintainers = with maintainers; [ goibhniu ];
     };
@@ -22823,7 +22823,7 @@ in modules // {
     doCheck = false;
 
     meta = {
-      homepage = http://pypi.python.org/pypi/zodbpickle;
+      homepage = https://pypi.python.org/pypi/zodbpickle;
     };
   };
 
@@ -22884,7 +22884,7 @@ in modules // {
     name = "zope.broken-3.6.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.broken/${name}.zip";
+      url = "https://pypi.python.org/packages/source/z/zope.broken/${name}.zip";
       sha256 = "b9b8776002da4f7b6b12dfcce77eb642ae62b39586dbf60e1d9bdc992c9f2999";
     };
 
@@ -22900,7 +22900,7 @@ in modules // {
     name = "zope.browser-2.0.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.browser/${name}.zip";
+      url = "https://pypi.python.org/packages/source/z/zope.browser/${name}.zip";
       sha256 = "0f9r5rn9lzgi4hvkhgb6vgw8kpz9sv16jsfb9ws4am8gbqcgv2iy";
     };
 
@@ -22934,7 +22934,7 @@ in modules // {
     name = "zope.component-4.2.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.component/zope.component-4.2.1.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.component/zope.component-4.2.1.tar.gz";
       sha256 = "1gzbr0j6c2h0cqnpi2cjss38wrz1bcwx8xahl3vykgz5laid15l6";
     };
 
@@ -22956,7 +22956,7 @@ in modules // {
     name = "zope.configuration-4.0.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.configuration/zope.configuration-4.0.3.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.configuration/zope.configuration-4.0.3.tar.gz";
       sha256 = "1x9dfqypgympnlm25p9m43xh4qv3p7d75vksv9pzqibrb4cggw5n";
     };
 
@@ -22972,7 +22972,7 @@ in modules // {
     name = "zope.container-4.0.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.container/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.container/${name}.tar.gz";
       sha256 = "5c04e61b52fd04d8b7103476532f557c2278c86281aae30d44f88a5fbe888940";
     };
 
@@ -22995,7 +22995,7 @@ in modules // {
     name = "zope.contenttype-4.0.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.contenttype/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.contenttype/${name}.tar.gz";
       sha256 = "9decc7531ad6925057f1a667ac0ef9d658577a92b0b48dafa7daa97b78a02bbb";
     };
 
@@ -23009,7 +23009,7 @@ in modules // {
     name = "zope.dottedname-3.4.6";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.dottedname/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.dottedname/${name}.tar.gz";
       sha256 = "331d801d98e539fa6c5d50c3835ecc144c429667f483281505de53fc771e6bf5";
     };
     meta = {
@@ -23023,13 +23023,13 @@ in modules // {
     version = "4.0.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.event/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.event/${name}.tar.gz";
       sha256 = "1w858k9kmgzfj36h65kp27m9slrmykvi5cjq6c119xqnaz5gdzgm";
     };
 
     meta = {
       description = "An event publishing system";
-      homepage = http://pypi.python.org/pypi/zope.event;
+      homepage = https://pypi.python.org/pypi/zope.event;
       license = licenses.zpt20;
       maintainers = with maintainers; [ goibhniu ];
     };
@@ -23041,7 +23041,7 @@ in modules // {
      version = "4.0.8";
 
      src = pkgs.fetchurl {
-       url = "http://pypi.python.org/packages/source/z/zope.exceptions/${name}.tar.gz";
+       url = "https://pypi.python.org/packages/source/z/zope.exceptions/${name}.tar.gz";
        sha256 = "0zwxaaa66sqxg5k7zcrvs0fbg9ym1njnxnr28dfmchzhwjvwnfzl";
      };
 
@@ -23052,7 +23052,7 @@ in modules // {
 
      meta = {
        description = "Exception interfaces and implementations";
-       homepage = http://pypi.python.org/pypi/zope.exceptions;
+       homepage = https://pypi.python.org/pypi/zope.exceptions;
        license = licenses.zpt20;
        maintainers = with maintainers; [ goibhniu ];
      };
@@ -23063,7 +23063,7 @@ in modules // {
     name = "zope.filerepresentation-3.6.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.filerepresentation/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.filerepresentation/${name}.tar.gz";
       sha256 = "d775ebba4aff7687e0381f050ebda4e48ce50900c1438f3f7e901220634ed3e0";
     };
 
@@ -23079,7 +23079,7 @@ in modules // {
     name = "zope.i18n-3.8.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.i18n/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.i18n/${name}.tar.gz";
       sha256 = "045nnimmshibcq71yym2d8yrs6wzzhxq5gl7wxjnkpyjm5y0hfkm";
     };
 
@@ -23095,7 +23095,7 @@ in modules // {
     name = "zope.i18nmessageid-4.0.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.i18nmessageid/zope.i18nmessageid-4.0.3.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.i18nmessageid/zope.i18nmessageid-4.0.3.tar.gz";
       sha256 = "1rslyph0klk58dmjjy4j0jxy21k03azksixc3x2xhqbkv97cmzml";
     };
 
@@ -23109,7 +23109,7 @@ in modules // {
     name = "zope.lifecycleevent-3.7.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.lifecycleevent/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.lifecycleevent/${name}.tar.gz";
       sha256 = "0s5brphqzzz89cykg61gy7zcmz0ryq1jj2va7gh2n1b3cccllp95";
     };
 
@@ -23125,7 +23125,7 @@ in modules // {
     name = "zope.location-4.0.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.location/zope.location-4.0.3.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.location/zope.location-4.0.3.tar.gz";
       sha256 = "1nj9da4ksiyv3h8n2vpzwd0pb03mdsh7zy87hfpx72b6p2zcwg74";
     };
 
@@ -23148,7 +23148,7 @@ in modules // {
     name = "zope.proxy-4.1.6";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.proxy/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.proxy/${name}.tar.gz";
       sha256 = "0pqwwmvm1prhwv1ziv9lp8iirz7xkwb6n2kyj36p2h0ppyyhjnm4";
     };
 
@@ -23167,7 +23167,7 @@ in modules // {
     name = "zope.publisher-3.12.6";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.publisher/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.publisher/${name}.tar.gz";
       sha256 = "d994d8eddfba504841492115032a9a7d86b1713ebc96d0ca16fbc6ee93168ba4";
     };
 
@@ -23185,7 +23185,7 @@ in modules // {
     name = "zope.schema-4.4.2";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.schema/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.schema/${name}.tar.gz";
       sha256 = "1p943jdxb587dh7php4vx04qvn7b2877hr4qs5zyckvp5afhhank";
     };
 
@@ -23201,7 +23201,7 @@ in modules // {
     name = "zope.security-4.0.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.security/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.security/${name}.tar.gz";
       sha256 = "8da30b03d5491464d59397e03b88192f31f587325ee6c6eb1ca596a1e487e2ec";
     };
 
@@ -23220,7 +23220,7 @@ in modules // {
     name = "zope.size-3.5.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.size/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.size/${name}.tar.gz";
       sha256 = "006xfkhvmypwd3ww9gbba4zly7n9w30bpp1h74d53la7l7fiqk2f";
     };
 
@@ -23238,7 +23238,7 @@ in modules // {
     doCheck = !isPyPy; # https://github.com/zopefoundation/zope.sqlalchemy/issues/12
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.sqlalchemy/${name}.zip";
+      url = "https://pypi.python.org/packages/source/z/zope.sqlalchemy/${name}.zip";
       sha256 = "e196d1b2cf796f46e2c6127717e359ddd35d8d084a8ba059f0f0fabff245b9e1";
     };
 
@@ -23257,7 +23257,7 @@ in modules // {
     version = "4.5.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.testing/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.testing/${name}.tar.gz";
       sha256 = "1yvglxhzvhl45mndvn9gskx2ph30zz1bz7rrlyfs62fv2pvih90s";
     };
 
@@ -23267,7 +23267,7 @@ in modules // {
 
     meta = {
       description = "Zope testing helpers";
-      homepage =  http://pypi.python.org/pypi/zope.testing;
+      homepage =  https://pypi.python.org/pypi/zope.testing;
       license = licenses.zpt20;
       maintainers = with maintainers; [ goibhniu ];
     };
@@ -23279,7 +23279,7 @@ in modules // {
     version = "4.4.10";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.testrunner/${name}.zip";
+      url = "https://pypi.python.org/packages/source/z/zope.testrunner/${name}.zip";
       sha256 = "1w09wbqiqmq6hvrammi4fzc7fr129v63gdnzlk4qi2b1xy5qpqab";
     };
 
@@ -23287,7 +23287,7 @@ in modules // {
 
     meta = {
       description = "A flexible test runner with layer support";
-      homepage = http://pypi.python.org/pypi/zope.testrunner;
+      homepage = https://pypi.python.org/pypi/zope.testrunner;
       license = licenses.zpt20;
       maintainers = with maintainers; [ goibhniu ];
     };
@@ -23298,7 +23298,7 @@ in modules // {
     name = "zope.traversing-4.0.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.traversing/${name}.zip";
+      url = "https://pypi.python.org/packages/source/z/zope.traversing/${name}.zip";
       sha256 = "79d38b92ec1d9a2467966ee954b792d83ac66f22e45e928113d4b5dc1f5e74eb";
     };
 
@@ -23317,7 +23317,7 @@ in modules // {
     name = "zope.interface-4.1.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/z/zope.interface/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/z/zope.interface/${name}.tar.gz";
       sha256 = "0ks8h73b2g4bkad821qbv0wzjppdrwys33i7ka45ik3wxjg1l8if";
     };
 
@@ -23344,7 +23344,7 @@ in modules // {
     propagatedBuildInputs = with self; [ hglib ];
 
     meta = {
-      homepage = http://pypi.python.org/pypi/hgsvn;
+      homepage = https://pypi.python.org/pypi/hgsvn;
     };
   };
 
@@ -23555,7 +23555,7 @@ in modules // {
   pyzmq = buildPythonPackage rec {
     name = "pyzmq-15.2.0";
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/p/pyzmq/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/p/pyzmq/${name}.tar.gz";
       sha256 = "2dafa322670a94e20283aba2a44b92134d425bd326419b68ad4db8d0831a26ec";
     };
     buildInputs = with self; [ pkgs.zeromq3 pytest tornado ];
@@ -23615,7 +23615,7 @@ in modules // {
   tissue = buildPythonPackage rec {
     name = "tissue-0.9.2";
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/t/tissue/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/t/tissue/${name}.tar.gz";
       sha256 = "7e34726c3ec8fae358a7faf62de172db15716f5582e5192a109e33348bd76c2e";
     };
 
@@ -23654,7 +23654,7 @@ in modules // {
     name = "translationstring-1.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/t/translationstring/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/t/translationstring/${name}.tar.gz";
       sha256 = "4ee44cfa58c52ade8910ea0ebc3d2d84bdcad9fa0422405b1801ec9b9a65b72d";
     };
 
@@ -23732,7 +23732,7 @@ in modules // {
     name = "WebHelpers-1.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/W/WebHelpers/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/W/WebHelpers/${name}.tar.gz";
       sha256 = "ea86f284e929366b77424ba9a89341f43ae8dee3cbeb8702f73bcf86058aa583";
     };
 
@@ -23814,7 +23814,7 @@ in modules // {
     };
 
     meta = {
-      homepage = http://pypi.python.org/pypi/ujson;
+      homepage = https://pypi.python.org/pypi/ujson;
       description = "Ultra fast JSON encoder and decoder for Python";
       license = licenses.bsd3;
     };
@@ -23825,7 +23825,7 @@ in modules // {
     name = "Unidecode-0.04.18";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/U/Unidecode/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/U/Unidecode/${name}.tar.gz";
       sha256 = "12hhblqy1ajvidm38im4171x4arg83pfmziyn53nizp29p3m14gi";
     };
 
@@ -23834,7 +23834,7 @@ in modules // {
     buildInputs = [ pkgs.glibcLocales ];
 
     meta = {
-      homepage = http://pypi.python.org/pypi/Unidecode/;
+      homepage = https://pypi.python.org/pypi/Unidecode/;
       description = "ASCII transliterations of Unicode text";
       license = licenses.gpl2;
       maintainers = with maintainers; [ iElectric ];
@@ -23879,7 +23879,7 @@ in modules // {
 
     meta = {
       description = "Python package to control BlinkStick USB devices";
-      homepage = http://pypi.python.org/pypi/BlinkStick/;
+      homepage = https://pypi.python.org/pypi/BlinkStick/;
       license = licenses.bsd3;
       maintainers = with maintainers; [ np ];
     };
@@ -24296,7 +24296,7 @@ in modules // {
     name = "rpdb-0.1.5";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/r/rpdb/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/r/rpdb/${name}.tar.gz";
       sha256 = "0rql1hq3lziwcql0h3dy05w074cn866p397ng9bv6qbz85ifw1bk";
     };
 
@@ -24312,7 +24312,7 @@ in modules // {
     name = "grequests-0.2.0";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/g/grequests/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/g/grequests/${name}.tar.gz";
       sha256 = "0lafzax5igbh8y4x0krizr573wjsxz7bhvwygiah6qwrzv83kv5c";
     };
 
@@ -24330,7 +24330,7 @@ in modules // {
     name = "Flask-Babel-0.9";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/F/Flask-Babel/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/F/Flask-Babel/${name}.tar.gz";
       sha256 = "0k7vk4k54y55ma0nx2k5s0phfqbriwslhy5shh3b0d046q7ibzaa";
     };
 
@@ -24348,7 +24348,7 @@ in modules // {
     name = "speaklater-1.3";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/speaklater/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/speaklater/${name}.tar.gz";
       sha256 = "1ab5dbfzzgz6cnz4xlwx79gz83id4bhiw67k1cgqrlzfs0va7zjr";
     };
 
@@ -25008,7 +25008,7 @@ in modules // {
 
     meta = {
       description = "Termcolor";
-      homepage = http://pypi.python.org/pypi/termcolor;
+      homepage = https://pypi.python.org/pypi/termcolor;
       license = licenses.mit;
     };
   };
@@ -26118,7 +26118,7 @@ in modules // {
     version = "2.2.1";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/s/semver/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/s/semver/${name}.tar.gz";
       sha256 = "161gvsfpw0l8lnf1v19rvqc8b9f8n70cc8ppya4l0n6rwc1c1n4m";
     };
 
@@ -26135,7 +26135,7 @@ in modules // {
     version = "1.4";
 
     src = pkgs.fetchurl {
-      url = "http://pypi.python.org/packages/source/e/ed25519/${name}.tar.gz";
+      url = "https://pypi.python.org/packages/source/e/ed25519/${name}.tar.gz";
       sha256 = "0ahx1nkxa0xis3cw0h5c4fpgv8mq4znkq7kajly33lc3317bk499";
     };
 
