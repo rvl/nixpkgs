@@ -6,6 +6,15 @@ let
 
   cfg = config.services.emacs;
 
+  editorScript = pkgs.writeScriptBin "editor-emacs.sh" ''
+    #!${pkgs.stdenv.shell}
+    if [ -z "$1" ]; then
+      exec ${cfg.package}/bin/emacsclient --create-frame --alternate-editor ${cfg.package}/bin/emacs
+    else
+      exec ${cfg.package}/bin/emacsclient --alternate-editor ${cfg.package}/bin/emacs "$@"
+    fi
+  '';
+
 in {
 
   options.services.emacs = {
@@ -14,7 +23,13 @@ in {
       default = false;
       example = true;
       description = ''
-        Enable Emacs daemon to have an always running Emacs. Use emacsclient to connect to the daemon..
+        Whether to install a user service for the Emacs daemon. Once
+        the service is started, use emacsclient to connect to the
+        daemon.
+
+        The service must be manually started and/or enabled for each
+        user with "systemctl --user start emacs" and
+        "systemctl --user enable emacs".
       '';
     };
 
@@ -27,6 +42,15 @@ in {
       '';
     };
 
+    defaultEditor = mkOption {
+      type = types.bool;
+      default = false;
+      example = true;
+      description = ''
+        When enabled, configures emacsclient to be the default editor
+        using the EDITOR environment variable.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
@@ -41,7 +65,10 @@ in {
       };
     };
 
-    environment.systemPackages = [ cfg.package ];
-  };
+    environment.systemPackages = [ cfg.package editorScript ];
 
+    environment.variables = if cfg.defaultEditor then {
+      EDITOR = mkOverride 900 "${editorScript}/bin/editor-emacs.sh";
+    } else {};
+  };
 }
