@@ -22,8 +22,8 @@ import ./make-test.nix ({ pkgs, ...} : {
   testScript =
     ''
       $machine->waitForUnit("multi-user.target");
-      $machine->sleep(1); # sometimes fails without that
-      $machine->succeed("systemctl --user daemon-reload");
+      # wait for login and user's service manager
+      $machine->waitUntilSucceeds("systemctl --user daemon-reload");
 
       # checks that the EDITOR environment variable is set
       $machine->succeed("test \$(basename \"\$EDITOR\") = editor-emacs.sh");
