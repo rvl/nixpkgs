@@ -1,0 +1,185 @@
+<chapter xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         version="5.0"
+         xml:id="module-services-emacs">
+
+<title>Emacs</title>
+
+<para>Emacs is the extensible, customizable, self-documenting
+real-time display editor.</para>
+
+<para>It can be installed in the normal way
+(see <xref linkend="sec-package-management" />) through the
+<literal>nixos.emacs24</literal> package, or
+<literal>nixos.emacs25pre</literal> for the pretest version.</para>
+
+<para><emphasis>Upstream documentation:</emphasis> <link xlink:href="http://www.gnu.org/software/emacs/"/></para>
+
+<section><title>Emacs Package Management</title>
+
+<para>Nixpkgs provides optional declarative management of Emacs
+extension packages. This is highly convenient if you would share
+exactly the same Emacs configuration between different systems and
+have all necessary packages available.</para>
+
+<subsection><title>Declarative Package Installation</title>
+
+<para>All packages from <link xlink:href="https://elpa.gnu.org/">ELPA</link> and
+<link xlink:href="https://melpa.org/">MELPA</link> are available within
+nixpkgs, and regularly updated.</para>
+
+<para>The basic setup looks like this:
+
+<programlisting>
+environment.systemPackages = with pkgs.emacsPackagesNg; [
+  (emacsWithPackages (with melpaPackages; [
+    # packages here, for example
+    magit
+    nix-mode
+    # ...
+
+    # example of a non-elpa/melpa package
+    pkgs.ledger
+  ]))
+];
+</programlisting>
+</para>
+
+<para>
+The result of this configuration will be an
+<programname>emacs</programname> command which launches Emacs with all
+of your chosen packages in the load path.
+</para>
+
+<para>
+The list of possible packages in ELPA, Melpa, and Melpa Stable can be
+seen with the following commands:
+
+<programlisting>
+nix-env -f "&lt;nixpkgs&gt;" -qaP -A emacsPackagesNg
+nix-env -f "&lt;nixpkgs&gt;" -qaP -A emacsPackagesNg.melpaPackages
+nix-env -f "&lt;nixpkgs&gt;" -qaP -A emacsPackagesNg.melpaStablePackages
+</programlisting>
+</para>
+
+<tip>
+  <para>
+    Of interest may be <literal>melpaPackages.nix-mode</literal>,
+    which provides syntax highlighting for the Nix language.
+  </para>
+</tip>
+
+<para>
+To use a custom emacs package:
+
+<programlisting>
+let
+  emacs = pkgs.emacs24.override {
+    withGTK2 = false;
+    withGTK3 = true;
+    enableTTYTrueColor = true;
+  };
+  emacsPackages = pkgs.emacsPackagesNgGen emacs;
+  myEmacs = with emacsPackages; emacsWithPackages (with melpaPackages; [
+    # ...
+  ]);
+in
+{
+  environment.systemPackages = [ myEmacs ];
+}
+</programlisting>
+</para>
+
+<note><para>This documentation describes the new Emacs packages
+framework in NixOS 16.03 (<literal>emacsPackagesNg</literal>) which
+should not be confused with the previous framework
+(<literal>emacs24Packages</literal>).</para></note>
+
+</subsection>
+
+<subsection><title>Emacs Configuration</title>
+
+<para>
+Once your Emacs packages are declared, previously downloaded packages
+can be cleaned up by removing <literal>~/.emacs.d/elpa</literal> (do
+make a backup first, in case you forgot a package).
+</para>
+
+<programlisting>
+(require 'package)
+
+;; optional. makes unpure packages archives unavailable
+(setq package-archives nil)
+
+;; ;; optional. use this if you install emacs packages to the system profile
+;; (add-to-list 'package-directory-list "/run/current-system/sw/share/emacs/site-lisp/elpa")
+;; ;; optional. use this if you install emacs packages to user profiles (with nix-env)
+;; (add-to-list 'package-directory-list "~/.nix-profile/share/emacs/site-lisp/elpa")
+
+(setq package-enable-at-startup nil)
+(package-initialize)
+</programlisting>
+
+</subsection>
+
+</section>
+
+<section><title>Emacs Daemon systemd Service</title>
+
+<para><emphasis>Source:</emphasis> <filename>modules/services/editors/emacs.nix</filename></para>
+
+<para>To install the systemd user service for Emacs, add the following
+to your <filename>configuration.nix</filename>:
+
+<programlisting>
+services.emacs.enable = true;
+# services.emacs.package = pkgs.emacs24;
+# services.emacs.defaultEditor = true;
+</programlisting>
+
+</para>
+
+<para>
+To enable the systemd user service for just the currently logged in user, run:
+
+<programlisting>
+systemctl --user enable emacs
+</programlisting>
+
+This will add a symlink in <literal>~/.config/systemd/user</literal>.
+</para>
+
+<para>
+ To enable the systemd user service for all users, set
+
+<programlisting>
+systemd.user.services.emacs.wantedBy = [ "default.target" ];
+</programlisting>
+
+This is not set by default because having emacs run for every user who
+logs in may not be desired.
+</para>
+</section>
+
+
+<section><title><literal>emacsclient</literal> as the Default Editor</title>
+
+<para>If <literal>services.emacs.defaultEditor</literal> is set, the
+<variable>EDITOR</variable> will be set to launch
+<programname>emacsclient</programname>.</para>
+
+<para>Any setting of <variable>EDITOR</variable> in the shell config
+files will override <literal>services.emacs.defaultEditor</literal>,
+so remove these from <literal>.profile</literal> or
+<literal>.zshenv</literal>.</para>
+
+<para>Don't forget to add <literal>(server-start)</literal> to
+<literal>~/.emacs</literal>.
+
+
+</para>
+
+</section>
+
+</chapter>
