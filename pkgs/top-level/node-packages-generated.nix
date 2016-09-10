@@ -5381,15 +5381,15 @@
     cpu = [ ];
   };
   by-spec."bower2nix"."*" =
-    self.by-version."bower2nix"."3.0.1";
-  by-version."bower2nix"."3.0.1" = self.buildNodePackage {
-    name = "bower2nix-3.0.1";
-    version = "3.0.1";
+    self.by-version."bower2nix"."3.1.0";
+  by-version."bower2nix"."3.1.0" = self.buildNodePackage {
+    name = "bower2nix-3.1.0";
+    version = "3.1.0";
     bin = true;
     src = fetchurl {
-      url = "https://registry.npmjs.org/bower2nix/-/bower2nix-3.0.1.tgz";
-      name = "bower2nix-3.0.1.tgz";
-      sha1 = "06a52c033a66a890fb0c7c45a43074f3bc2e4a44";
+      url = "https://registry.npmjs.org/bower2nix/-/bower2nix-3.1.0.tgz";
+      name = "bower2nix-3.1.0.tgz";
+      sha1 = "3cd67w3vklq8i3z79xdrrzslb0rld2pi";
     };
     deps = {
       "argparse-1.0.4" = self.by-version."argparse"."1.0.4";
@@ -5410,7 +5410,7 @@
     os = [ ];
     cpu = [ ];
   };
-  "bower2nix" = self.by-version."bower2nix"."3.0.1";
+  "bower2nix" = self.by-version."bower2nix"."3.1.0";
   by-spec."bplist-creator"."0.0.4" =
     self.by-version."bplist-creator"."0.0.4";
   by-version."bplist-creator"."0.0.4" = self.buildNodePackage {
