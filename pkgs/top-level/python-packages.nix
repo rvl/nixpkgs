@@ -27193,6 +27193,8 @@ EOF
 
   spacy = callPackage ../development/python-modules/spacy { };
 
+  textacy = callPackage ../development/python-modules/textacy { };
+
   pyemd  = callPackage ../development/python-modules/pyemd { };
 
   behave = callPackage ../development/python-modules/behave { };
