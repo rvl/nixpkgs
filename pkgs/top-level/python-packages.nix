@@ -2676,6 +2676,8 @@ in {
     };
   };
 
+  cld2-cffi = callPackage ../development/python-modules/cld2-cffi {};
+
   clf = buildPythonPackage rec {
     name = "clf-${version}";
     version = "0.5.2";
