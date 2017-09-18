@@ -19,8 +19,6 @@ let
     };
   };
 
-  makeModelSet = models: with pkgs.lib; listToAttrs (map (m: nameValuePair m.pname (buildModelPackage m)) models);
+  makeModelSet = models: with stdenv.lib; listToAttrs (map (m: nameValuePair m.pname (buildModelPackage m)) models);
 
-in makeModelSet (pkgs.lib.importJSON ./models.json)
-
-# cat models.json | jq -r '.[] | @uri "https://github.com/explosion/spacy-models/releases/download/\(.pname)-\(.version)/\(.pname)-\(.version).tar.gz"' | xargs -n1 nix-prefetch-url
+in makeModelSet (stdenv.lib.importJSON ./models.json)
