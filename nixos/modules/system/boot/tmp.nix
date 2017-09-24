@@ -32,8 +32,18 @@ with lib;
 
     systemd.additionalUpstreamSystemUnits = optional config.boot.tmpOnTmpfs "tmp.mount";
 
-    systemd.tmpfiles.rules = optional config.boot.cleanTmpDir "D! /tmp 1777 root root";
-
+    systemd.services.clean-tmp-dir = mkIf config.boot.cleanTmpDir {
+      description = "Deletes the contents of /tmp";
+      after = [ "local-fs.target" ];
+      wantedBy = [ "sysinit.target" ];
+      serviceConfig.Type = "oneshot";
+      script = ''
+        shopt -s dotglob
+        rm --force           \
+           --one-file-system \
+           --recursive       \
+           /tmp/*
+      '';
+    };
   };
-
 }
