@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -i bash -p curl.bin git.out nix jq.out nodePackages.bower2nix
+#!nix-shell -i bash -p curl.bin git.out nix jq.out
 
 set -euo pipefail
 IFS=$'\n\t'
@@ -33,5 +33,5 @@ SHA=$(cd "$TOP" && nix-prefetch-url -A uchiwa.src)
 write_src
 
 curl https://raw.githubusercontent.com/${REPO}/${VERSION}/bower.json -s > bower.json
-rm -f bower-packages.nix
-bower2nix bower.json bower-packages.nix
+
+exec ./regen.sh
