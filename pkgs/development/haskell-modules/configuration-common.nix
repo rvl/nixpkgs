@@ -1088,6 +1088,19 @@ self: super: {
   # dontCheck: printf double rounding behavior
   prettyprinter = if pkgs.stdenv.hostPlatform.isMusl then dontCheck super.prettyprinter else super.prettyprinter;
 
+  arbtt = (overrideCabal super.arbtt {
+    jailbreak = true;
+    editedCabalFile = null;
+    src = pkgs.fetchFromGitHub {
+      owner = "nomeata";
+      repo = "arbtt";
+      rev = "a6666cf8f3dbf36d5fab41ac6f339e173a212667";
+      sha256 = "01045p8ysr7lqmdhhyjpgpmh5iyfm3h8a9dfl6vkhfm4ql7bdb8i";
+    };
+  });
+  # steeloverseer = doJailbreak super.steeloverseer;
+  # nix-diff = doJailbreak super.nix-diff;
+
   # Fix with Cabal 2.2, https://github.com/guillaume-nargeot/hpc-coveralls/pull/73
   hpc-coveralls = appendPatch super.hpc-coveralls (pkgs.fetchpatch {
     url = "https://github.com/guillaume-nargeot/hpc-coveralls/pull/73/commits/344217f513b7adfb9037f73026f5d928be98d07f.patch";
