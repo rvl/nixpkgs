@@ -1,6 +1,6 @@
 { stdenv, fetchurl, vmTools, writeScript, writeText, runCommand, makeInitrd
-, python, perl, coreutils, dosfstools, gzip, mtools, netcat-gnu, openssh, qemu
-, samba, socat, vde2, cdrkit, pathsFromGraph, gnugrep
+, python, coreutils, dosfstools, gzip, mtools, netcat-gnu, openssh, qemu
+, samba, socat, vde2, xorriso, closureInfo, pathsFromGraph, gnugrep
 }:
 
 { isoFile, productKey, arch ? null }:
@@ -14,7 +14,7 @@ let
   };
 
   mkCygwinImage = import ./cygwin-iso {
-    inherit stdenv fetchurl runCommand python perl cdrkit pathsFromGraph;
+    inherit stdenv fetchurl runCommand python xorriso closureInfo pathsFromGraph;
     arch = let
       defaultArch = if stdenv.is64bit then "x86_64" else "i686";
     in if arch == null then defaultArch else arch;

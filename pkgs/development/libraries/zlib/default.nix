@@ -30,7 +30,10 @@ stdenv.mkDerivation (rec {
 
   configureFlags = stdenv.lib.optional (!static) "--shared";
 
-  postInstall = ''
+  postInstall =
+    stdenv.lib.optionalString (stdenv.hostPlatform.libc == "msvcrt") ''
+      moveToOutput lib/pkgconfig/zlib.pc "$dev"
+  '' + ''
     moveToOutput lib/libz.a "$static"
   ''
     # jww (2015-01-06): Sometimes this library install as a .so, even on
@@ -43,8 +46,11 @@ stdenv.mkDerivation (rec {
   ''
     # Non-typical naming confuses libtool which then refuses to use zlib's DLL
     # in some cases, e.g. when compiling libpng.
-  + stdenv.lib.optionalString (stdenv.hostPlatform.libc == "msvcrt") ''
+  + stdenv.lib.optionalString (stdenv.hostPlatform.libc == "msvcrt" && !static) ''
     ln -s zlib1.dll $out/bin/libz.dll
+  ''
+  + stdenv.lib.optionalString (stdenv.hostPlatform.libc == "msvcrt" && static) ''
+    mkdir -p $out
   '';
 
   # As zlib takes part in the stdenv building, we don't want references
@@ -82,4 +88,6 @@ stdenv.mkDerivation (rec {
   preConfigure = ''
     export CHOST=${stdenv.hostPlatform.config}
   '';
+} // stdenv.lib.optionalAttrs (stdenv.hostPlatform.libc == "msvcrt") {
+  configureScript = "true";
 })

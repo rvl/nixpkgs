@@ -5,7 +5,7 @@ let
   bootstrapper = import ./bootstrap.nix {
     inherit (pkgs) stdenv vmTools writeScript writeText runCommand makeInitrd;
     inherit (pkgs) coreutils dosfstools gzip mtools netcat-gnu openssh qemu samba;
-    inherit (pkgs) socat vde2 fetchurl python perl cdrkit pathsFromGraph;
+    inherit (pkgs) socat vde2 fetchurl python xorriso closureInfo pathsFromGraph;
     inherit (pkgs) gnugrep;
   };
 
@@ -21,7 +21,7 @@ let
 
 in {
   runInWindowsVM = drv: let
-  in pkgs.lib.overrideDerivation drv (attrs: let
+  in drv.overrideAttrs (attrs: let
     bootstrap = bootstrapper attrs.windowsImage;
   in {
     requiredSystemFeatures = [ "kvm" ];
@@ -29,7 +29,7 @@ in {
     args = ["-e" (bootstrap.resumeAndRun builder)];
     windowsImage = bootstrap.suspendedVM;
     origArgs = attrs.args;
-    origBuilder = if attrs.builder == attrs.stdenv.shell
+    origBuilder = if attrs.builder == drv.stdenv.shell
                   then "/bin/sh"
                   else attrs.builder;
 

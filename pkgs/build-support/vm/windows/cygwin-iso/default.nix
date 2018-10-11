@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, runCommand, python, perl, xorriso, pathsFromGraph
+{ stdenv, fetchurl, runCommand, python, xorriso, closureInfo, pathsFromGraph
 , arch ? "x86_64"
 }:
 
@@ -10,7 +10,7 @@
 let
   cygPkgList = if arch == "x86_64" then fetchurl {
     url = "${mirror}/x86_64/setup.ini";
-    sha256 = "0arrxvxbl85l82iy648snx5cl952w791p45p0dfg1xpiaf96cbkj";
+    sha256 = "15fxgikqpk2gxd5pj6hywvv6d702rhj8n9sw6kmds4vwqrim0y2k";
   } else fetchurl {
     url = "${mirror}/x86/setup.ini";
     sha256 = "1fayx34868vd5h2nah7chiw65sl3i9qzrwvs7lrlv2h8k412vb69";
@@ -22,7 +22,7 @@ let
       libc = "msvcrt";
       platform = {};
       inherit arch;
-      config = "${arch}-w64-mingw32";
+      config = "${arch}-pc-mingw32";
     };
   }).windows.cygwinSetup;
 
@@ -40,7 +40,7 @@ let
   in map gen expr;
 
 in import ../../../../../nixos/lib/make-iso9660-image.nix {
-  inherit stdenv perl xorriso pathsFromGraph;
+  inherit stdenv closureInfo xorriso;
   syslinux = null;
   contents = [
     { source = "${cygwinCross}/bin/setup.exe";

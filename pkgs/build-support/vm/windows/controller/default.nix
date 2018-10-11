@@ -130,7 +130,7 @@ let
       -o StrictHostKeyChecking=no \
       -i /ssh.key \
       -l Administrator \
-      192.168.0.1 -- ${lib.escapeShellArg command}
+      192.168.0.1 -- ${escapeShellArg command}
   '') + optionalString (suspendTo != null) ''
     ${coreutils}/bin/touch /xchg/suspend_now
     ${loopForever}
@@ -190,9 +190,11 @@ let
       UNIX-CONNECT:$QEMU_VDE_SOCKET/ctl,retry=20
   '';
 
+  qemuProg = "${vmTools.qemu}/bin/qemu-kvm";  # maybe use "qemuBinary vmTools.qemu"
+
   vmExec = ''
-    ${vmTools.qemuProg} ${controllerQemuArgs} &
-    ${vmTools.qemuProg} ${cygwinQemuArgs} &
+    ${qemuProg} ${controllerQemuArgs} &
+    ${qemuProg} ${cygwinQemuArgs} &
     echo -n "Waiting for VMs to start up..."
     timeout=60
     while ! test -e "$WINVM_PIDFILE" -a -e "$CTRLVM_PIDFILE"; do
