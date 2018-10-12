@@ -1,0 +1,11 @@
+--- cvs-export/netio.cc.orig	2018-10-11 21:07:20.059621628 +1000
++++ cvs-export/netio.cc	2018-10-11 21:07:48.522071814 +1000
+@@ -201,7 +201,7 @@
+   *passwd = eget (h, IDC_NET_PASSWD, *passwd);
+   if (! *passwd) {
+     *passwd = new char[1];
+-    passwd[0] = '\0';
++    passwd[0] = NULL;
+   }
+ }
+ 

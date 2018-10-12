@@ -1,5 +1,5 @@
 { stdenv, fetchcvs, autoconf, automake, libtool, flex, bison, pkgconfig
-, zlibStatic, bzip2, xz, libgcrypt
+, zlibStatic, bzip2, xz, libgcrypt, libgpgerror
 }:
 
 with stdenv.lib;
@@ -20,13 +20,20 @@ stdenv.mkDerivation rec {
   buildInputs = let
     mkStatic = flip overrideDerivation (o: {
       dontDisableStatic = true;
-      configureFlags = toList (o.configureFlags or []) ++ [ "--enable-static" ];
+      configureFlags = toList (o.configureFlags or []) ++ [ "--enable-static" "--disable-shared" ];
       buildInputs = map mkStatic (o.buildInputs or []);
       propagatedBuildInputs = map mkStatic (o.propagatedBuildInputs or []);
     });
-  in [ (mkStatic libgcrypt) bzip2 zlibStatic (xz.override { enableStatic = true; }) ];
+  in [
+    (mkStatic libgcrypt)
+    (mkStatic libgpgerror)
+    zlibStatic.dev zlibStatic.static
+    (bzip2.override { linkStatic = true; })
+    (xz.override { enableStatic = true; })
+  ];
 
-  configureFlags = [ "--disable-shared" ];
+  configureFlags = [ "--enable-static" "--disable-shared" ];
+  NIX_CFLAGS_COMPILE = [ "-Wno-error" ];
 
   dontDisableStatic = true;
 
@@ -37,6 +44,8 @@ stdenv.mkDerivation rec {
   installPhase = ''
     install -vD setup.exe "$out/bin/setup.exe"
   '';
+
+  patches = [ ./fix-cygwin-setup.patch ];
 
   meta = {
     homepage = https://sourceware.org/cygwin-apps/setup.html;
