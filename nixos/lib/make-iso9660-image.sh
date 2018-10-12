@@ -48,6 +48,9 @@ if test -n "$bootable"; then
     isoBootFlags="-eltorito-boot ${bootImage}
                   -eltorito-catalog .boot.cat
                   -no-emul-boot -boot-load-size 4 -boot-info-table"
+
+    # Make sure isolinux is near the beginning of the ISO
+    isoBootSortFlags="--sort-weight 1 /isolinux"
 fi
 
 if test -n "$usbBootable"; then
@@ -112,7 +115,7 @@ xorriso="xorriso
  -r
  -path-list pathlist
  --sort-weight 0 /
- --sort-weight 1 /isolinux" # Make sure isolinux is near the beginning of the ISO
+ ${isoBootSortFlags}"
 
 $xorriso -output $out/iso/$isoName
 
