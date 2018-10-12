@@ -113,11 +113,122 @@ let
     Command0 = "${cygwinRoot}\bin\bash -l ${shExecAfterwards}"
   '';
 
+  # https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/windows-setup-automation-overview#implicit-answer-file-search-order
+  # https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/update-windows-settings-and-scripts-create-your-own-answer-file-sxs
+  # Migration of Unattend.txt settings
+  # https://msdn.microsoft.com/en-us/library/windows/hardware/dn923100(v=vs.85).aspx
+  win10Unattended = writeText "Autounattend.xml" ''
+    <?xml version="1.0" encoding="utf-8"?>
+    <unattend xmlns="urn:schemas-microsoft-com:unattend">
+        <settings pass="specialize">
+            <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <AutoLogon>
+                    <Password>
+                        <Value><!-- INSERT ADMINISTRATOR PASSWORD HERE --></Value>
+                        <PlainText>true</PlainText>
+                    </Password>
+                    <Enabled>true</Enabled>
+                    <LogonCount>2</LogonCount>
+                    <Username>Administrator</Username>
+                </AutoLogon>
+                <ComputerName>*</ComputerName>
+            </component>
+        </settings>
+        <settings pass="windowsPE">
+            <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <DiskConfiguration>
+                    <Disk wcm:action="add">
+                        <CreatePartitions>
+                            <CreatePartition wcm:action="add">
+                                <Order>1</Order>
+                                <Size>500</Size>
+                                <Type>Primary</Type>
+                            </CreatePartition>
+                            <CreatePartition wcm:action="add">
+                                <Order>2</Order>
+                                <Size>100</Size>
+                                <Type>EFI</Type>
+                            </CreatePartition>
+                            <CreatePartition wcm:action="add">
+                                <Order>3</Order>
+                                <Size>16</Size>
+                                <Type>MSR</Type>
+                            </CreatePartition>
+                            <CreatePartition wcm:action="add">
+                                <Order>4</Order>
+                                <Extend>true</Extend>
+                                <Type>Primary</Type>
+                            </CreatePartition>
+                        </CreatePartitions>
+                        <ModifyPartitions>
+                            <ModifyPartition wcm:action="add">
+                                <Order>1</Order>
+                                <PartitionID>1</PartitionID>
+                                <Label>WinRE</Label>
+                                <Format>NTFS</Format>
+                                <TypeID>de94bba4-06d1-4d40-a16a-bfd50179d6ac</TypeID>
+                            </ModifyPartition>
+                            <ModifyPartition wcm:action="add">
+                                <Order>2</Order>
+                                <PartitionID>2</PartitionID>
+                                <Label>System</Label>
+                                <Format>FAT32</Format>
+                            </ModifyPartition>
+                            <ModifyPartition wcm:action="add">
+                                <Order>3</Order>
+                                <PartitionID>3</PartitionID>
+                            </ModifyPartition>
+                            <ModifyPartition wcm:action="add">
+                                <Order>4</Order>
+                                <PartitionID>4</PartitionID>
+                                <Label>Windows</Label>
+                                <Format>NTFS</Format>
+                            </ModifyPartition>
+                        </ModifyPartitions>
+                        <DiskID>0</DiskID>
+                        <WillWipeDisk>true</WillWipeDisk>
+                    </Disk>
+                    <WillShowUI>OnError</WillShowUI>
+                </DiskConfiguration>
+                <ImageInstall>
+                    <OSImage>
+                        <InstallTo>
+                            <DiskID>0</DiskID>
+                            <PartitionID>4</PartitionID>
+                        </InstallTo>
+                        <WillShowUI>Never</WillShowUI>
+                        <InstallFrom>
+                            <MetaData wcm:action="add">
+                                <Key>/IMAGE/NAME</Key>
+                                <Value><!--REPLACE WITH PRODUCT NAME--></Value>
+                            </MetaData>
+                        </InstallFrom>
+                    </OSImage>
+                </ImageInstall>
+                <UserData>
+                    <ProductKey>
+                        <Key><!--REPLACE WITH PRODUCT KEY--></Key>
+                        <WillShowUI>Never</WillShowUI>
+                    </ProductKey>
+                    <AcceptEula>true</AcceptEula>
+                </UserData>
+                <EnableNetwork>false</EnableNetwork>
+            </component>
+            <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <SetupUILanguage>
+                    <UILanguage>en-us</UILanguage>
+                </SetupUILanguage>
+                <UILanguage>en-us</UILanguage>
+            </component>
+        </settings>
+    </unattend>
+  '';
+
 in stdenv.mkDerivation {
   name = "unattended-floppy.img";
   buildCommand = ''
     dd if=/dev/zero of="$out" count=1440 bs=1024
     ${dosfstools}/sbin/mkfs.msdos "$out"
-    ${mtools}/bin/mcopy -i "$out" "${winXpUnattended}" ::winnt.sif
+    ${mtools}/bin/mcopy -i "$out" "${win10Unattended}" ::Autounattend.xml
   '';
 }
