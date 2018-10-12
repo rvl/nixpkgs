@@ -153,8 +153,9 @@ let
     "-kernel ${modulesClosure.kernel}/bzImage"
     "-initrd ${initrd}/initrd"
     "-append \"${kernelAppend}\""
-    "-net nic,vlan=0,macaddr=52:54:00:12:01:02,model=virtio"
-    "-net vde,vlan=0,sock=$QEMU_VDE_SOCKET"
+    "-netdev user,id=win0"
+    "-device virtio-net-pci,netdev=win0,mac=52:54:00:12:01:02"
+    "-net vde,id=win1,sock=$QEMU_VDE_SOCKET"
   ]);
 
   maybeKvm64 = optional (stdenv.hostPlatform.system == "x86_64-linux") "-cpu kvm64";
@@ -163,8 +164,9 @@ let
     "-monitor unix:$MONITOR_SOCKET,server,nowait"
     "-pidfile $WINVM_PIDFILE"
     "-nographic"
-    "-net nic,vlan=0,macaddr=52:54:00:12:01:01"
-    "-net vde,vlan=0,sock=$QEMU_VDE_SOCKET"
+    "-netdev user,id=win0"
+    "-device virtio-net-pci,netdev=win0,mac=52:54:00:12:01:01"
+    "-net vde,id=win1,sock=$QEMU_VDE_SOCKET"
     "-rtc base=2010-01-01,clock=vm"
   ] ++ qemuArgs ++ optionals (resumeFrom != null) [
     "-incoming 'exec: ${gzip}/bin/gzip -c -d \"${resumeFrom}\"'"
