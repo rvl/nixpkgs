@@ -56,7 +56,7 @@ let
       "-drive file=${instfloppy},readonly,index=0,if=floppy"
       "-drive file=winvm.img,index=0,media=disk"
       "-drive file=${isoFile},index=1,media=cdrom"
-      "-drive file=${cygiso}/iso/cd.iso,index=2,media=cdrom"
+      "-drive file=${cygiso}/iso/cygwin.iso,index=2,media=cdrom"
     ];
   };
 

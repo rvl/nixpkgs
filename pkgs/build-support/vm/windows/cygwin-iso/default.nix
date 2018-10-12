@@ -41,13 +41,15 @@ let
 
 in import ../../../../../nixos/lib/make-iso9660-image.nix {
   inherit stdenv closureInfo xorriso;
+  isoName = "cygwin.iso";
+  volumeID = "CYGWIN";
   syslinux = null;
   contents = [
     { source = "${cygwinCross}/bin/setup.exe";
-      target = "setup.exe";
+      target = "/setup.exe";
     }
     { source = cygPkgList;
-      target = "setup.ini";
+      target = "/setup.ini";
     }
   ] ++ makeCygwinClosure {
     packages = cygPkgList;
