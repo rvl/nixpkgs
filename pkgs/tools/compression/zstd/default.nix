@@ -52,7 +52,7 @@ stdenv.mkDerivation rec {
     # The licence of the CLI programme is GPLv2+, that of the library BSD-2.
     license = with licenses; [ gpl2Plus bsd2 ];
 
-    platforms = platforms.unix;
+    platforms = platforms.all;
     maintainers = with maintainers; [ orivej ];
   };
 }

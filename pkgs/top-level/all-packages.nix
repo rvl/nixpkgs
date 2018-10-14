@@ -171,7 +171,9 @@ with pkgs;
   fetchfossil = callPackage ../build-support/fetchfossil { };
 
   fetchgit = callPackage ../build-support/fetchgit {
-    git = gitMinimal;
+    git = gitMinimal.override (lib.optionalAttrs true {
+      curl = buildPackages.curl.override { gssSupport = false; };
+    });
   };
 
   fetchgitPrivate = callPackage ../build-support/fetchgit/private.nix { };
@@ -10704,6 +10706,12 @@ with pkgs;
   libsixel = callPackage ../development/libraries/libsixel { };
 
   libsolv = callPackage ../development/libraries/libsolv { };
+  libsolvMinimal = callPackage ../development/libraries/libsolv {
+    staticBuild = true;
+    expat = null;
+    rpm = null;
+    db = null;
+  };
 
   libspectre = callPackage ../development/libraries/libspectre { };
 
