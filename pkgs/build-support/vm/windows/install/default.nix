@@ -3,7 +3,7 @@
 }:
 
 { isoFile
-, productKey
+, productKey ? null
 }:
 
 let

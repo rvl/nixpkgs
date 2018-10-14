@@ -3,7 +3,7 @@
 , samba, socat, vde2, xorriso, closureInfo, pathsFromGraph, gnugrep
 }:
 
-{ isoFile, productKey, arch ? null }:
+{ isoFile, productKey ? null, arch ? null }:
 
 with stdenv.lib;
 
