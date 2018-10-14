@@ -1,6 +1,6 @@
 { stdenv, writeText, dosfstools, mtools }:
 
-{ productKey
+{ productKey ? null
 , shExecAfterwards ? "E:\\bootstrap.sh"
 , cygwinRoot ? "C:\\cygwin"
 , cygwinSetup ? "E:\\setup.exe"
@@ -113,8 +113,6 @@ let
     Command0 = "${cygwinRoot}\bin\bash -l ${shExecAfterwards}"
   '';
 
-  # https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/windows-setup-automation-overview#implicit-answer-file-search-order
-  # https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/update-windows-settings-and-scripts-create-your-own-answer-file-sxs
   # Migration of Unattend.txt settings
   # https://msdn.microsoft.com/en-us/library/windows/hardware/dn923100(v=vs.85).aspx
   win10Unattended = writeText "Autounattend.xml" ''
@@ -124,7 +122,7 @@ let
             <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <AutoLogon>
                     <Password>
-                        <Value><!-- INSERT ADMINISTRATOR PASSWORD HERE --></Value>
+                        <Value>nopasswd</Value>
                         <PlainText>true</PlainText>
                     </Password>
                     <Enabled>true</Enabled>
@@ -132,93 +130,140 @@ let
                     <Username>Administrator</Username>
                 </AutoLogon>
                 <ComputerName>*</ComputerName>
+                <OOBE>
+                   <HideEULAPage>true</HideEULAPage>
+                   <NetworkLocation>Other</NetworkLocation>
+                   <ProtectYourPC>3</ProtectYourPC>
+                   <SkipMachineOOBE>true</SkipMachineOOBE>
+                   <SkipUserOOBE>true</SkipUserOOBE>
+                </OOBE>
+
+                <FirstLogonCommands>
+                   <SynchronousCommand wcm:action="add">
+                      <CommandLine>${stdenv.lib.concatStringsSep " " afterSetup}</CommandLine>
+                      <Description>cygwin setup</Description>
+                      <Order>1</Order>
+                   </SynchronousCommand>
+                   <SynchronousCommand wcm:action="add">
+                      <CommandLine>${cygwinRoot}\bin\bash -l ${shExecAfterwards}</CommandLine>
+                      <Description>bash command</Description>
+                      <Order>2</Order>
+                   </SynchronousCommand>
+                </FirstLogonCommands>
             </component>
+
+            <!--
+            <component name="Networking-MPSSVC-Svc" language="neutral" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" processorarchitecture="amd64" publickeytoken="31bf3856ad364e35" versionscope="nonSxS">
+              <DomainProfile_EnableFirewall>false</DomainProfile_EnableFirewall>
+              <PrivateProfile_EnableFirewall>false</PrivateProfile_EnableFirewall>
+              <PublicProfile_EnableFirewall>false</PublicProfile_EnableFirewall>
+            </component>
+
+            <component name="Microsoft-Windows-UnattendedJoin" language="neutral" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" processorarchitecture="amd64" publickeytoken="31bf3856ad364e35" versionscope="nonSxS">
+              <Identification>
+                <JoinWorkgroup>cygwin</JoinWorkgroup>
+                <UnsecureJoin>true</UnsecureJoin>
+              </Identification>
+            </component>
+            -->
         </settings>
+
         <settings pass="windowsPE">
             <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <DiskConfiguration>
-                    <Disk wcm:action="add">
-                        <CreatePartitions>
-                            <CreatePartition wcm:action="add">
-                                <Order>1</Order>
-                                <Size>500</Size>
-                                <Type>Primary</Type>
-                            </CreatePartition>
-                            <CreatePartition wcm:action="add">
-                                <Order>2</Order>
-                                <Size>100</Size>
-                                <Type>EFI</Type>
-                            </CreatePartition>
-                            <CreatePartition wcm:action="add">
-                                <Order>3</Order>
-                                <Size>16</Size>
-                                <Type>MSR</Type>
-                            </CreatePartition>
-                            <CreatePartition wcm:action="add">
-                                <Order>4</Order>
-                                <Extend>true</Extend>
-                                <Type>Primary</Type>
-                            </CreatePartition>
-                        </CreatePartitions>
-                        <ModifyPartitions>
-                            <ModifyPartition wcm:action="add">
-                                <Order>1</Order>
-                                <PartitionID>1</PartitionID>
-                                <Label>WinRE</Label>
-                                <Format>NTFS</Format>
-                                <TypeID>de94bba4-06d1-4d40-a16a-bfd50179d6ac</TypeID>
-                            </ModifyPartition>
-                            <ModifyPartition wcm:action="add">
-                                <Order>2</Order>
-                                <PartitionID>2</PartitionID>
-                                <Label>System</Label>
-                                <Format>FAT32</Format>
-                            </ModifyPartition>
-                            <ModifyPartition wcm:action="add">
-                                <Order>3</Order>
-                                <PartitionID>3</PartitionID>
-                            </ModifyPartition>
-                            <ModifyPartition wcm:action="add">
-                                <Order>4</Order>
-                                <PartitionID>4</PartitionID>
-                                <Label>Windows</Label>
-                                <Format>NTFS</Format>
-                            </ModifyPartition>
-                        </ModifyPartitions>
-                        <DiskID>0</DiskID>
-                        <WillWipeDisk>true</WillWipeDisk>
-                    </Disk>
-                    <WillShowUI>OnError</WillShowUI>
+
+                  <Disk wcm:action="add">
+                    <DiskID>0</DiskID>
+                    <WillWipeDisk>true</WillWipeDisk>
+                    <CreatePartitions>
+                      <!-- System partition -->
+                      <CreatePartition wcm:action="add">
+                        <Order>1</Order>
+                        <Type>Primary</Type>
+                        <Size>350</Size>
+                      </CreatePartition>
+
+                      <!-- Windows partition -->
+                      <CreatePartition wcm:action="add">
+                        <Order>2</Order>
+                        <Type>Primary</Type>
+                        <Extend>true</Extend>
+                      </CreatePartition>
+                    </CreatePartitions>
+
+                    <ModifyPartitions>
+                      <!-- System partition -->
+                      <ModifyPartition wcm:action="add">
+                        <Order>1</Order>
+                        <PartitionID>1</PartitionID>
+                        <Label>System</Label>
+                        <Letter>S</Letter>
+                        <Format>NTFS</Format>
+                        <Active>true</Active>
+                      </ModifyPartition>
+
+                      <!-- Windows partition -->
+                      <ModifyPartition wcm:action="add">
+                        <Order>2</Order>
+                        <PartitionID>2</PartitionID>
+                        <Label>Windows</Label>
+                        <Letter>C</Letter>
+                        <Format>NTFS</Format>
+                      </ModifyPartition>
+                    </ModifyPartitions>
+                  </Disk>
+                  <WillShowUI>OnError</WillShowUI>
                 </DiskConfiguration>
+
                 <ImageInstall>
-                    <OSImage>
-                        <InstallTo>
-                            <DiskID>0</DiskID>
-                            <PartitionID>4</PartitionID>
-                        </InstallTo>
-                        <WillShowUI>Never</WillShowUI>
-                        <InstallFrom>
-                            <MetaData wcm:action="add">
-                                <Key>/IMAGE/NAME</Key>
-                                <Value><!--REPLACE WITH PRODUCT NAME--></Value>
-                            </MetaData>
-                        </InstallFrom>
-                    </OSImage>
+                  <OSImage>
+                    <InstallTo>
+                      <DiskID>0</DiskID>
+                      <PartitionID>2</PartitionID>
+                    </InstallTo>
+                    <WillShowUI>Never</WillShowUI>
+                    <InstallFrom>
+                        <MetaData wcm:action="add">
+                            <Key>/IMAGE/NAME</Key>
+                            <Value>Windows 10 Pro</Value>
+                        </MetaData>
+                    </InstallFrom>
+                  </OSImage>
                 </ImageInstall>
+
                 <UserData>
                     <ProductKey>
-                        <Key><!--REPLACE WITH PRODUCT KEY--></Key>
+                        <Key>${toString productKey}</Key>
                         <WillShowUI>Never</WillShowUI>
                     </ProductKey>
                     <AcceptEula>true</AcceptEula>
                 </UserData>
                 <EnableNetwork>false</EnableNetwork>
+                <EnableFirewall>false</EnableFirewall>
             </component>
             <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <SetupUILanguage>
                     <UILanguage>en-us</UILanguage>
                 </SetupUILanguage>
                 <UILanguage>en-us</UILanguage>
+                <UILanguageFallback>en-US</UILanguageFallback>
+                <InputLocale>0409:00000409</InputLocale>
+                <SystemLocale>en-US</SystemLocale>
+                <UserLocale>en-US</UserLocale>
+            </component>
+
+            <component name="Microsoft-Windows-TCPIP" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+              <Interfaces>
+                <Interface wcm:action="add">
+                    <Ipv4Settings>
+                        <DhcpEnabled>false</DhcpEnabled>
+                    </Ipv4Settings>
+                    <Identifier>Local Area Connection</Identifier>
+                    <UnicastIpAddresses>
+                        <IpAddress wcm:action="add" wcm:keyValue="1">192.168.0.1/24</IpAddress>
+                    </UnicastIpAddresses>
+                </Interface>
+              </Interfaces>
             </component>
         </settings>
     </unattend>
@@ -231,4 +276,7 @@ in stdenv.mkDerivation {
     ${dosfstools}/sbin/mkfs.msdos "$out"
     ${mtools}/bin/mcopy -i "$out" "${win10Unattended}" ::Autounattend.xml
   '';
+  passthru = {
+    xml = win10Unattended;
+  };
 }
