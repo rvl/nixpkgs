@@ -1,27 +1,43 @@
 { stdenv,  fetchurl, gnome3, itstool, libxml2, pkgconfig, intltool,
-  exiv2, libjpeg, libtiff, gstreamer, libraw, libsoup, libsecret,
-  libchamplain, librsvg, libwebp, json_glib, webkit, lcms2, bison,
-  flex, hicolor_icon_theme, wrapGAppsHook }:
+  exiv2, libjpeg, libtiff, gst_all_1, libraw, libsoup, libsecret,
+  glib, gtk3, gsettings-desktop-schemas,
+  libchamplain, librsvg, libwebp, json-glib, webkitgtk, lcms2, bison,
+  flex, wrapGAppsHook, shared-mime-info }:
 
-stdenv.mkDerivation rec {
-  name = "${pname}-${version}";
+let
   pname = "gthumb";
-  version = "${major}.4";
-  major = "3.4";
+  version = "3.6.2";
+in stdenv.mkDerivation rec {
+  name = "${pname}-${version}";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/${pname}/${major}/${name}.tar.xz";
-    sha256 = "154bdc8c1940209f1e3d9c60184efef45b0d24f5f7f7f59b819e9c08e19c2981";
+    url = "mirror://gnome/sources/${pname}/${stdenv.lib.versions.majorMinor version}/${name}.tar.xz";
+    sha256 = "0rjb0bsjhn7nyl5jyjgrypvr6qdr9dc2g586j3lzan96a2vnpgy9";
   };
 
-  nativeBuildInputs = [ pkgconfig wrapGAppsHook ];
+  nativeBuildInputs = [ itstool libxml2 intltool pkgconfig bison flex wrapGAppsHook ];
 
-  buildInputs = with gnome3;
-    [ itstool libxml2 intltool glib gtk gsettings_desktop_schemas dconf
-      exiv2 libjpeg libtiff gstreamer libraw libsoup libsecret libchamplain
-      librsvg libwebp json_glib webkit lcms2 bison flex hicolor_icon_theme defaultIconTheme ];
+  buildInputs = [
+    glib gtk3 gsettings-desktop-schemas gst_all_1.gstreamer gst_all_1.gst-plugins-base
+    exiv2 libjpeg libtiff libraw libsoup libsecret libchamplain
+    librsvg libwebp json-glib webkitgtk lcms2 gnome3.adwaita-icon-theme
+  ];
 
   enableParallelBuilding = true;
+
+  configureFlags = [
+    "--enable-libchamplain"
+  ];
+
+  preFixup = ''
+    gappsWrapperArgs+=(--prefix XDG_DATA_DIRS : "${shared-mime-info}/share")
+  '';
+
+  passthru = {
+    updateScript = gnome3.updateScript {
+      packageName = pname;
+    };
+  };
 
   meta = with stdenv.lib; {
     homepage = https://wiki.gnome.org/Apps/gthumb;

@@ -2,9 +2,9 @@
 , openssl
 , linkOpenssl? true
 , openldap
-, withLdap ? false
+, withLdap ? true
 , sqlite
-, withSqlite ? false
+, withSqlite ? true
 , libpcap
 , withPcap ? true
 , libcap
@@ -13,7 +13,7 @@
 , withMemcached ? false
 , hiredis
 , withRedis ? false
-, libmysql
+, mysql
 , withMysql ? false
 , json_c
 , withJson ? false
@@ -21,6 +21,8 @@
 , withYubikey ? false
 , collectd
 , withCollectd ? false
+, curl
+, withRest ? false
 }:
 
 assert withSqlite -> sqlite != null;
@@ -29,9 +31,10 @@ assert withPcap -> libpcap != null;
 assert withCap -> libcap != null;
 assert withMemcached -> libmemcached != null;
 assert withRedis -> hiredis != null;
-assert withMysql -> libmysql != null;
+assert withMysql -> mysql != null;
 assert withYubikey -> libyubikey != null;
 assert withCollectd -> collectd != null;
+assert withRest -> curl != null && withJson;
 
 ## TODO: include windbind optionally (via samba?)
 ## TODO: include oracle optionally
@@ -40,25 +43,32 @@ assert withCollectd -> collectd != null;
 with stdenv.lib;
 stdenv.mkDerivation rec {
   name = "freeradius-${version}";
-  version = "3.0.11";
+  version = "3.0.17";
 
-  buildInputs = [ autoreconfHook openssl talloc finger_bsd perl ]
+  src = fetchurl {
+    url = "ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-${version}.tar.gz";
+    sha256 = "0bc35knv46z729l4h22rirqns5v6jb0fzcffnjayhs8wjysfkfyy";
+  };
+
+  nativeBuildInputs = [ autoreconfHook ];
+
+  buildInputs = [ openssl talloc finger_bsd perl ]
     ++ optional withLdap openldap
     ++ optional withSqlite sqlite
     ++ optional withPcap libpcap
     ++ optional withCap libcap
     ++ optional withMemcached libmemcached
     ++ optional withRedis hiredis
-    ++ optional withMysql libmysql
+    ++ optional withMysql mysql.connector-c
     ++ optional withJson json_c
     ++ optional withYubikey libyubikey
-    ++ optional withCollectd collectd;
+    ++ optional withCollectd collectd
+    ++ optional withRest curl;
 
-  # NOTE: are the --with-{lib}-lib-dir and --with-{lib}-include-dir necessary with buildInputs ?
 
   configureFlags = [
-     "--sysconfdir=/etc"
-     "--localstatedir=/var"
+    "--sysconfdir=/etc"
+    "--localstatedir=/var"
   ] ++ optional (!linkOpenssl) "--with-openssl=no";
 
   postPatch = ''
@@ -70,16 +80,13 @@ stdenv.mkDerivation rec {
     "localstatedir=\${TMPDIR}"
   ];
 
-  src = fetchurl {
-    url = "ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-${version}.tar.gz";
-    sha256 = "0naxw9b060rbp4409904j6nr2zwl6wbjrbq1839xrwhmaf8p4yxr";
-  };
+  outputs = [ "out" "dev" "man" "doc" ];
 
   meta = with stdenv.lib; {
-    homepage = http://freeradius.org/;
+    homepage = https://freeradius.org/;
     description = "A modular, high performance free RADIUS suite";
-    license = stdenv.lib.licenses.gpl2;
-    maintainers = with maintainers; [ sheenobu ];
+    license = licenses.gpl2;
+    maintainers = with maintainers; [ sheenobu willibutz ];
     platforms = with platforms; linux;
   };
 

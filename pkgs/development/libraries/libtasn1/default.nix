@@ -1,26 +1,22 @@
 { stdenv, fetchurl, perl, texinfo }:
 
 stdenv.mkDerivation rec {
-  name = "libtasn1-4.9";
+  name = "libtasn1-4.13";
 
   src = fetchurl {
     url = "mirror://gnu/libtasn1/${name}.tar.gz";
-    sha256 = "0869cp6jx7cajgv6cnddsh3vc7bimmdkdjn80y1jpb4iss7plvsg";
+    sha256 = "1jlc1iahj8k3haz28j55nzg7sgni5h41vqy461i1bpbx6668wlky";
   };
 
   outputs = [ "out" "dev" "devdoc" ];
   outputBin = "dev";
 
-  # Warning causes build to fail on darwin since 4.9,
-  # check if this can be removed in the next release.
-  CFLAGS = "-Wno-sign-compare";
-
-  buildInputs = [ perl texinfo ];
+  nativeBuildInputs = [ texinfo perl ];
 
   doCheck = true;
 
   meta = with stdenv.lib; {
-    homepage = http://www.gnu.org/software/libtasn1/;
+    homepage = https://www.gnu.org/software/libtasn1/;
     description = "An ASN.1 library";
     longDescription = ''
       Libtasn1 is the ASN.1 library used by GnuTLS, GNU Shishi and some
@@ -28,7 +24,6 @@ stdenv.mkDerivation rec {
       portable, and only require an ANSI C89 platform.
     '';
     license = licenses.lgpl2Plus;
-    maintainers = with maintainers; [ wkennington ];
     platforms = platforms.all;
   };
 }

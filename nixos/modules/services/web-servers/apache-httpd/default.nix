@@ -16,7 +16,7 @@ let
 
   phpMajorVersion = head (splitString "." php.version);
 
-  mod_perl = pkgs.mod_perl.override { apacheHttpd = httpd; };
+  mod_perl = pkgs.apacheHttpdPackages.mod_perl.override { apacheHttpd = httpd; };
 
   defaultListen = cfg: if cfg.enableSSL
     then [{ip = "*"; port = 443;}]
@@ -63,6 +63,8 @@ let
       let
         svcFunction =
           if svc ? function then svc.function
+          # instead of using serviceType="mediawiki"; you can copy mediawiki.nix to any location outside nixpkgs, modify it at will, and use serviceExpression=./mediawiki.nix;
+          else if svc ? serviceExpression then import (toString svc.serviceExpression)
           else import (toString "${toString ./.}/${if svc ? serviceType then svc.serviceType else svc.serviceName}.nix");
         config = (evalModules
           { modules = [ { options = res.options; config = svc.config or svc; } ];
@@ -94,11 +96,6 @@ let
   mainSubservices = subservicesFor mainCfg;
 
   allSubservices = mainSubservices ++ concatMap subservicesFor mainCfg.virtualHosts;
-
-
-  # !!! should be in lib
-  writeTextInDir = name: text:
-    pkgs.runCommand name {inherit text;} "mkdir -p $out; echo -n \"$text\" > $out/$name";
 
 
   enableSSL = any (vhost: vhost.enableSSL) allHosts;
@@ -154,7 +151,7 @@ let
 
 
   loggingConf = (if mainCfg.logFormat != "none" then ''
-    ErrorLog ${mainCfg.logDir}/error_log
+    ErrorLog ${mainCfg.logDir}/error.log
 
     LogLevel notice
 
@@ -163,7 +160,7 @@ let
     LogFormat "%{Referer}i -> %U" referer
     LogFormat "%{User-agent}i" agent
 
-    CustomLog ${mainCfg.logDir}/access_log ${mainCfg.logFormat}
+    CustomLog ${mainCfg.logDir}/access.log ${mainCfg.logFormat}
   '' else ''
     ErrorLog /dev/null
   '');
@@ -190,8 +187,8 @@ let
     SSLRandomSeed startup builtin
     SSLRandomSeed connect builtin
 
-    SSLProtocol All -SSLv2 -SSLv3
-    SSLCipherSuite HIGH:!aNULL:!MD5:!EXP
+    SSLProtocol ${mainCfg.sslProtocols}
+    SSLCipherSuite ${mainCfg.sslCiphers}
     SSLHonorCipherOrder on
   '';
 
@@ -220,7 +217,7 @@ let
     ) null ([ cfg ] ++ subservices);
 
     documentRoot = if maybeDocumentRoot != null then maybeDocumentRoot else
-      pkgs.runCommand "empty" {} "mkdir -p $out";
+      pkgs.runCommand "empty" { preferLocalBuild = true; } "mkdir -p $out";
 
     documentRootConf = ''
       DocumentRoot "${documentRoot}"
@@ -264,8 +261,8 @@ let
     '' else ""}
 
     ${if !isMainServer && mainCfg.logPerVirtualHost then ''
-      ErrorLog ${mainCfg.logDir}/error_log-${cfg.hostName}
-      CustomLog ${mainCfg.logDir}/access_log-${cfg.hostName} ${cfg.logFormat}
+      ErrorLog ${mainCfg.logDir}/error-${cfg.hostName}.log
+      CustomLog ${mainCfg.logDir}/access-${cfg.hostName}.log ${cfg.logFormat}
     '' else ""}
 
     ${optionalString (robotsTxt != "") ''
@@ -379,6 +376,8 @@ let
     Include ${httpd}/conf/extra/httpd-multilang-errordoc.conf
     Include ${httpd}/conf/extra/httpd-languages.conf
 
+    TraceEnable off
+
     ${if enableSSL then sslConf else ""}
 
     # Fascist default - deny access to everything.
@@ -427,6 +426,7 @@ let
   phpIni = pkgs.runCommand "php.ini"
     { options = concatStringsSep "\n"
         ([ mainCfg.phpOptions ] ++ (map (svc: svc.phpOptions) allSubservices));
+      preferLocalBuild = true;
     }
     ''
       cat ${php}/etc/php.ini > $out
@@ -498,8 +498,8 @@ in
         default = false;
         description = ''
           If enabled, each virtual host gets its own
-          <filename>access_log</filename> and
-          <filename>error_log</filename>, namely suffixed by the
+          <filename>access.log</filename> and
+          <filename>error.log</filename>, namely suffixed by the
           <option>hostName</option> of the virtual host.
         '';
       };
@@ -633,6 +633,19 @@ in
         description =
           "Maximum number of httpd requests answered per httpd child (prefork), 0 means unlimited";
       };
+
+      sslCiphers = mkOption {
+        type = types.str;
+        default = "HIGH:!aNULL:!MD5:!EXP";
+        description = "Cipher Suite available for negotiation in SSL proxy handshake.";
+      };
+
+      sslProtocols = mkOption {
+        type = types.str;
+        default = "All -SSLv2 -SSLv3 -TLSv1";
+        example = "All -SSLv2 -SSLv3";
+        description = "Allowed SSL/TLS protocol versions.";
+      };
     }
 
     # Include the options shared between the main server and virtual hosts.
@@ -654,16 +667,16 @@ in
                      message = "SSL is enabled for httpd, but sslServerCert and/or sslServerKey haven't been specified."; }
                  ];
 
-    warnings = map (cfg: ''apache-httpd's port option is deprecated. Use listen = [{/*ip = "*"; */ port = ${toString cfg.port}";}]; instead'' ) (lib.filter (cfg: cfg.port != 0) allHosts);
+    warnings = map (cfg: ''apache-httpd's port option is deprecated. Use listen = [{/*ip = "*"; */ port = ${toString cfg.port};}]; instead'' ) (lib.filter (cfg: cfg.port != 0) allHosts);
 
-    users.extraUsers = optionalAttrs (mainCfg.user == "wwwrun") (singleton
+    users.users = optionalAttrs (mainCfg.user == "wwwrun") (singleton
       { name = "wwwrun";
         group = mainCfg.group;
         description = "Apache httpd user";
         uid = config.ids.uids.wwwrun;
       });
 
-    users.extraGroups = optionalAttrs (mainCfg.group == "wwwrun") (singleton
+    users.groups = optionalAttrs (mainCfg.group == "wwwrun") (singleton
       { name = "wwwrun";
         gid = config.ids.gids.wwwrun;
       });
@@ -674,6 +687,10 @@ in
       ''
         ; Needed for PHP's mail() function.
         sendmail_path = sendmail -t -i
+
+        ; Don't advertise PHP
+        expose_php = off
+      '' + optionalString (!isNull config.time.timeZone) ''
 
         ; Apparently PHP doesn't use $TZ.
         date.timezone = "${config.time.timeZone}"

@@ -1,38 +1,54 @@
-{ stdenv, fetchFromGitHub, autoreconfHook, pkgconfig, gnome3, gtk-engine-murrine }:
+{ stdenv, fetchFromGitHub, sassc, autoreconfHook, pkgconfig, gtk3, gnome3
+, gtk-engine-murrine, optipng, inkscape }:
 
 stdenv.mkDerivation rec {
-  name = "${pname}-${version}";
   pname = "arc-theme";
-  version = "2016-11-25";
+  version = "20190213";
 
   src = fetchFromGitHub {
-    owner = "horst3180";
-    repo = pname;
-    rev = "d641d3de1641a9aa0a0f6ac1bacec91d9fdd3326";
-    sha256 = "06ysd19bpqsng2bp2gqzn0wpjhldxgwvlzngrs6mkm9hr7ky5z00";
+    owner  = "NicoHood";
+    repo   = pname;
+    rev    = version;
+    sha256 = "1qalf61xh6a8yz2a98z3ih0w9ky12v3wc61gdczbfnyfasgzc254";
   };
 
-  nativeBuildInputs = [ autoreconfHook pkgconfig ];
+  nativeBuildInputs = [
+    autoreconfHook
+    pkgconfig
+    sassc
+    optipng
+    inkscape
+    gtk3
+    gnome3.gnome-shell
+  ];
 
-  buildInputs = [ gtk-engine-murrine ];
+  propagatedUserEnvPkgs = [
+    gnome3.gnome-themes-extra
+    gtk-engine-murrine
+  ];
 
-  preferLocalBuild = true;
+  enableParallelBuilding = true;
 
-  configureFlags = [ "--disable-unity" "--with-gnome=${gnome3.version}" ];
+  postPatch = ''
+    patchShebangs .
+  '';
+
+  preBuild = ''
+    # Shut up inkscape's warnings about creating profile directory
+    export HOME="$NIX_BUILD_ROOT"
+  '';
+
+  configureFlags = [ "--disable-unity" ];
 
   postInstall = ''
-    mkdir -p $out/share/plank/themes
-    cp -r extra/*-Plank $out/share/plank/themes
-    mkdir -p $out/share/doc/$pname/Chrome
-    cp -r extra/Chrome/*.crx $out/share/doc/$pname/Chrome
-    cp AUTHORS README.md $out/share/doc/$pname/
+    install -Dm644 -t $out/share/doc/${pname} AUTHORS *.md
   '';
 
   meta = with stdenv.lib; {
     description = "A flat theme with transparent elements for GTK 3, GTK 2 and Gnome-Shell";
-    homepage = "https://github.com/horst3180/arc-theme";
-    license = licenses.gpl3;
-    platforms = platforms.unix;
+    homepage    = https://github.com/NicoHood/arc-theme;
+    license     = licenses.gpl3;
     maintainers = with maintainers; [ simonvandel romildo ];
+    platforms   = platforms.linux;
   };
 }

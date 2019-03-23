@@ -1,25 +1,24 @@
-{stdenv, fetchurl, ocaml, findlib, camlp4}:
+{ stdenv, fetchFromGitHub, buildDunePackage, cppo }:
 
-stdenv.mkDerivation rec {
-  name = "camomile-${version}";
-  version = "0.8.5";
+buildDunePackage rec {
+  pname = "camomile";
+	version = "1.0.1";
 
-  src = fetchurl {
-    url = https://github.com/yoriyuki/Camomile/releases/download/rel-0.8.5/camomile-0.8.5.tar.bz2;
-    sha256 = "003ikpvpaliy5hblhckfmln34zqz0mk3y2m1fqvbjngh3h2np045";
-  };
+	src = fetchFromGitHub {
+		owner = "yoriyuki";
+		repo = pname;
+		rev = version;
+		sha256 = "1pfxr9kzkpd5bsdqrpxasfxkawwkg4cpx3m1h6203sxi7qv1z3fn";
+	};
 
-  buildInputs = [ocaml findlib camlp4];
+	buildInputs = [ cppo ];
 
-  createFindlibDestdir = true;
+	configurePhase = "ocaml configure.ml --share $out/share/camomile";
 
-  meta = {
-    homepage = https://github.com/yoriyuki/Camomile/tree/master/Camomile;
-    description = "A comprehensive Unicode library for OCaml";
-    license = stdenv.lib.licenses.lgpl21;
-    platforms = ocaml.meta.platforms or [];
-    maintainers = [
-      stdenv.lib.maintainers.z77z
-    ];
-  };
+	meta = {
+		inherit (src.meta) homepage;
+		maintainers = [ stdenv.lib.maintainers.vbgl ];
+		license = stdenv.lib.licenses.lgpl21;
+		description = "A Unicode library for OCaml";
+	};
 }

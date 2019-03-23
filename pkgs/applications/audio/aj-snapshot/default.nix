@@ -3,16 +3,17 @@
 stdenv.mkDerivation rec {
   name =  packageName + "-" + version ;
   packageName = "aj-snapshot" ;
-  version = "0.9.6" ;
+  version = "0.9.9";
 
   src = fetchurl {
     url = "mirror://sourceforge/${packageName}/${name}.tar.bz2";
-    sha256 = "12n2h3609fbvsnnwrwma4m55iyv6lcv1v3q5pznz2w6f12wf0c9z";
+    sha256 = "0z8wd5yvxdmw1h1rj6km9h01xd4xmp4d86gczlix7hsc7zrf0wil";
   };
 
   doCheck = false;
 
-  buildInputs = [ alsaLib minixml jack2Full pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ alsaLib minixml jack2Full ];
 
   meta = with stdenv.lib; {
     description = "Tool for storing/restoring JACK and/or ALSA connections to/from cml files";
@@ -25,7 +26,7 @@ stdenv.mkDerivation rec {
 
     homepage = http://aj-snapshot.sourceforge.net/;
     license = licenses.gpl2;
-    maintainers = [ maintainers.palo ];
+    maintainers = [ maintainers.mrVanDalo ];
     platforms = platforms.all;
   };
 }

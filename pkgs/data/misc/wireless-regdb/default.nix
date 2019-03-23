@@ -1,19 +1,18 @@
-{ stdenv, fetchgit }:
+{ stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
-  name = "wireless-regdb-${version}";
-  version = "2016-06-10";
+  pname = "wireless-regdb";
+  version = "2019.03.01";
 
-  src = fetchgit {
-    sha256 = "0im9likzpziircl96pql2jpyl8pfcqc5v0wgqy705j4ga5sx8pmn";
-    url = https://git.kernel.org/pub/scm/linux/kernel/git/sforshee/wireless-regdb.git;
-    rev = "refs/tags/master-${version}";
+  src = fetchurl {
+    url = "https://www.kernel.org/pub/software/network/${pname}/${pname}-${version}.tar.xz";
+    sha256 = "0pwipig8bik1gca440hfv0xa23bi49jfiqc69xvcb6sr0rq6ykis";
   };
 
-  phases = [ "unpackPhase" "installPhase" ];
+  dontBuild = true;
 
   makeFlags = [
-    "DESTDIR=$(out)"
+    "DESTDIR=${placeholder "out"}"
     "PREFIX="
   ];
 
@@ -22,6 +21,6 @@ stdenv.mkDerivation rec {
     homepage = http://wireless.kernel.org/en/developers/Regulatory/;
     license = licenses.isc;
     platforms = platforms.all;
-    maintainers = with maintainers; [ nckx ];
+    maintainers = with maintainers; [ fpletz ];
   };
 }

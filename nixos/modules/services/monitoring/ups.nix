@@ -80,7 +80,7 @@ let
     };
 
     config = {
-      directives = mkHeader ([
+      directives = mkOrder 10 ([
         "driver = ${config.driver}"
         "port = ${config.port}"
         ''desc = "${config.description}"''
@@ -259,7 +259,7 @@ in
 
 
 /*
-    users.extraUsers = [
+    users.users = [
       { name = "nut";
         uid = 84;
         home = "/var/lib/nut";
@@ -269,7 +269,7 @@ in
       }
     ];
 
-    users.extraGroups = [
+    users.groups = [
       { name = "nut";
         gid = 84;
       }

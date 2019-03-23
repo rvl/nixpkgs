@@ -2,11 +2,11 @@
 , libtool, makeWrapper }:
 
 stdenv.mkDerivation rec {
-  name = "nut-2.7.1";
+  name = "nut-2.7.4";
 
   src = fetchurl {
     url = "http://www.networkupstools.org/source/2.7/${name}.tar.gz";
-    sha256 = "1667n9h8jcz7k6h24fn615khqahlq5z22zxs4s0q046rsqxdg9ki";
+    sha256 = "19r5dm07sfz495ckcgbfy0pasx0zy3faa0q7bih69lsjij8q43lq";
   };
 
   buildInputs = [ neon libusb openssl udev avahi freeipmi libtool ];
@@ -26,13 +26,13 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
-  
+
   postInstall = ''
     wrapProgram $out/bin/nut-scanner --prefix LD_LIBRARY_PATH : \
       "$out/lib:${neon}/lib:${libusb.out}/lib:${avahi}/lib:${freeipmi}/lib"
   '';
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "Network UPS Tools";
     longDescription = ''
       Network UPS Tools is a collection of programs which provide a common
@@ -41,8 +41,9 @@ stdenv.mkDerivation rec {
     '';
     homepage = http://www.networkupstools.org/;
     repositories.git = https://github.com/networkupstools/nut.git;
-    platforms = with stdenv.lib.platforms; linux;
-    maintainers = with stdenv.lib.maintainers; [ pierron ];
+    platforms = platforms.linux;
+    maintainers = [ maintainers.pierron ];
+    license = with licenses; [ gpl1Plus gpl2Plus gpl3Plus ];
     priority = 10;
   };
 }

@@ -33,6 +33,7 @@
 , libXxf86vm
 , libdrm
 , libffi
+, libglvnd
 , libpng
 , libvdpau
 , libxcb
@@ -47,29 +48,21 @@
 , debug ? false
 }:
 
-let
-  arch =
-    if      stdenv.system == "x86_64-linux" then
-      "x86_64"
-    else if stdenv.system == "i686-linux"   then
-      "i386"
-    else throw "Flash Player is not supported on this platform";
-in
 stdenv.mkDerivation rec {
   name = "flashplayer-standalone-${version}";
-  version = "24.0.0.194";
+  version = "32.0.0.156";
 
   src = fetchurl {
     url =
       if debug then
-        "https://fpdownload.macromedia.com/pub/flashplayer/updaters/24/flash_player_sa_linux_debug.x86_64.tar.gz"
+        "https://fpdownload.macromedia.com/pub/flashplayer/updaters/32/flash_player_sa_linux_debug.x86_64.tar.gz"
       else
-        "https://fpdownload.macromedia.com/pub/flashplayer/updaters/24/flash_player_sa_linux.x86_64.tar.gz";
+        "https://fpdownload.macromedia.com/pub/flashplayer/updaters/32/flash_player_sa_linux.x86_64.tar.gz";
     sha256 =
       if debug then
-        "0yiln97l8b27s5c6nv9m09cdgwa4c47idnf2p6y6i0slfcqj1cxv"
+        "0fzs2x8yxpykkza1r3yn17hmrdz51c7qigbm5qifvw59q9zl15i9"
       else
-        "1f34qm8grj3141p6kym6y2pqisrmn9l6nkhbfmfhsd472g5q85v1";
+        "11733155aznijwhnc5wv0v6wmw9g1akbqwl07kx3lam571s8aywr";
   };
 
   nativeBuildInputs = [ unzip ];
@@ -96,8 +89,8 @@ stdenv.mkDerivation rec {
       alsaLib atk bzip2 cairo curl expat fontconfig freetype gdk_pixbuf glib
       glibc graphite2 gtk2 harfbuzz libICE libSM libX11 libXau libXcomposite
       libXcursor libXdamage libXdmcp libXext libXfixes libXi libXinerama
-      libXrandr libXrender libXt libXxf86vm libdrm libffi libpng libvdpau
-      libxcb libxshmfence nspr nss pango pcre pixman zlib
+      libXrandr libXrender libXt libXxf86vm libdrm libffi libglvnd libpng
+      libvdpau libxcb libxshmfence nspr nss pango pcre pixman zlib
     ];
 
   meta = {
@@ -106,5 +99,8 @@ stdenv.mkDerivation rec {
     license = stdenv.lib.licenses.unfree;
     maintainers = [];
     platforms = [ "x86_64-linux" ];
+    # Application crashed with an unhandled SIGSEGV
+    # Not on all systems, though. Video driver problem?
+    broken = false;
   };
 }

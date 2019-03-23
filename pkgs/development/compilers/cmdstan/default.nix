@@ -1,19 +1,19 @@
-{ stdenv, fetchurl, python }:
+{ stdenv, fetchurl, python, runtimeShell }:
 
 stdenv.mkDerivation rec {
-  name = "cmdstan-2.9.0";
+  name = "cmdstan-2.17.1";
 
   src = fetchurl {
-    url = "https://github.com/stan-dev/cmdstan/releases/download/v2.9.0/cmdstan-2.9.0.tar.gz";
-    sha256 = "08bim6nxgam989152hm0ga1rfb33mr71pwsym1nmfmavma68bwm9";
+    url = "https://github.com/stan-dev/cmdstan/releases/download/v2.17.1/cmdstan-2.17.1.tar.gz";
+    sha256 = "1vq1cnrkvrvbfl40j6ajc60jdrjcxag1fi6kff5pqmadfdz9564j";
   };
 
   buildFlags = "build";
   enableParallelBuilding = true;
-  nativeBuildInputs = stdenv.lib.optional doCheck python;
 
   doCheck = true;
-  checkPhase = "python ./runCmdStanTests.py src/test/interface";  # see #5368
+  checkInputs = [ python ];
+  checkPhase = "python ./runCmdStanTests.py src/test/interface"; # see #5368
 
   installPhase = ''
     mkdir -p $out/opt $out/bin
@@ -21,7 +21,7 @@ stdenv.mkDerivation rec {
     ln -s $out/opt/cmdstan/bin/stanc $out/bin/stanc
     ln -s $out/opt/cmdstan/bin/stansummary $out/bin/stansummary
     cat > $out/bin/stan <<EOF
-    #!/bin/sh
+    #!${runtimeShell}
     make -C $out/opt/cmdstan "\$(realpath "\$1")"
     EOF
     chmod a+x $out/bin/stan
@@ -37,6 +37,6 @@ stdenv.mkDerivation rec {
     '';
     homepage = http://mc-stan.org/interfaces/cmdstan.html;
     license = stdenv.lib.licenses.bsd3;
-    platforms = stdenv.lib.platforms.linux;
+    platforms = stdenv.lib.platforms.all;
   };
 }

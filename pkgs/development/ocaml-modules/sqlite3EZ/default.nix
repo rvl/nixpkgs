@@ -2,6 +2,10 @@
 
 assert stdenv.lib.versionAtLeast (stdenv.lib.getVersion ocaml) "3.12";
 
+if stdenv.lib.versionAtLeast ocaml.version "4.06"
+then throw "sqlite3EZ is not available for OCaml ${ocaml.version}"
+else
+
 stdenv.mkDerivation {
   name = "ocaml-sqlite3EZ-0.1.0";
 
@@ -17,7 +21,7 @@ stdenv.mkDerivation {
   createFindlibDestdir = true;
 
   meta = with stdenv.lib; {
-    homepage = http://github.com/mlin/ocaml-sqlite3EZ;
+    homepage = https://github.com/mlin/ocaml-sqlite3EZ;
     description = "A thin wrapper for sqlite3-ocaml with a simplified interface";
     license = licenses.mit;
     maintainers = [ maintainers.vbgl ];

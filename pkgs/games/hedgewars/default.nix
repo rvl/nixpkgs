@@ -1,25 +1,27 @@
-{ SDL_image, SDL_ttf, SDL_net, fpc, qt4, ghcWithPackages, ffmpeg, freeglut
-, stdenv, makeWrapper, fetchurl, cmake, pkgconfig, lua5_1, SDL, SDL_mixer
-, zlib, libpng, mesa, physfs
+{ SDL2_image, SDL2_ttf, SDL2_net, fpc, qt5, ghcWithPackages, ffmpeg, freeglut
+, stdenv, makeWrapper, fetchurl, cmake, pkgconfig, lua5_1, SDL2, SDL2_mixer
+, zlib, libpng, libGLU_combined, physfs
 }:
 
 let
   ghc = ghcWithPackages (pkgs: with pkgs; [
-          network vector utf8-string bytestring-show random hslogger
-          dataenc SHA entropy zlib_0_5_4_2
+          network vector utf8-string /* broken: bytestring-show */ random hslogger
+          SHA entropy pkgs.zlib sandi regex-tdfa
         ]);
 in
 stdenv.mkDerivation rec {
-  version = "0.9.22";
+  version = "0.9.25";
   name = "hedgewars-${version}";
   src = fetchurl {
-    url = "http://download.gna.org/hedgewars/hedgewars-src-${version}.tar.bz2";
-    sha256 = "14i1wvqbqib9h9092z10g4g0y14r5sp2fdaksvnw687l3ybwi6dn";
+    url = "https://www.hedgewars.org/download/releases/hedgewars-src-${version}.tar.bz2";
+    sha256 = "08x7fqpy0hpnbfq2k06g522xayi7s53bca819zfhalvqnqs76pdk";
   };
 
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs = [
-    SDL_ttf SDL_net cmake pkgconfig lua5_1 SDL SDL_mixer SDL_image fpc
-    qt4 ghc ffmpeg freeglut makeWrapper physfs
+    SDL2_ttf SDL2_net cmake lua5_1 SDL2 SDL2_mixer SDL2_image fpc
+    ghc ffmpeg freeglut makeWrapper physfs
+    qt5.qttools qt5.qtbase
   ];
 
   postPatch = ''
@@ -27,20 +29,20 @@ stdenv.mkDerivation rec {
   '';
 
   preBuild = ''
-    export NIX_LDFLAGS="$NIX_LDFLAGS -rpath ${SDL_image}/lib
-                                     -rpath ${SDL_mixer}/lib
-                                     -rpath ${SDL_net}/lib
-                                     -rpath ${SDL_ttf}/lib
-                                     -rpath ${SDL.out}/lib
+    export NIX_LDFLAGS="$NIX_LDFLAGS -rpath ${SDL2_image}/lib
+                                     -rpath ${SDL2_mixer}/lib
+                                     -rpath ${SDL2_net}/lib
+                                     -rpath ${SDL2_ttf}/lib
+                                     -rpath ${SDL2.out}/lib
                                      -rpath ${libpng.out}/lib
                                      -rpath ${lua5_1}/lib
-                                     -rpath ${mesa}/lib
+                                     -rpath ${libGLU_combined}/lib
                                      -rpath ${zlib.out}/lib
                                      "
   '';
 
   postInstall = ''
-    wrapProgram $out/bin/hwengine --prefix LD_LIBRARY_PATH : $LD_LIBRARY_PATH:${stdenv.lib.makeLibraryPath [ mesa freeglut physfs ]}
+    wrapProgram $out/bin/hwengine --prefix LD_LIBRARY_PATH : $LD_LIBRARY_PATH:${stdenv.lib.makeLibraryPath [ libGLU_combined freeglut physfs ]}
   '';
 
   meta = with stdenv.lib; {
@@ -72,5 +74,7 @@ stdenv.mkDerivation rec {
        all movement on the battlefield has ceased).'';
     maintainers = with maintainers; [ kragniz fpletz ];
     platforms = ghc.meta.platforms;
+    hydraPlatforms = [];
+    broken = true;  # depends on broken Haskell package bytestring-show
   };
 }

@@ -1,28 +1,37 @@
-{ stdenv, fetchurl
+{ stdenv, fetchFromGitHub
 , pkgconfig, autoreconfHook
 , openssl, db48, boost, zlib, miniupnpc
 , glib, protobuf, utillinux, qt4, qrencode
-, withGui }:
+, AppKit
+, withGui ? true, libevent
+}:
 
 with stdenv.lib;
+
 stdenv.mkDerivation rec {
 
   name = "litecoin" + (toString (optional (!withGui) "d")) + "-" + version;
-  version = "0.10.2.2";
+  version = "0.16.3";
 
-  src = fetchurl {
-    url = "https://github.com/litecoin-project/litecoin/archive/v${version}.tar.gz";
-    sha256 = "1p1h2654b7f2lyrmihcjmpmx6sjpkgsifcm2ixxb2g9jh6qq8b4m";
+  src = fetchFromGitHub {
+    owner = "litecoin-project";
+    repo = "litecoin";
+    rev = "v${version}";
+    sha256 = "0vc184qfdkjky1qffa7309k6973k4197bkzwcmffc9r5sdfhrhkp";
   };
 
-  buildInputs = [ pkgconfig autoreconfHook openssl
-                  openssl db48 boost zlib miniupnpc glib protobuf utillinux ]
+  nativeBuildInputs = [ pkgconfig autoreconfHook ];
+  buildInputs = [ openssl db48 boost zlib
+                  miniupnpc glib protobuf utillinux libevent ]
+                  ++ optionals stdenv.isDarwin [ AppKit ]
                   ++ optionals withGui [ qt4 qrencode ];
 
   configureFlags = [ "--with-boost-libdir=${boost.out}/lib" ]
                      ++ optionals withGui [ "--with-gui=qt4" ];
 
-  meta = with stdenv.lib; {
+  enableParallelBuilding = true;
+
+  meta = {
     description = "A lite version of Bitcoin using scrypt as a proof-of-work algorithm";
     longDescription= ''
       Litecoin is a peer-to-peer Internet currency that enables instant payments
@@ -36,6 +45,7 @@ stdenv.mkDerivation rec {
     homepage = https://litecoin.org/;
     platforms = platforms.unix;
     license = licenses.mit;
-    maintainers = with maintainers; [ offline AndersonTorres ];  
+    broken = stdenv.isDarwin;
+    maintainers = with maintainers; [ offline AndersonTorres ];
   };
 }

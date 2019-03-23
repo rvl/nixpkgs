@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, ... }:
 
 with lib;
 
@@ -8,12 +8,14 @@ in
 
 {
   imports = [
+    ./2bwm.nix
     ./afterstep.nix
     ./bspwm.nix
-    ./compiz.nix
     ./dwm.nix
+    ./evilwm.nix
     ./exwm.nix
     ./fluxbox.nix
+    ./fvwm.nix
     ./herbstluftwm.nix
     ./i3.nix
     ./jwm.nix

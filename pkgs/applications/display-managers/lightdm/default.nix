@@ -1,44 +1,89 @@
-{ stdenv, fetchurl, pam, pkgconfig, libxcb, glib, libXdmcp, itstool, libxml2
-, intltool, xlibsWrapper, libxklavier, libgcrypt, libaudit
-, qt4 ? null
+{ stdenv, fetchFromGitHub, pam, pkgconfig, autoconf, automake, libtool, libxcb
+, glib, libXdmcp, itstool, intltool, libxklavier, libgcrypt, audit, busybox
+, polkit, accountsservice, gtk-doc, gnome3, gobject-introspection, vala, fetchpatch
+, withQt4 ? false, qt4
 , withQt5 ? false, qtbase
 }:
 
-let
-  ver_branch = "1.19";
-  version = "1.19.5";
-in
-stdenv.mkDerivation rec {
-  name = "lightdm-${version}";
+with stdenv.lib;
 
-  src = fetchurl {
-    url = "${meta.homepage}/${ver_branch}/${version}/+download/${name}.tar.xz";
-    sha256 = "0gbz8jk1ljh8rwgvldkiqma1k61sd27yh008228ahdqd5i2v1r1z";
+stdenv.mkDerivation rec {
+  pname = "lightdm";
+  version = "1.28.0";
+
+  outputs = [ "out" "dev" ];
+
+  src = fetchFromGitHub {
+    owner = "CanonicalLtd";
+    repo = pname;
+    rev = version;
+    sha256 = "1mmqy1jdvgc0h0h9gli7n4vdv5p8m5019qjr5ni4h73iz6mjdj2b";
   };
 
-  patches = [ ./fix-paths.patch ];
+  nativeBuildInputs = [
+    autoconf
+    automake
+    gnome3.yelp-tools
+    gnome3.yelp-xsl
+    gobject-introspection
+    gtk-doc
+    intltool
+    itstool
+    libtool
+    pkgconfig
+    vala
+  ];
 
   buildInputs = [
-    pkgconfig pam libxcb glib libXdmcp itstool libxml2 intltool libxklavier libgcrypt
-    qt4 libaudit
-  ] ++ stdenv.lib.optional withQt5 qtbase;
+    accountsservice
+    audit
+    glib
+    libXdmcp
+    libgcrypt
+    libxcb
+    libxklavier
+    pam
+    polkit
+  ] ++ optional withQt4 qt4
+    ++ optional withQt5 qtbase;
+
+  patches = [
+    # Adds option to disable writing dmrc files
+    (fetchpatch {
+      url = "https://src.fedoraproject.org/rpms/lightdm/raw/4cf0d2bed8d1c68970b0322ccd5dbbbb7a0b12bc/f/lightdm-1.25.1-disable_dmrc.patch";
+      sha256 = "06f7iabagrsiws2l75sx2jyljknr9js7ydn151p3qfi104d1541n";
+    })
+  ];
+
+  preConfigure = "NOCONFIGURE=1 ./autogen.sh";
 
   configureFlags = [
     "--localstatedir=/var"
     "--sysconfdir=/etc"
     "--disable-tests"
-  ] ++ stdenv.lib.optional (qt4 != null) "--enable-liblightdm-qt"
-    ++ stdenv.lib.optional withQt5 "--enable-liblightdm-qt5";
+    "--disable-static"
+    "--disable-dmrc"
+  ] ++ optional withQt4 "--enable-liblightdm-qt"
+    ++ optional withQt5 "--enable-liblightdm-qt5";
 
   installFlags = [
-    "sysconfdir=\${out}/etc"
+    "sysconfdir=${placeholder ''out''}/etc"
     "localstatedir=\${TMPDIR}"
   ];
 
-  meta = with stdenv.lib; {
-    homepage = https://launchpad.net/lightdm;
+  prePatch = ''
+    substituteInPlace autogen.sh \
+      --replace "which" "${busybox}/bin/which"
+
+    substituteInPlace src/shared-data-manager.c \
+      --replace /bin/rm ${busybox}/bin/rm
+  '';
+
+  meta = {
+    homepage = https://github.com/CanonicalLtd/lightdm;
+    description = "A cross-desktop display manager";
     platforms = platforms.linux;
     license = licenses.gpl3;
-    maintainers = with maintainers; [ ocharles wkennington ];
+    maintainers = with maintainers; [ ocharles worldofpeace ];
   };
 }

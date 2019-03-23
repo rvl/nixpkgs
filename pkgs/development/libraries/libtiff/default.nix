@@ -1,17 +1,23 @@
-{ stdenv, fetchurl, fetchpatch, pkgconfig, zlib, libjpeg, xz }:
+{ stdenv
+, fetchurl
 
-let
-  version = "4.0.7";
-in
+, pkgconfig
+
+, zlib
+, libjpeg
+, xz
+}:
+
 stdenv.mkDerivation rec {
+  version = "4.0.10";
   name = "libtiff-${version}";
 
   src = fetchurl {
-    url = "http://download.osgeo.org/libtiff/tiff-${version}.tar.gz";
-    sha256 = "06ghqhr4db1ssq0acyyz49gr8k41gzw6pqb6mbn5r7jqp77s4hwz";
+    url = "https://download.osgeo.org/libtiff/tiff-${version}.tar.gz";
+    sha256 = "1r4np635gr6zlc0bic38dzvxia6iqzcrary4n1ylarzpr8fd2lic";
   };
 
-  outputs = [ "bin" "dev" "out" "doc" ];
+  outputs = [ "bin" "dev" "out" "man" "doc" ];
 
   nativeBuildInputs = [ pkgconfig ];
 
@@ -19,7 +25,7 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
-  doCheck = true;
+  doCheck = true; # not cross;
 
   meta = with stdenv.lib; {
     description = "Library and utilities for working with the TIFF image file format";

@@ -1,18 +1,19 @@
 { stdenv, fetchFromGitHub, autoreconfHook, mpd_clientlib, ncurses, pcre, pkgconfig
-, taglib }:
+, taglib, curl }:
 
 stdenv.mkDerivation rec {
-  version = "0.09.0";
+  version = "0.09.2";
   name = "vimpc-${version}";
 
   src = fetchFromGitHub {
     owner = "boysetsfrog";
     repo = "vimpc";
     rev = "v${version}";
-    sha256 = "1z9yx2pz84lyng1ig9y4z6pdalwxb80ig7nnzhqfy3pl36hq6shi";
+    sha256 = "0lswzkap2nm7v5h7ppb6a64cb35rajysd09nb204rxgrkij4m6nx";
   };
 
-  buildInputs = [ autoreconfHook mpd_clientlib ncurses pcre pkgconfig taglib ];
+  nativeBuildInputs = [ autoreconfHook pkgconfig ];
+  buildInputs = [ mpd_clientlib ncurses pcre taglib curl ];
 
   postInstall = ''
     mkdir -p $out/etc

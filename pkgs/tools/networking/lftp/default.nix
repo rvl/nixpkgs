@@ -1,30 +1,37 @@
-{ stdenv, fetchurl, gnutls, pkgconfig, readline, zlib, libidn, gmp, libiconv }:
+{ stdenv, fetchurl, gnutls, pkgconfig, readline, zlib, libidn2, gmp, libiconv, libunistring, gettext }:
 
 stdenv.mkDerivation rec {
-  name = "lftp-4.7.3";
+  name = "lftp-${version}";
+  version = "4.8.4";
 
   src = fetchurl {
     urls = [
-      "http://lftp.yar.ru/ftp/${name}.tar.bz2"
-      "http://lftp.yar.ru/ftp/old/${name}.tar.bz2"
+      "https://lftp.tech/ftp/${name}.tar.xz"
+      "https://ftp.st.ryukoku.ac.jp/pub/network/ftp/lftp/${name}.tar.xz"
+      "https://lftp.yar.ru/ftp/${name}.tar.xz"
       ];
-    sha256 = "06jmc9x86ga67yyx7655zv96gfv1gdm955a7g4afd3bwf6bzfxac";
+    sha256 = "0qks22357xv9y6ripmf5j2n5svh8j5z0yniphfk89sjwkqg2gg2f";
   };
 
   nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ gnutls readline zlib libidn gmp libiconv ];
+
+  buildInputs = [ gnutls readline zlib libidn2 gmp libiconv libunistring gettext ];
+
+  hardeningDisable = stdenv.lib.optional stdenv.isDarwin "format";
 
   configureFlags = [
     "--with-readline=${readline.dev}"
+    "--with-zlib=${zlib.dev}"
+    "--without-expat"
   ];
 
-  postPatch = ''
-    substituteInPlace src/lftp_rl.c --replace 'history.h' 'readline/history.h'
-  '';
+  installFlags = [ "PREFIX=$(out)" ];
+
+  enableParallelBuilding = true;
 
   meta = with stdenv.lib; {
     description = "A file transfer program supporting a number of network protocols";
-    homepage = http://lftp.yar.ru/;
+    homepage = https://lftp.tech/;
     license = licenses.gpl3;
     platforms = platforms.unix;
     maintainers = [ maintainers.bjornfor ];

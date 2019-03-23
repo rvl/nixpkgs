@@ -1,15 +1,20 @@
-{ stdenv, fetchgit }:
+{ stdenv, fetchFromGitHub }:
 
 stdenv.mkDerivation rec {
-  name = "makeself-2.2.0";
+  version = "2.4.0";
+  name = "makeself-${version}";
 
-  src = fetchgit {
-    url = "https://github.com/megastep/makeself.git";
-    rev = "b836b9281ae99abe1865608b065551da56c80719";
-    sha256 = "f7c97f0f8ad8128f2f1b54383319f2cc44cbb05b60ced222784debdf326f23ad";
+  src = fetchFromGitHub {
+    owner = "megastep";
+    repo = "makeself";
+    rev = "release-${version}";
+    sha256 = "1lw3gx1zpzp2wmzrw5v7k31vfsrdzadqha9ni309fp07g8inrr9n";
   };
 
-  patchPhase = ''
+  # backported from https://github.com/megastep/makeself/commit/77156e28ff21231c400423facc7049d9c60fd1bd
+  patches = [ ./Use-rm-from-PATH.patch ];
+
+  postPatch = ''
     sed -e "s|^HEADER=.*|HEADER=$out/share/${name}/makeself-header.sh|" -i makeself.sh
   '';
 

@@ -1,38 +1,19 @@
-{ stdenv, beamPackages, makeWrapper, fetchHex, erlang }:
-  beamPackages.buildRebar3 {
-    name = "relx-exe";
-    version = "3.18.0";
-    src = fetchHex {
-      pkg = "relx";
-      version = "3.18.0";
-      sha256 =
-        "e76e0446b8d1b113f2b7dcc713f032ccdf1dbda33d76edfeb19c2b6b686dcad7";
-    };
+{ stdenv, fetchHex, fetchRebar3Deps, rebar3Relx }:
 
-    buildInputs = [ makeWrapper erlang ];
+rebar3Relx rec {
+  name = "relx-exe";
+  version = "3.23.1";
+  releaseType = "escript";
 
-    beamDeps  = with beamPackages; [
-      providers_1_6_0
-      getopt_0_8_2
-      erlware_commons_0_19_0
-      cf_0_2_1
-      bbmustache_1_0_4
-    ];
+  src = fetchHex {
+    pkg = "relx";
+    sha256 = "13j7wds2d7b8v3r9pwy3zhwhzywgwhn6l9gm3slqzyrs1jld0a9d";
+    version = "3.23.1";
+  };
 
-    postBuild = ''
-      HOME=. rebar3 escriptize
-    '';
-
-    postInstall = ''
-      mkdir -p "$out/bin"
-      cp -r "_build/default/bin/relx" "$out/bin/relx"
-    '';
-
-    meta = {
-      description = "Executable command for Relx";
-      license = stdenv.lib.licenses.asl20;
-      homepage = "https://github.com/erlware/relx";
-      maintainers = with stdenv.lib.maintainers; [ ericbmerritt ];
-    };
-
-  }
+  checkouts = fetchRebar3Deps {
+    inherit name version;
+    src = "${src}/rebar.lock";
+    sha256 = "046b1lb9rymndlvzmin3ppa3vkssjqspyfp98869k11s5avg76hd";
+  };
+}

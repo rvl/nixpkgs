@@ -1,34 +1,31 @@
-{ stdenv, fetchurl }:
+{ stdenv, fetchFromGitHub, which }:
 
 stdenv.mkDerivation rec {
-  version = "1.3.3";
+  version = "1.3.8";
   name = "rhash-${version}";
 
-  src = fetchurl {
-    url = "mirror://sourceforge/rhash/${name}-src.tar.gz";
-    sha1 = "0981bdc98ba7ef923b1a6cd7fd8bb0374cff632e";
+  src = fetchFromGitHub {
+    owner = "rhash";
+    repo = "RHash";
+    rev = "v${version}";
+    sha256 = "0i00wl63hn80g0s9gdi772gchbghwgkvn4nbb5227y2wwy30yyi2";
   };
 
-  installFlags = [ "DESTDIR=$(out)" "PREFIX=/" ];
+  nativeBuildInputs = [ which ];
 
-  # we build the static library because of two makefile bugs
-  # * .h files installed for static library target only
-  # * .so.0 -> .so link only created in the static library install target
-  buildPhase = ''
-    make lib-shared lib-static build-shared
-  '';
+  # configure script is not autotools-based, doesn't support these options
+  configurePlatforms = [ ];
 
-  # we don't actually want the static library, so we remove it after it
-  # gets installed
-  installPhase = ''
-    make DESTDIR="$out" PREFIX="/" install-shared install-lib-shared install-lib-static
-    rm $out/lib/librhash.a
-  '';
+  doCheck = true;
+
+  checkTarget = "test-full";
+
+  installTargets = [ "install" "install-lib-shared" "install-lib-so-link" "install-lib-headers" ];
 
   meta = with stdenv.lib; {
     homepage = http://rhash.anz.ru;
     description = "Console utility and library for computing and verifying hash sums of files";
-    platforms = platforms.linux;
+    platforms = platforms.all;
     maintainers = [ maintainers.andrewrk ];
   };
 }

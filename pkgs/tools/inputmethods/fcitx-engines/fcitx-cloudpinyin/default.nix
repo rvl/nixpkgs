@@ -2,14 +2,15 @@
 
 stdenv.mkDerivation rec {
   name = "fcitx-cloudpinyin-${version}";
-  version = "0.3.4";
+  version = "0.3.6";
 
   src = fetchurl {
     url = "http://download.fcitx-im.org/fcitx-cloudpinyin/${name}.tar.xz";
-    sha256 = "143x9gbswzfngvgfy77zskrzrpywj8qg2d19kisgfwfisk7yhcf1";
+    sha256 = "1f3ryx817bxb8g942l50ng4xg0gp50rb7pv2p6zf98r2z804dcvf";
   };
 
-  buildInputs = [ cmake pkgconfig fcitx gettext curl ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ cmake fcitx gettext curl ];
 
   preInstall = ''
     substituteInPlace src/cmake_install.cmake \

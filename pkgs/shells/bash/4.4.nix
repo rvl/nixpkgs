@@ -1,44 +1,36 @@
-{ stdenv, fetchurl, readline70 ? null, interactive ? false, texinfo ? null
-, binutils ? null, bison
+{ stdenv, buildPackages
+, fetchurl, binutils ? null, bison, autoconf, utillinux
+
+# patch for cygwin requires readline support
+, interactive ? stdenv.isCygwin, readline70 ? null
+, withDocs ? false, texinfo ? null
 }:
 
+with stdenv.lib;
+
 assert interactive -> readline70 != null;
-assert stdenv.isDarwin -> binutils != null;
+assert withDocs -> texinfo != null;
+assert stdenv.hostPlatform.isDarwin -> binutils != null;
 
 let
-  version = "4.4";
-  realName = "bash-${version}";
-  shortName = "bash44";
-  baseConfigureFlags = if interactive then "--with-installed-readline" else "--disable-readline";
-  sha256 = "1jyz6snd63xjn6skk7za6psgidsd53k05cr3lksqybi0q6936syq";
-
-  upstreamPatches =
-    let
-      patch = nr: sha256:
-        fetchurl {
-          url = "mirror://gnu/bash/${realName}-patches/${shortName}-${nr}";
-          inherit sha256;
-        };
-    in
-      import ./bash-4.4-patches.nix patch;
-
-  inherit (stdenv.lib) optional optionalString;
+  upstreamPatches = import ./bash-4.4-patches.nix (nr: sha256: fetchurl {
+    url = "mirror://gnu/bash/bash-4.4-patches/bash44-${nr}";
+    inherit sha256;
+  });
 in
 
 stdenv.mkDerivation rec {
-  name = "${realName}-p${toString (builtins.length upstreamPatches)}";
+  name = "bash-${optionalString interactive "interactive-"}${version}-p${toString (builtins.length upstreamPatches)}";
+  version = "4.4";
 
   src = fetchurl {
-    url = "mirror://gnu/bash/${realName}.tar.gz";
-    inherit sha256;
+    url = "mirror://gnu/bash/bash-${version}.tar.gz";
+    sha256 = "1jyz6snd63xjn6skk7za6psgidsd53k05cr3lksqybi0q6936syq";
   };
 
   hardeningDisable = [ "format" ];
 
-  outputs = [ "out" "dev" "doc" "info" ];
-
-  # the man pages are small and useful enough
-  outputMan = if interactive then "out" else null;
+  outputs = [ "out" "dev" "man" "doc" "info" ];
 
   NIX_CFLAGS_COMPILE = ''
     -DSYS_BASHRC="/etc/bashrc"
@@ -52,33 +44,37 @@ stdenv.mkDerivation rec {
   patchFlags = "-p0";
 
   patches = upstreamPatches
-      ++ [ (fetchurl {
-              # https://security.gentoo.org/glsa/201701-02
-              url = "https://gitweb.gentoo.org/repo/gentoo.git/plain/app-shells"
-                  + "/bash/files/bash-4.4-popd-offset-overflow.patch"
-                  + "?id=1bf1ceeb04a2f57e1e5e1636a8c288c4d0db6682";
-              sha256 = "02n08lw5spvsc2b1bll0gr6mg4qxcg7pzfjkw7ji5w7bjcikccbm";
-          }) ]
-      ++ optional stdenv.isCygwin ./cygwin-bash-4.3.33-1.src.patch;
+    ++ optional stdenv.hostPlatform.isCygwin ./cygwin-bash-4.4.11-2.src.patch
+    # https://lists.gnu.org/archive/html/bug-bash/2016-10/msg00006.html
+    ++ optional stdenv.hostPlatform.isMusl (fetchurl {
+      url = "https://lists.gnu.org/archive/html/bug-bash/2016-10/patchJxugOXrY2y.patch";
+      sha256 = "1m4v9imidb1cc1h91f2na0b8y9kc5c5fgmpvy9apcyv2kbdcghg1";
+    });
 
-  crossAttrs = {
-    configureFlags = baseConfigureFlags +
-      " bash_cv_job_control_missing=nomissing bash_cv_sys_named_pipes=nomissing" +
-      optionalString stdenv.isCygwin ''
-        --without-libintl-prefix --without-libiconv-prefix
-        --with-installed-readline
-        bash_cv_dev_stdin=present
-        bash_cv_dev_fd=standard
-        bash_cv_termcap_lib=libncurses
-      '';
-  };
-
-  configureFlags = baseConfigureFlags;
+  configureFlags = [
+    (if interactive then "--with-installed-readline" else "--disable-readline")
+  ] ++ optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
+    "bash_cv_job_control_missing=nomissing"
+    "bash_cv_sys_named_pipes=nomissing"
+    "bash_cv_getcwd_malloc=yes"
+  ] ++ optionals stdenv.hostPlatform.isCygwin [
+    "--without-libintl-prefix"
+    "--without-libiconv-prefix"
+    "--with-installed-readline"
+    "bash_cv_dev_stdin=present"
+    "bash_cv_dev_fd=standard"
+    "bash_cv_termcap_lib=libncurses"
+  ] ++ optionals (stdenv.hostPlatform.libc == "musl") [
+    "--without-bash-malloc"
+    "--disable-nls"
+  ];
 
   # Note: Bison is needed because the patches above modify parse.y.
-  nativeBuildInputs = [bison]
-    ++ optional (texinfo != null) texinfo
-    ++ optional stdenv.isDarwin binutils;
+  depsBuildBuild = [ buildPackages.stdenv.cc ];
+  nativeBuildInputs = [ bison ]
+    ++ optional withDocs texinfo
+    ++ optional stdenv.hostPlatform.isDarwin binutils
+    ++ optional (stdenv.hostPlatform.libc == "musl") autoconf;
 
   buildInputs = optional interactive readline70;
 
@@ -86,9 +82,17 @@ stdenv.mkDerivation rec {
   # build `version.h'.
   enableParallelBuilding = false;
 
+  makeFlags = optional stdenv.hostPlatform.isCygwin [
+    "LOCAL_LDFLAGS=-Wl,--export-all,--out-implib,libbash.dll.a"
+    "SHOBJ_LIBS=-lbash"
+  ];
+
+  checkInputs = [ utillinux ];
+  doCheck = false; # dependency cycle, needs to be interactive
+
   postInstall = ''
     ln -s bash "$out/bin/sh"
-    moveToOutput lib/bash/Makefile.inc "$dev"
+    rm -f $out/lib/bash/Makefile.inc
   '';
 
   postFixup = if interactive
@@ -98,11 +102,11 @@ stdenv.mkDerivation rec {
     ''
     # most space is taken by locale data
     else ''
-      rm -r "$out/share" "$out/bin/bashbug"
+      rm -rf "$out/share" "$out/bin/bashbug"
     '';
 
   meta = with stdenv.lib; {
-    homepage = http://www.gnu.org/software/bash/;
+    homepage = https://www.gnu.org/software/bash/;
     description =
       "GNU Bourne-Again Shell, the de facto standard shell on Linux" +
         (if interactive then " (for interactive use)" else "");

@@ -1,15 +1,17 @@
-{ stdenv, lib, fetchurl, fetchpatch, pkgconfig, zlib, expat, openssl, autoconf
-, libjpeg, libpng, libtiff, freetype, fontconfig, lcms2, libpaper, jbig2dec
-, libiconv, ijs
-, x11Support ? false, xlibsWrapper ? null
-, cupsSupport ? false, cups ? null
+{ config, stdenv, lib, fetchurl, pkgconfig, zlib, expat, openssl, autoconf
+, libjpeg, libpng, libtiff, freetype, fontconfig, libpaper, jbig2dec
+, libiconv, ijs, lcms2
+, cupsSupport ? config.ghostscript.cups or (!stdenv.isDarwin), cups ? null
+, x11Support ? cupsSupport, xlibsWrapper ? null # with CUPS, X11 only adds very little
 }:
 
 assert x11Support -> xlibsWrapper != null;
 assert cupsSupport -> cups != null;
+
 let
-  version = "9.20";
-  sha256 = "1az0dnvgingqv78yvfhzmx1zavn5sv1xrrscz984hy3gvz2ks3rw";
+  version = "9.${ver_min}";
+  ver_min = "26";
+  sha512 = "0z2mvsh06qgnxl7p9isw7swg8jp8xcx3rnbqk727avw7ammvfh8785d2bn5i4fhz8y45ka3cpgp7b598m06yq5zawijhcnzkq187nrx";
 
   fonts = stdenv.mkDerivation {
     name = "ghostscript-fonts";
@@ -37,31 +39,32 @@ stdenv.mkDerivation rec {
   name = "ghostscript-${version}";
 
   src = fetchurl {
-    url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs920/${name}.tar.xz";
-    inherit sha256;
+    url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs9${ver_min}/${name}.tar.xz";
+    inherit sha512;
   };
 
-  outputs = [ "out" "doc" ];
+  patches = [
+    ./urw-font-files.patch
+    ./doc-no-ref.diff
+  ];
+
+  outputs = [ "out" "man" "doc" ];
 
   enableParallelBuilding = true;
 
   nativeBuildInputs = [ pkgconfig autoconf ];
   buildInputs =
     [ zlib expat openssl
-      libjpeg libpng libtiff freetype fontconfig lcms2 libpaper jbig2dec
-      libiconv ijs
+      libjpeg libpng libtiff freetype fontconfig libpaper jbig2dec
+      libiconv ijs lcms2
     ]
     ++ lib.optional x11Support xlibsWrapper
     ++ lib.optional cupsSupport cups
     ;
 
-  patches = [
-    ./urw-font-files.patch
-  ];
-
   preConfigure = ''
     # requires in-tree (heavily patched) openjpeg
-    rm -rf jpeg libpng zlib jasper expat tiff lcms{,2} jbig2dec freetype cups/libs ijs
+    rm -rf jpeg libpng zlib jasper expat tiff lcms2mt jbig2dec freetype cups/libs ijs
 
     sed "s@if ( test -f \$(INCLUDE)[^ ]* )@if ( true )@; s@INCLUDE=/usr/include@INCLUDE=/no-such-path@" -i base/unix-aux.mak
     sed "s@^ZLIBDIR=.*@ZLIBDIR=${zlib.dev}/include@" -i configure.ac
@@ -88,10 +91,14 @@ stdenv.mkDerivation rec {
 
     cp -r Resource "$out/share/ghostscript/${version}"
 
-    mkdir -p "$doc/share/ghostscript/${version}"
-    mv "$out/share/ghostscript/${version}"/{doc,examples} "$doc/share/ghostscript/${version}/"
+    mkdir -p "$doc/share/doc/ghostscript"
+    mv "$doc/share/doc/${version}" "$doc/share/doc/ghostscript/"
 
     ln -s "${fonts}" "$out/share/ghostscript/fonts"
+  '' + stdenv.lib.optionalString stdenv.isDarwin ''
+    for file in $out/lib/*.dylib* ; do
+      install_name_tool -id "$file" $file
+    done
   '';
 
   preFixup = lib.optionalString stdenv.isDarwin ''
@@ -101,7 +108,7 @@ stdenv.mkDerivation rec {
   passthru = { inherit version; };
 
   meta = {
-    homepage = "http://www.ghostscript.com/";
+    homepage = https://www.ghostscript.com/;
     description = "PostScript interpreter (mainline version)";
 
     longDescription = ''
@@ -113,7 +120,7 @@ stdenv.mkDerivation rec {
       of output drivers for various file formats and printers.
     '';
 
-    license = stdenv.lib.licenses.gpl3Plus;
+    license = stdenv.lib.licenses.agpl3;
 
     platforms = stdenv.lib.platforms.all;
     maintainers = [ stdenv.lib.maintainers.viric ];

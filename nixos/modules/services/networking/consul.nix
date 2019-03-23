@@ -6,9 +6,10 @@ let
   dataDir = "/var/lib/consul";
   cfg = config.services.consul;
 
-  configOptions = { data_dir = dataDir; } //
-    (if cfg.webUi then { ui_dir = "${cfg.package.ui}"; } else { }) //
-    cfg.extraConfig;
+  configOptions = {
+    data_dir = dataDir;
+    ui = cfg.webUi;
+  } // cfg.extraConfig;
 
   configFiles = [ "/etc/consul.json" "/etc/consul-addrs.json" ]
     ++ cfg.extraConfigFiles;
@@ -155,7 +156,7 @@ in
   config = mkIf cfg.enable (
     mkMerge [{
 
-      users.extraUsers."consul" = {
+      users.users."consul" = {
         description = "Consul agent daemon user";
         uid = config.ids.uids.consul;
         # The shell is needed for health checks
@@ -183,7 +184,8 @@ in
           ExecReload = "${cfg.package.bin}/bin/consul reload";
           PermissionsStartOnly = true;
           User = if cfg.dropPrivileges then "consul" else null;
-          TimeoutStartSec = "0";
+          Restart = "on-failure";
+          TimeoutStartSec = "infinity";
         } // (optionalAttrs (cfg.leaveOnStop) {
           ExecStop = "${cfg.package.bin}/bin/consul leave";
         });

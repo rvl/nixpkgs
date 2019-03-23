@@ -1,43 +1,53 @@
-{ stdenv, fetchFromGitHub, pango, libinput
-, makeWrapper, cmake, pkgconfig, asciidoc, libxslt, docbook_xsl, cairo
-, wayland, wlc, libxkbcommon, pixman, fontconfig, pcre, json_c, dbus_libs
+{ stdenv, fetchFromGitHub, fetchpatch
+, meson, ninja
+, pkgconfig, scdoc
+, wayland, libxkbcommon, pcre, json_c, dbus, libevdev
+, pango, cairo, libinput, libcap, pam, gdk_pixbuf
+, wlroots, wayland-protocols
 }:
 
-let
-  version = "0.9";
-in
-  stdenv.mkDerivation rec {
-    name = "sway-${version}";
+stdenv.mkDerivation rec {
+  name = "${pname}-${version}";
+  pname = "sway";
+  version = "1.0";
 
-    src = fetchFromGitHub {
-      owner = "Sircmpwn";
-      repo = "sway";
-      rev = "${version}";
-      sha256 = "0qqqg23rknxnjcgvkfrx3pijqc3dvi74qmmavq07vy2qfs1xlwg0";
-    };
+  src = fetchFromGitHub {
+    owner = "swaywm";
+    repo = "sway";
+    rev = version;
+    sha256 = "09cndc2nl39d3l7g5634xp0pxcz60pvc5277mfw89r22mh0j78rx";
+  };
 
-    nativeBuildInputs = [ makeWrapper cmake pkgconfig asciidoc libxslt docbook_xsl ];
+  patches = [
+    # Fix for a compiler warning that causes a build failure
+    # (see https://github.com/swaywm/sway/issues/3862):
+    (fetchpatch {
+      url = "https://github.com/swaywm/sway/commit/bcde298a719f60b9913133dbd2a169dedbc8dd7d.patch";
+      sha256 = "0r583nmqvq43ib93yv6flw8pj833v32lbs0q0xld56s3rnzvvdcp";
+    })
+    ./sway-config-no-nix-store-references.patch
+  ];
 
-    buildInputs = [ wayland wlc libxkbcommon pixman fontconfig pcre json_c dbus_libs pango cairo libinput ];
+  nativeBuildInputs = [ pkgconfig meson ninja scdoc ];
 
-    patchPhase = ''
-      sed -i s@/etc/sway@$out/etc/sway@g CMakeLists.txt;
-    '';
+  buildInputs = [
+    wayland libxkbcommon pcre json_c dbus libevdev
+    pango cairo libinput libcap pam gdk_pixbuf
+    wlroots wayland-protocols
+  ];
 
-    makeFlags = "PREFIX=$(out)";
-    installPhase = "PREFIX=$out make install";
+  enableParallelBuilding = true;
 
-    LD_LIBRARY_PATH = stdenv.lib.makeLibraryPath [ wlc dbus_libs ];
-    preFixup = ''
-      wrapProgram $out/bin/sway \
-        --prefix LD_LIBRARY_PATH : "${LD_LIBRARY_PATH}";
-    '';
+  mesonFlags = [
+    "-Ddefault-wallpaper=false" "-Dxwayland=enabled" "-Dgdk-pixbuf=enabled"
+    "-Dtray=enabled" "-Dman-pages=enabled"
+  ];
 
-    meta = with stdenv.lib; {
-      description = "i3-compatible window manager for Wayland";
-      homepage    = "http://swaywm.org";
-      license     = licenses.mit;
-      platforms   = platforms.linux;
-      maintainers = with maintainers; [ ];
-    };
-  }
+  meta = with stdenv.lib; {
+    description = "i3-compatible tiling Wayland compositor";
+    homepage    = https://swaywm.org;
+    license     = licenses.mit;
+    platforms   = platforms.linux;
+    maintainers = with maintainers; [ primeos synthetica ];
+  };
+}

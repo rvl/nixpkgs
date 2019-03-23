@@ -4,8 +4,7 @@
 { config, lib, pkgs, ... }:
 
 with lib;
-
-let kernel = config.boot.kernelPackages.kernel; in
+with import ../../lib/qemu-flags.nix { inherit pkgs; };
 
 {
 
@@ -22,8 +21,8 @@ let kernel = config.boot.kernelPackages.kernel; in
 
     systemd.services.backdoor =
       { wantedBy = [ "multi-user.target" ];
-        requires = [ "dev-hvc0.device" "dev-ttyS0.device" ];
-        after = [ "dev-hvc0.device" "dev-ttyS0.device" ];
+        requires = [ "dev-hvc0.device" "dev-${qemuSerialDevice}.device" ];
+        after = [ "dev-hvc0.device" "dev-${qemuSerialDevice}.device" ];
         script =
           ''
             export USER=root
@@ -40,7 +39,7 @@ let kernel = config.boot.kernelPackages.kernel; in
 
             cd /tmp
             exec < /dev/hvc0 > /dev/hvc0
-            while ! exec 2> /dev/ttyS0; do sleep 0.1; done
+            while ! exec 2> /dev/${qemuSerialDevice}; do sleep 0.1; done
             echo "connecting to host..." >&2
             stty -F /dev/hvc0 raw -echo # prevent nl -> cr/nl conversion
             echo
@@ -49,11 +48,14 @@ let kernel = config.boot.kernelPackages.kernel; in
         serviceConfig.KillSignal = "SIGHUP";
       };
 
-    # Prevent agetty from being instantiated on ttyS0, since it
-    # interferes with the backdoor (writes to ttyS0 will randomly fail
+    # Prevent agetty from being instantiated on the serial device, since it
+    # interferes with the backdoor (writes to it will randomly fail
     # with EIO).  Likewise for hvc0.
-    systemd.services."serial-getty@ttyS0".enable = false;
+    systemd.services."serial-getty@${qemuSerialDevice}".enable = false;
     systemd.services."serial-getty@hvc0".enable = false;
+
+    # Only use a serial console, no TTY.
+    virtualisation.qemu.consoles = [ qemuSerialDevice ];
 
     boot.initrd.preDeviceCommands =
       ''
@@ -88,7 +90,7 @@ let kernel = config.boot.kernelPackages.kernel; in
     # Panic if an error occurs in stage 1 (rather than waiting for
     # user intervention).
     boot.kernelParams =
-      [ "console=ttyS0" "panic=1" "boot.panic_on_fail" ];
+      [ "console=${qemuSerialDevice}" "panic=1" "boot.panic_on_fail" ];
 
     # `xwininfo' is used by the test driver to query open windows.
     environment.systemPackages = [ pkgs.xorg.xwininfo ];
@@ -100,8 +102,12 @@ let kernel = config.boot.kernelPackages.kernel; in
         MaxLevelConsole=debug
       '';
 
-    # Don't clobber the console with duplicate systemd messages.
-    systemd.extraConfig = "ShowStatus=no";
+    systemd.extraConfig = ''
+      # Don't clobber the console with duplicate systemd messages.
+      ShowStatus=no
+      # Allow very slow start
+      DefaultTimeoutStartSec=300
+    '';
 
     boot.consoleLogLevel = 7;
 
@@ -120,18 +126,12 @@ let kernel = config.boot.kernelPackages.kernel; in
     networking.usePredictableInterfaceNames = false;
 
     # Make it easy to log in as root when running the test interactively.
-    users.extraUsers.root.initialHashedPassword = mkOverride 150 "";
+    users.users.root.initialHashedPassword = mkOverride 150 "";
 
-    services.xserver.displayManager.logToJournal = true;
+    services.xserver.displayManager.job.logToJournal = true;
 
-    # Bump kdm's X server start timeout to account for heavily loaded
-    # VM host systems.
-    services.xserver.displayManager.kdm.extraConfig =
-      ''
-        [X-:*-Core]
-        ServerTimeout=240
-      '';
-
+    # set default stateVersion to avoid warnings during eval
+    system.stateVersion = mkDefault "18.03";
   };
 
 }

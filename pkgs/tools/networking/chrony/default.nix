@@ -1,29 +1,34 @@
-{ stdenv, fetchurl, pkgconfig, libcap, readline, texinfo, nss, nspr }:
+{ stdenv, fetchurl, pkgconfig, libcap, readline, texinfo, nss, nspr
+, libseccomp, pps-tools }:
 
 assert stdenv.isLinux -> libcap != null;
 
 stdenv.mkDerivation rec {
   name = "chrony-${version}";
 
-  version = "2.4.1";
+  version = "3.4";
 
   src = fetchurl {
-    url = "http://download.tuxfamily.org/chrony/${name}.tar.gz";
-    sha256 = "1q5nxl19fdppwpxancff5dc9crgma8f24zww7ag4bd15yq79xm8g";
+    url = "https://download.tuxfamily.org/chrony/${name}.tar.gz";
+    sha256 = "17vb1sy79lsjif23v66mgn39lbgmxy59mf7mi9ffb9qh4ryf8xxg";
   };
 
-  buildInputs = [ readline texinfo nss nspr ] ++ stdenv.lib.optional stdenv.isLinux libcap;
+  postPatch = ''
+    patchShebangs test
+  '';
+
+  buildInputs = [ readline texinfo nss nspr ]
+    ++ stdenv.lib.optionals stdenv.isLinux [ libcap libseccomp pps-tools ];
   nativeBuildInputs = [ pkgconfig ];
 
   hardeningEnable = [ "pie" ];
 
-  configureFlags = [
-    "--chronyvardir=$(out)/var/lib/chrony"
-  ];
+  configureFlags = [ "--chronyvardir=$(out)/var/lib/chrony" ]
+    ++ stdenv.lib.optional stdenv.isLinux [ "--enable-scfilter" ];
 
   meta = with stdenv.lib; {
     description = "Sets your computer's clock from time servers on the Net";
-    homepage = http://chrony.tuxfamily.org/;
+    homepage = https://chrony.tuxfamily.org/;
     repositories.git = git://git.tuxfamily.org/gitroot/chrony/chrony.git;
     license = licenses.gpl2;
     platforms = with platforms; linux ++ freebsd ++ openbsd;

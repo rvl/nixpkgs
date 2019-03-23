@@ -1,15 +1,18 @@
-{ stdenv, fetchurl, pkgconfig, gettext, perl, python
-, libiconv, libintlOrEmpty, zlib, libffi, pcre, libelf
+{ config, stdenv, fetchurl, fetchpatch, gettext, meson, ninja, pkgconfig, perl, python3, glibcLocales
+, libiconv, zlib, libffi, pcre, libelf, gnome3, libselinux, bash, gnum4, gtk-doc, docbook_xsl, docbook_xml_dtd_45
 # use utillinuxMinimal to avoid circular dependency (utillinux, systemd, glib)
 , utillinuxMinimal ? null
+, buildPackages
 
-# this is just for tests (not in closure of any regular package)
-, coreutils, dbus_daemon, libxml2, tzdata, desktop_file_utils, shared_mime_info, doCheck ? false
+# this is just for tests (not in the closure of any regular package)
+, doCheck ? config.doCheckByDefault or false
+, coreutils, dbus, libxml2, tzdata
+, desktop-file-utils, shared-mime-info
+, darwin
 }:
 
 with stdenv.lib;
 
-assert stdenv.isFreeBSD || stdenv.isDarwin || stdenv.cc.isGNU;
 assert stdenv.isLinux -> utillinuxMinimal != null;
 
 # TODO:
@@ -42,102 +45,164 @@ let
     ln -sr -t "''${!outputInclude}/include/" "''${!outputInclude}"/lib/*/include/* 2>/dev/null || true
   '';
 
-  ver_maj = "2.50";
-  ver_min = "2";
+  binPrograms = optional (!stdenv.isDarwin) "gapplication" ++ [ "gdbus" "gio" "gsettings" ];
+  version = "2.58.2";
 in
 
 stdenv.mkDerivation rec {
-  name = "glib-${ver_maj}.${ver_min}";
+  name = "glib-${version}";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/glib/${ver_maj}/${name}.tar.xz";
-    sha256 = "be68737c1f268c05493e503b3b654d2b7f43d7d0b8c5556f7e4651b870acfbf5";
+    url = "mirror://gnome/sources/glib/${stdenv.lib.versions.majorMinor version}/${name}.tar.xz";
+    sha256 = "0jrxfm4gn1qz3y1450z709v74ys2bkjr8yffkgy106kgagb4xcn7";
   };
 
-  patches = optional stdenv.isDarwin ./darwin-compilation.patch ++ optional doCheck ./skip-timer-test.patch;
+  patches = optional stdenv.isDarwin ./darwin-compilation.patch
+    ++ optional doCheck ./skip-timer-test.patch
+    ++ optionals stdenv.hostPlatform.isMusl [
+      ./quark_init_on_demand.patch
+      ./gobject_init_on_demand.patch
+    ] ++ [
+      ./schema-override-variable.patch
+      # Require substituteInPlace in postPatch
+      ./fix-gio-launch-desktop-path.patch
+      # https://gitlab.gnome.org/GNOME/glib/issues/1626
+      # https://gitlab.gnome.org/GNOME/glib/merge_requests/557
+      (fetchpatch {
+        url = https://gitlab.gnome.org/GNOME/glib/commit/85c4031696add9797e2334ced20678edcd96c869.patch;
+        sha256 = "1hmyvhx89wip2a26gk1rvd87k0pjfia51s0ysybjyzf5f1pzw877";
+      })
+      # https://gitlab.gnome.org/GNOME/glib/issues/1645
+      (fetchpatch {
+        url = https://gitlab.gnome.org/GNOME/glib/commit/e695ca9f310c393d8f39694f77471dbcb06daa9e.diff;
+        sha256 = "1jkb2bdnni0xdyn86xrx9z0fdwxrm7y08lagz8x5x01wglkwa26w";
+      })
+      # https://gitlab.gnome.org/GNOME/glib/issues/1643
+      (fetchpatch {
+        url = https://gitlab.gnome.org/GNOME/glib/commit/c792e5adaa8ae3a45e6ff3ff71168ad8d040a0d4.patch;
+        sha256 = "022x70qfn5wlv5gz3nlg0bwiwjxcd7l11j3qvbms2y8d1ffh5rfd";
+      })
+      (fetchpatch {
+        url = https://gitlab.gnome.org/GNOME/glib/commit/30ccbc386026cecac6ef3a77d8fa4f3c24ac68d7.patch;
+        sha256 = "04y3pxgzlx92cppwibx4rlsyvwxb37aq52x2lr6ajfgykv2nzpr3";
+      })
+    ];
 
-  outputs = [ "out" "dev" "devdoc" ];
+  outputs = [ "bin" "out" "dev" "devdoc" ];
   outputBin = "dev";
 
   setupHook = ./setup-hook.sh;
 
-  buildInputs = [ libelf setupHook pcre ]
-    ++ optionals stdenv.isLinux [ utillinuxMinimal ] # for libmount
-    ++ optionals doCheck [ tzdata libxml2 desktop_file_utils shared_mime_info ];
+  buildInputs = [
+    libelf setupHook pcre
+    bash gnum4 # install glib-gettextize and m4 macros for other apps to use
+  ] ++ optionals stdenv.isLinux [
+    libselinux
+    utillinuxMinimal # for libmount
+  ] ++ optionals stdenv.isDarwin (with darwin.apple_sdk.frameworks; [
+    AppKit Carbon Cocoa CoreFoundation CoreServices Foundation
+    # Needed for CFURLCreateFromFSRef, etc. which have deen deprecated
+    # since 10.9 and are not part of swift-corelibs CoreFoundation.
+    darwin.cf-private
+  ]);
 
-  nativeBuildInputs = [ pkgconfig gettext perl python ];
+  nativeBuildInputs = [
+    meson ninja pkgconfig perl python3 gettext gtk-doc docbook_xsl docbook_xml_dtd_45 glibcLocales
+  ];
 
-  propagatedBuildInputs = [ zlib libffi libiconv ]
-    ++ libintlOrEmpty;
+  propagatedBuildInputs = [ zlib libffi gettext libiconv ];
 
-  # internal pcre would only add <200kB, but it's relatively common
-  configureFlags = [ "--with-pcre=system" ]
-    ++ optional stdenv.isDarwin "--disable-compile-warnings"
-    ++ optional (stdenv.isFreeBSD || stdenv.isSunOS) "--with-libiconv=gnu"
-    ++ optional stdenv.isSunOS "--disable-dtrace";
+  mesonFlags = [
+    # Avoid the need for gobject introspection binaries in PATH in cross-compiling case.
+    # Instead we just copy them over from the native output.
+    "-Dgtk_doc=${if stdenv.hostPlatform == stdenv.buildPlatform then "true" else "false"}"
+  ];
 
-  NIX_CFLAGS_COMPILE = optionalString stdenv.isDarwin " -lintl"
-    + optionalString stdenv.isSunOS " -DBSD_COMP";
+  LC_ALL = "en_US.UTF-8";
 
-  preConfigure = if !stdenv.isSunOS then null else
-    ''
-      sed -i -e 's|inotify.h|foobar-inotify.h|g' configure
-    '';
+  NIX_CFLAGS_COMPILE = optional stdenv.isSunOS "-DBSD_COMP";
+
+  postPatch = ''
+    substituteInPlace meson.build --replace "install_dir : 'bin'," "install_dir : glib_bindir,"
+
+    # substitute fix-gio-launch-desktop-path.patch
+    substituteInPlace gio/gdesktopappinfo.c --replace "@bindir@" "$out/bin"
+
+    chmod +x gio/tests/gengiotypefuncs.py
+    patchShebangs gio/tests/gengiotypefuncs.py
+    patchShebangs glib/gen-unicode-tables.pl
+    patchShebangs tests/gen-casefold-txt.py
+    patchShebangs tests/gen-casemap-txt.py
+  '';
 
   LIBELF_CFLAGS = optional stdenv.isFreeBSD "-I${libelf}";
   LIBELF_LIBS = optional stdenv.isFreeBSD "-L${libelf} -lelf";
 
-  preBuild = optionalString stdenv.isDarwin
-    ''
-      export MACOSX_DEPLOYMENT_TARGET=
-    '';
-
-  enableParallelBuilding = true;
   DETERMINISTIC_BUILD = 1;
 
   postInstall = ''
+    mkdir -p $bin/bin
+    for app in ${concatStringsSep " " binPrograms}; do
+      mv "$dev/bin/$app" "$bin/bin"
+    done
+
+  '' + optionalString (!stdenv.isDarwin) ''
+    # Add gio-launch-desktop to $out so we can refer to it from $dev
+    mkdir $out/bin
+    mv "$dev/bin/gio-launch-desktop" "$out/bin/"
+    ln -s "$out/bin/gio-launch-desktop" "$bin/bin/"
+
+  '' + ''
     moveToOutput "share/glib-2.0" "$dev"
     substituteInPlace "$dev/bin/gdbus-codegen" --replace "$out" "$dev"
     sed -i "$dev/bin/glib-gettextize" -e "s|^gettext_dir=.*|gettext_dir=$dev/share/glib-2.0/gettext|"
-  ''
+
     # This file is *included* in gtk3 and would introduce runtime reference via __FILE__.
-    + ''
-      sed '1i#line 1 "${name}/include/glib-2.0/gobject/gobjectnotifyqueue.c"' \
-        -i "$dev"/include/glib-2.0/gobject/gobjectnotifyqueue.c
-    '';
+    sed '1i#line 1 "${name}/include/glib-2.0/gobject/gobjectnotifyqueue.c"' \
+      -i "$dev"/include/glib-2.0/gobject/gobjectnotifyqueue.c
+  '' + optionalString (stdenv.hostPlatform != stdenv.buildPlatform) ''
+    cp -r ${buildPackages.glib.devdoc} $devdoc
+  '';
+
+  checkInputs = [ tzdata libxml2 desktop-file-utils shared-mime-info ];
+
+  preCheck = optionalString doCheck ''
+    export LD_LIBRARY_PATH="$NIX_BUILD_TOP/${name}/glib/.libs:$LD_LIBRARY_PATH"
+    export TZDIR="${tzdata}/share/zoneinfo"
+    export XDG_CACHE_HOME="$TMP"
+    export XDG_RUNTIME_HOME="$TMP"
+    export HOME="$TMP"
+    export XDG_DATA_DIRS="${desktop-file-utils}/share:${shared-mime-info}/share"
+    export G_TEST_DBUS_DAEMON="${dbus.daemon}/bin/dbus-daemon"
+    export PATH="$PATH:$(pwd)/gobject"
+    echo "PATH=$PATH"
+
+    substituteInPlace gio/tests/desktop-files/home/applications/epiphany-weather-for-toronto-island-9c6a4e022b17686306243dada811d550d25eb1fb.desktop \
+      --replace "Exec=/bin/true" "Exec=${coreutils}/bin/true"
+    # Needs machine-id, comment the test
+    sed -e '/\/gdbus\/codegen-peer-to-peer/ s/^\/*/\/\//' -i gio/tests/gdbus-peer.c
+    sed -e '/g_test_add_func/ s/^\/*/\/\//' -i gio/tests/gdbus-unix-addresses.c
+    # All gschemas fail to pass the test, upstream bug?
+    sed -e '/g_test_add_data_func/ s/^\/*/\/\//' -i gio/tests/gschema-compile.c
+    # Cannot reproduce the failing test_associations on hydra
+    sed -e '/\/appinfo\/associations/d' -i gio/tests/appinfo.c
+    # Needed because of libtool wrappers
+    sed -e '/g_subprocess_launcher_set_environ (launcher, envp);/a g_subprocess_launcher_setenv (launcher, "PATH", g_getenv("PATH"), TRUE);' -i gio/tests/gsubprocess.c
+  '';
 
   inherit doCheck;
-  preCheck = optionalString doCheck
-    '' export LD_LIBRARY_PATH="$NIX_BUILD_TOP/${name}/glib/.libs:$LD_LIBRARY_PATH"
-       export TZDIR="${tzdata}/share/zoneinfo"
-       export XDG_CACHE_HOME="$TMP"
-       export XDG_RUNTIME_HOME="$TMP"
-       export HOME="$TMP"
-       export XDG_DATA_DIRS="${desktop_file_utils}/share:${shared_mime_info}/share"
-       export G_TEST_DBUS_DAEMON="${dbus_daemon.out}/bin/dbus-daemon"
-
-       substituteInPlace gio/tests/desktop-files/home/applications/epiphany-weather-for-toronto-island-9c6a4e022b17686306243dada811d550d25eb1fb.desktop --replace "Exec=/bin/true" "Exec=${coreutils}/bin/true"
-       # Needs machine-id, comment the test
-       sed -e '/\/gdbus\/codegen-peer-to-peer/ s/^\/*/\/\//' -i gio/tests/gdbus-peer.c
-       sed -e '/g_test_add_func/ s/^\/*/\/\//' -i gio/tests/gdbus-unix-addresses.c
-       # All gschemas fail to pass the test, upstream bug?
-       sed -e '/g_test_add_data_func/ s/^\/*/\/\//' -i gio/tests/gschema-compile.c
-       # Cannot reproduce the failing test_associations on hydra
-       sed -e '/\/appinfo\/associations/d' -i gio/tests/appinfo.c
-       # Needed because of libtool wrappers
-       sed -e '/g_subprocess_launcher_set_environ (launcher, envp);/a g_subprocess_launcher_setenv (launcher, "PATH", g_getenv("PATH"), TRUE);' -i gio/tests/gsubprocess.c
-    '';
 
   passthru = {
-     gioModuleDir = "lib/gio/modules";
-     inherit flattenInclude;
+    gioModuleDir = "lib/gio/modules";
+    inherit flattenInclude;
+    updateScript = gnome3.updateScript { packageName = "glib"; };
   };
 
   meta = with stdenv.lib; {
     description = "C library of programming buildings blocks";
-    homepage    = http://www.gtk.org/;
-    license     = licenses.lgpl2Plus;
-    maintainers = with maintainers; [ lovek323 raskin urkud ];
+    homepage    = https://www.gtk.org/;
+    license     = licenses.lgpl21Plus;
+    maintainers = with maintainers; [ lovek323 raskin ];
     platforms   = platforms.unix;
 
     longDescription = ''

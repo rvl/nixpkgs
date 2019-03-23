@@ -9,23 +9,45 @@ let
   cfg = config.networking;
   dnsmasqResolve = config.services.dnsmasq.enable &&
                    config.services.dnsmasq.resolveLocalQueries;
-  hasLocalResolver = config.services.bind.enable || dnsmasqResolve;
+  hasLocalResolver = config.services.bind.enable ||
+                     config.services.unbound.enable ||
+                     dnsmasqResolve;
 
   resolvconfOptions = cfg.resolvconfOptions
     ++ optional cfg.dnsSingleRequest "single-request"
-    ++ optional cfg.dnsExtensionMechanism "ends0";
+    ++ optional cfg.dnsExtensionMechanism "edns0";
+
+
+  localhostMapped4 = cfg.hosts ? "127.0.0.1" && elem "localhost" cfg.hosts."127.0.0.1";
+  localhostMapped6 = cfg.hosts ? "::1"       && elem "localhost" cfg.hosts."::1";
+
+  localhostMultiple = any (elem "localhost") (attrValues (removeAttrs cfg.hosts [ "127.0.0.1" "::1" ]));
+
 in
 
 {
 
   options = {
 
+    networking.hosts = lib.mkOption {
+      type = types.attrsOf (types.listOf types.str);
+      example = literalExample ''
+        {
+          "127.0.0.1" = [ "foo.bar.baz" ];
+          "192.168.0.2" = [ "fileserver.local" "nameserver.local" ];
+        };
+      '';
+      description = ''
+        Locally defined maps of hostnames to IP addresses.
+      '';
+    };
+
     networking.extraHosts = lib.mkOption {
       type = types.lines;
       default = "";
       example = "192.168.0.1 lanlocalhost";
       description = ''
-        Additional entries to be appended to <filename>/etc/hosts</filename>.
+        Additional verbatim entries to be appended to <filename>/etc/hosts</filename>.
       '';
     };
 
@@ -176,25 +198,44 @@ in
 
   config = {
 
+    assertions = [{
+      assertion = localhostMapped4;
+      message = ''`networking.hosts` doesn't map "127.0.0.1" to "localhost"'';
+    } {
+      assertion = !cfg.enableIPv6 || localhostMapped6;
+      message = ''`networking.hosts` doesn't map "::1" to "localhost"'';
+    } {
+      assertion = !localhostMultiple;
+      message = ''
+        `networking.hosts` maps "localhost" to something other than "127.0.0.1"
+        or "::1". This will break some applications. Please use
+        `networking.extraHosts` if you really want to add such a mapping.
+      '';
+    }];
+
+    networking.hosts = {
+      "127.0.0.1" = [ "localhost" ];
+    } // optionalAttrs (cfg.hostName != "") {
+      "127.0.1.1" = [ cfg.hostName ];
+    } // optionalAttrs cfg.enableIPv6 {
+      "::1" = [ "localhost" ];
+    };
+
     environment.etc =
       { # /etc/services: TCP/UDP port assignments.
-        "services".source = pkgs.iana_etc + "/etc/services";
+        "services".source = pkgs.iana-etc + "/etc/services";
 
         # /etc/protocols: IP protocol numbers.
-        "protocols".source  = pkgs.iana_etc + "/etc/protocols";
-
-        # /etc/rpc: RPC program numbers.
-        "rpc".source = pkgs.glibc.out + "/etc/rpc";
+        "protocols".source  = pkgs.iana-etc + "/etc/protocols";
 
         # /etc/hosts: Hostname-to-IP mappings.
-        "hosts".text =
-          ''
-            127.0.0.1 localhost
-            ${optionalString cfg.enableIPv6 ''
-              ::1 localhost
-            ''}
-            ${cfg.extraHosts}
-          '';
+        "hosts".text = let
+          oneToString = set: ip: ip + " " + concatStringsSep " " set.${ip};
+          allToString = set: concatMapStringsSep "\n" (oneToString set) (attrNames set);
+        in ''
+          ${allToString cfg.hosts}
+          ${cfg.extraHosts}
+        '';
 
         # /etc/host.conf: resolver configuration file
         "host.conf".text = cfg.hostConf;
@@ -222,13 +263,16 @@ in
             '' + cfg.extraResolvconfConf + ''
             '';
 
-      } // (optionalAttrs config.services.resolved.enable (
-        if dnsmasqResolve then {
-          "dnsmasq-resolv.conf".source = "/run/systemd/resolve/resolv.conf";
-        } else {
-          "resolv.conf".source = "/run/systemd/resolve/resolv.conf";
-        }
-      ));
+      } // optionalAttrs config.services.resolved.enable {
+        # symlink the dynamic stub resolver of resolv.conf as recommended by upstream:
+        # https://www.freedesktop.org/software/systemd/man/systemd-resolved.html#/etc/resolv.conf
+        "resolv.conf".source = "/run/systemd/resolve/stub-resolv.conf";
+      } // optionalAttrs (config.services.resolved.enable && dnsmasqResolve) {
+        "dnsmasq-resolv.conf".source = "/run/systemd/resolve/resolv.conf";
+      } // optionalAttrs (pkgs.stdenv.hostPlatform.libc == "glibc") {
+        # /etc/rpc: RPC program numbers.
+        "rpc".source = pkgs.glibc.out + "/etc/rpc";
+      };
 
       networking.proxy.envVars =
         optionalAttrs (cfg.proxy.default != null) {
@@ -251,11 +295,6 @@ in
     # Install the proxy environment variables
     environment.sessionVariables = cfg.proxy.envVars;
 
-    # The ‘ip-up’ target is kept for backwards compatibility.
-    # New services should use systemd upstream targets:
-    # See https://www.freedesktop.org/wiki/Software/systemd/NetworkTarget/
-    systemd.targets.ip-up.description = "Services Requiring IP Connectivity (deprecated)";
-
     # This is needed when /etc/resolv.conf is being overriden by networkd
     # and other configurations. If the file is destroyed by an environment
     # activation then it must be rebuilt so that applications which interface
@@ -270,12 +309,12 @@ in
           ln -s /run/systemd/resolve/resolv.conf /run/resolvconf/interfaces/systemd
         ''}
 
-        # Make sure resolv.conf is up to date if not managed by systemd
-        ${optionalString (!config.services.resolved.enable) ''
+        # Make sure resolv.conf is up to date if not managed manually or by systemd
+        ${optionalString (!config.environment.etc?"resolv.conf") ''
           ${pkgs.openresolv}/bin/resolvconf -u
         ''}
       '';
 
   };
 
-  }
+}

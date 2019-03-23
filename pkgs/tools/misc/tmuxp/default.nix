@@ -1,34 +1,36 @@
-{ stdenv, fetchurl, pythonPackages }:
+{ stdenv, python }:
 
-pythonPackages.buildPythonApplication rec {
-  name = "tmuxp-${version}";
-  version = "1.2.2";
+with python.pkgs;
 
-  namePrefix = "";
+buildPythonApplication rec {
+  pname = "tmuxp";
+  version = "1.5.1";
 
-  src = fetchurl {
-    url = "mirror://pypi/t/tmuxp/${name}.tar.gz";
-    sha256 = "1g37pdxs0wmnskqm7qsqm0ygwpc1dxk1d7lrzpgs717zxaak8vln";
+  src = fetchPypi {
+    inherit pname version;
+    sha256 = "1s2jmi46z1as5f7124zxjd88crbgb427jqf9987nz0csbpbb12qa";
   };
 
-  patchPhase = ''
-    sed -i 's/==.*$//' requirements/test.txt
+  postPatch = ''
+    sed -i 's/==.*$//' requirements/base.txt requirements/test.txt
   '';
 
-  buildInputs = with pythonPackages; [
+  checkInputs = [
     pytest
     pytest-rerunfailures
   ];
 
-  propagatedBuildInputs = with pythonPackages; [
+  # No tests in archive
+  doCheck = false;
+
+  propagatedBuildInputs = [
     click colorama kaptan libtmux
   ];
 
   meta = with stdenv.lib; {
     description = "Manage tmux workspaces from JSON and YAML";
-    homepage = "http://tmuxp.readthedocs.io";
+    homepage = https://tmuxp.git-pull.com/;
     license = licenses.bsd3;
-    platforms = platforms.linux;
-    maintainers = with maintainers; [ jgeerds ];
+    maintainers = with maintainers; [ ];
   };
 }

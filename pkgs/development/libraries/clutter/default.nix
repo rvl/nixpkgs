@@ -1,29 +1,38 @@
-{ stdenv, fetchurl, glib, pkgconfig, mesa, libX11, libXext, libXfixes
-, libXdamage, libXcomposite, libXi, cogl, pango, atk, json_glib, 
-gobjectIntrospection 
+{ stdenv, fetchurl, pkgconfig, libGLU_combined, libX11, libXext, libXfixes
+, libXdamage, libXcomposite, libXi, libxcb, cogl, pango, atk, json-glib
+, gobject-introspection, gtk3, gnome3, libinput, libgudev, libxkbcommon
 }:
 
 let
-  ver_maj = "1.26";
-  ver_min = "0";
+  pname = "clutter";
+  version = "1.26.2";
 in
 stdenv.mkDerivation rec {
-  name = "clutter-${ver_maj}.${ver_min}";
+  name = "${pname}-${version}";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/clutter/${ver_maj}/${name}.tar.xz";
-    sha256 = "01nfjd4k7j2n3agpx2d9ncff86nfsqv4n23465rb9zmk4iw4wlb7";
+    url = "mirror://gnome/sources/${pname}/${stdenv.lib.versions.majorMinor version}/${name}.tar.xz";
+    sha256 = "0mif1qnrpkgxi43h7pimim6w6zwywa16ixcliw0yjm9hk0a368z7";
   };
 
+  outputs = [ "out" "dev" ];
+
+  buildInputs = [ gtk3 ];
   nativeBuildInputs = [ pkgconfig ];
   propagatedBuildInputs =
-    [ libX11 mesa libXext libXfixes libXdamage libXcomposite libXi cogl pango
-      atk json_glib gobjectIntrospection
+    [ libX11 libGLU_combined libXext libXfixes libXdamage libXcomposite libXi cogl pango
+      atk json-glib gobject-introspection libxcb libinput libgudev libxkbcommon
     ];
 
   configureFlags = [ "--enable-introspection" ]; # needed by muffin AFAIK
 
   #doCheck = true; # no tests possible without a display
+
+  passthru = {
+    updateScript = gnome3.updateScript {
+      packageName = pname;
+    };
+  };
 
   meta = {
     description = "Library for creating fast, dynamic graphical user interfaces";
@@ -46,7 +55,7 @@ stdenv.mkDerivation rec {
     license = stdenv.lib.licenses.lgpl2Plus;
     homepage = http://www.clutter-project.org/;
 
-    maintainers = with stdenv.lib.maintainers; [ urkud lethalman ];
+    maintainers = with stdenv.lib.maintainers; [ lethalman ];
     platforms = stdenv.lib.platforms.mesaPlatforms;
   };
 }

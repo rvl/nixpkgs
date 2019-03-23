@@ -1,21 +1,26 @@
-{ stdenv, fetchurl,
-  bison, flex, expat, file
+{ stdenv, fetchFromGitHub, autoreconfHook,
+  texinfo, bison, flex, expat, file
 }:
 
 stdenv.mkDerivation rec {
-    name = "udunits-2.2.20";
-    src = fetchurl {
-        url = "ftp://ftp.unidata.ucar.edu/pub/udunits/${name}.tar.gz";
-        sha256 = "15fiv66ni6fmyz96k138vrjd7cx6ndxrj6c71pah18n69c0h42pi";
-    };
+  name = "udunits-${version}";
+  version = "2.2.27.6";
+  
+  src = fetchFromGitHub {
+    owner = "Unidata";
+    repo = "UDUNITS-2";
+    rev = "v${version}";
+    sha256 = "0621pac24c842dyipzaa59rh6pza9phdqi3snd4cq4pib0wjw6gm";
+  };
 
-    buildInputs = [ bison flex expat file ];
+  nativeBuildInputs = [ autoreconfHook texinfo bison flex file ];
+  buildInputs = [ expat ];
 
-    meta = with stdenv.lib; {
-      homepage = http://www.unidata.ucar.edu/software/udunits/;
-      description = "A C-based package for the programatic handling of units of physical quantities";
-      license = licenses.bsdOriginal;
-      platforms = platforms.linux;
-      maintainers = with maintainers; [ pSub ];
-    };
+  meta = with stdenv.lib; {
+    homepage = https://www.unidata.ucar.edu/software/udunits/;
+    description = "A C-based package for the programatic handling of units of physical quantities";
+    license = licenses.bsdOriginal;
+    platforms = platforms.linux;
+    maintainers = with maintainers; [ pSub ];
+  };
 }

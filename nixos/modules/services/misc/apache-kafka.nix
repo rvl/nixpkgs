@@ -19,13 +19,8 @@ let
         ${toString cfg.extraProperties}
       '';
 
-  configDir = pkgs.buildEnv {
-    name = "apache-kafka-conf";
-    paths = [
-      (pkgs.writeTextDir "server.properties" serverProperties)
-      (pkgs.writeTextDir "log4j.properties" cfg.log4jProperties)
-    ];
-  };
+  serverConfig = pkgs.writeText "server.properties" serverProperties;
+  logConfig = pkgs.writeText "log4j.properties" cfg.log4jProperties;
 
 in {
 
@@ -38,7 +33,7 @@ in {
 
     brokerId = mkOption {
       description = "Broker ID.";
-      default = 0;
+      default = -1;
       type = types.int;
     };
 
@@ -129,7 +124,7 @@ in {
 
     environment.systemPackages = [cfg.package];
 
-    users.extraUsers = singleton {
+    users.users = singleton {
       name = "apache-kafka";
       uid = config.ids.uids.apache-kafka;
       description = "Apache Kafka daemon user";
@@ -143,10 +138,11 @@ in {
       serviceConfig = {
         ExecStart = ''
           ${pkgs.jre}/bin/java \
-            -cp "${cfg.package}/libs/*:${configDir}" \
+            -cp "${cfg.package}/libs/*" \
+            -Dlog4j.configuration=file:${logConfig} \
             ${toString cfg.jvmOptions} \
             kafka.Kafka \
-            ${configDir}/server.properties
+            ${serverConfig}
         '';
         User = "apache-kafka";
         PermissionsStartOnly = true;

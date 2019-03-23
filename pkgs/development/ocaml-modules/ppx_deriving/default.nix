@@ -1,22 +1,37 @@
-{stdenv, buildOcaml, fetchurl,
- cppo, ppx_tools, result, ounit}:
+{ stdenv, ocaml, findlib, ocamlbuild, fetchzip
+, cppo, ppx_tools, ppx_derivers, result, ounit, ocaml-migrate-parsetree
+}:
 
-buildOcaml rec {
-  name = "ppx_deriving";
-  version = "v3.3";
+if !stdenv.lib.versionAtLeast ocaml.version "4.02"
+then throw "ppx_deriving is not available for OCaml ${ocaml.version}"
+else
 
-  minimumSupportedOcamlVersion = "4.02";
+let param =
+  if ocaml.version == "4.03.0"
+  then {
+    version = "4.1";
+    sha256 = "0cy9p8d8cbcxvqyyv8fz2z9ypi121zrgaamdlp4ld9f3jnwz7my9";
+    extraPropagatedBuildInputs = [];
+  } else {
+    version = "4.2.1";
+    sha256 = "1yhhjnncbbb7fsif7qplndh01s1xd72dqm8f3jkgx9y4ariqqvf9";
+    extraPropagatedBuildInputs = [ ocaml-migrate-parsetree ppx_derivers ];
+}; in
 
-  src = fetchurl {
-    url = "https://github.com/whitequark/${name}/archive/${version}.tar.gz";
-    sha256 = "1j20c6r2v7h05a4v9m8z5m1yqgwif41yrp63mik14pf3dkrj8x3f";
+stdenv.mkDerivation rec {
+  name = "ocaml${ocaml.version}-ppx_deriving-${version}";
+  inherit (param) version;
+
+  src = fetchzip {
+    url = "https://github.com/ocaml-ppx/ppx_deriving/archive/v${version}.tar.gz";
+    inherit (param) sha256;
   };
 
-  hasSharedObjects = true;
-
-  buildInputs = [ cppo ounit ];
-  propagatedBuildInputs =
+  buildInputs = [ ocaml findlib ocamlbuild cppo ounit ];
+  propagatedBuildInputs = param.extraPropagatedBuildInputs ++
     [ ppx_tools result ];
+
+  createFindlibDestdir = true;
 
   installPhase = "OCAMLPATH=$OCAMLPATH:`ocamlfind printconf destdir` make install";
 

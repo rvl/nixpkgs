@@ -11,7 +11,8 @@ stdenv.mkDerivation rec {
   # Remove patch once the kernel headers are updated
   patches = [ ./add-ip6-header.patch ];
 
-  buildInputs = [ autoreconfHook ];
+  nativeBuildInputs = [ autoreconfHook ];
+  buildInputs = [ ];
 
   postInstall = ''
     # The bridge utils build does not fail even if the brctl binary
@@ -21,9 +22,9 @@ stdenv.mkDerivation rec {
   '';
 
   meta = {
-    description = "http://sourceforge.net/projects/bridge/";
-    homepage = [ "http://www.linux-foundation.org/en/Net:Bridge/" "http://sourceforge.net/projects/bridge/" ];
-    license = "GPL";
+    description = "https://sourceforge.net/projects/bridge/";
+    homepage = https://wiki.linuxfoundation.org/networking/bridge;
+    license = stdenv.lib.licenses.gpl2Plus;
     platforms = stdenv.lib.platforms.linux;
   };
 }

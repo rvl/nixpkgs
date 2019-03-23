@@ -76,14 +76,6 @@ in
         '';
       };
 
-      stanchionSsl = mkOption {
-        type = types.bool;
-        default = true;
-        description = ''
-          Tell stanchion to use SSL.
-        '';
-      };
-
       distributedCookie = mkOption {
         type = types.str;
         default = "riak";
@@ -148,19 +140,17 @@ in
 
       distributed_cookie = ${cfg.distributedCookie}
 
-      stanchion_ssl=${if cfg.stanchionSsl then "on" else "off"}
-
       ${cfg.extraConfig}
     '';
 
-    users.extraUsers.stanchion = {
+    users.users.stanchion = {
       name = "stanchion";
       uid = config.ids.uids.stanchion;
       group = "stanchion";
       description = "Stanchion server user";
     };
 
-    users.extraGroups.stanchion.gid = config.ids.gids.stanchion;
+    users.groups.stanchion.gid = config.ids.gids.stanchion;
 
     systemd.services.stanchion = {
       description = "Stanchion Server";

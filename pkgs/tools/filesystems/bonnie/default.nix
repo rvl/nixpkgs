@@ -1,18 +1,18 @@
-{ stdenv, fetchurl }:
+{ stdenv, fetchurl, perl }:
 
-stdenv.mkDerivation {
-  name = "bonnie++-1.97";
+stdenv.mkDerivation rec {
+  name = "bonnie++-1.98";
   src = fetchurl {
-    url = http://www.coker.com.au/bonnie++/experimental/bonnie++-1.97.tgz;
-    sha256 = "10jrqgvacvblyqv38pg5jb9jspyisxaladcrp8k6b2k46xcs1xa4";
+    url = "https://www.coker.com.au/bonnie++/${name}.tgz";
+    sha256 = "010bmlmi0nrlp3aq7p624sfaj5a65lswnyyxk3cnz1bqig0cn2vf";
   };
-
-  patches = stdenv.lib.optional stdenv.isDarwin ./bonnie-homebrew.patch;
 
   enableParallelBuilding = true;
 
+  buildInputs = [ perl ];
+
   meta = {
-    homepage = "http://www.coker.com.au/bonnie++/";
+    homepage = http://www.coker.com.au/bonnie++/;
     description = "Hard drive and file system benchmark suite";
     license = stdenv.lib.licenses.gpl2;
     platforms = stdenv.lib.platforms.linux ++ stdenv.lib.platforms.darwin;

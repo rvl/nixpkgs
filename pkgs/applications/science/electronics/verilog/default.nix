@@ -2,13 +2,13 @@
 
 stdenv.mkDerivation rec {
   name = "iverilog-${version}";
-  version = "2016.05.21";
+  version = "2018.12.15";
 
   src = fetchFromGitHub {
     owner = "steveicarus";
     repo = "iverilog";
-    rev = "45fbf558065c0fdac9aa088ecd34e9bf49e81305";
-    sha256 = "137p7gkmp5kwih93i2a3lcf36a6k38j7fxglvw9y59w0233vj452";
+    rev = "7cd078e7ab184069b3b458fe6df7e83962254816";
+    sha256 = "1zc7lsa77dbsxjfz7vdgclmg97r0kw08xss7yfs4vyv5v5gnn98d";
   };
 
   patchPhase = ''

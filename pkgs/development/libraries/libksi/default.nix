@@ -19,10 +19,9 @@ stdenv.mkDerivation rec {
   ];
 
   meta = with stdenv.lib; {
-    homepage = "https://github.com/GuardTime/libksi";
+    homepage = https://github.com/GuardTime/libksi;
     description = "Keyless Signature Infrastructure API library";
     license = licenses.asl20;
     platforms = platforms.all;
-    maintainers = with maintainers; [ wkennington ];
   };
 }

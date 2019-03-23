@@ -1,25 +1,36 @@
-{ stdenv, fetchurl, python, buildPythonPackage, mpi, openssh, isPy3k, isPyPy }:
+{ stdenv, fetchPypi, fetchpatch, python, buildPythonPackage, mpi, openssh }:
 
 buildPythonPackage rec {
-  name = "mpi4py-1.3.1";
+  pname = "mpi4py";
+  version = "3.0.0";
 
-  src = fetchurl {
-    url = "https://bitbucket.org/mpi4py/mpi4py/downloads/${name}.tar.gz";
-    sha256 = "e7bd2044aaac5a6ea87a87b2ecc73b310bb6efe5026031e33067ea3c2efc3507";
+  src = fetchPypi {
+    inherit pname version;
+    sha256 = "1mzgd26dfv4vwbci8gq77ss9f0x26i9aqzq9b9vs9ndxhlnv0mxl";
   };
 
   passthru = {
     inherit mpi;
   };
 
-  # The tests in the `test_spawn` module fail in the chroot build environment.
-  # However, they do pass in a pure, or non-pure nix-shell. Hence, we
-  # deactivate these particular tests.
-  # Unfortunately, the command-line arguments to `./setup.py test` are not
-  # correctly passed to the test-runner. Hence, these arguments are patched
-  # directly into `setup.py`.
-  patchPhase = ''
-    sed 's/err = main(cmd.args or \[\])/err = main(cmd.args or ["-v", "-e", "test_spawn"])/' -i setup.py
+  patches = [
+    (fetchpatch {
+      # Disable tests failing with 3.1.x and MPI_THREAD_MULTIPLE (upstream patch)
+      url = "https://bitbucket.org/mpi4py/mpi4py/commits/c2b6b7e642a182f9b00a2b8e9db363214470548a/raw";
+      sha256 = "0n6bz3kj4vcqb6q7d0mlj5vl6apn7i2bvfc9mpg59vh3wy47119q";
+    })
+    (fetchpatch {
+      # Open MPI: Workaround removal of MPI_{LB|UB} (upstream patch)
+      url = "https://bitbucket.org/mpi4py/mpi4py/commits/39ca784226460f9e519507269ebb29635dc8bd90/raw";
+      sha256 = "02kxikdlsrlq8yr5hca42536mxbrq4k4j8nqv7p1p2r0q21a919q";
+    })
+
+  ];
+
+  postPatch = ''
+    substituteInPlace test/test_spawn.py --replace \
+                      "unittest.skipMPI('openmpi(<3.0.0)')" \
+                      "unittest.skipMPI('openmpi')"
   '';
 
   configurePhase = "";
@@ -36,21 +47,20 @@ buildPythonPackage rec {
     # sometimes packages specify where files should be installed outside the usual
     # python lib prefix, we override that back so all infrastructure (setup hooks)
     # work as expected
+
+    # Needed to run the tests reliably. See:
+    # https://bitbucket.org/mpi4py/mpi4py/issues/87/multiple-test-errors-with-openmpi-30
+    export OMPI_MCA_rmaps_base_oversubscribe=yes
   '';
 
   setupPyBuildFlags = ["--mpicc=${mpi}/bin/mpicc"];
 
-  buildInputs = [ mpi ];
-  # Requires openssh for tests. Tests of dependent packages will also fail,
-  # if openssh is not present. E.g. h5py with mpi support.
-  propagatedBuildInputs = [ openssh ];
-
-  disabled = isPy3k || isPyPy;
+  nativeBuildInputs = [ mpi openssh ];
 
   meta = {
     description =
       "Python bindings for the Message Passing Interface standard";
-    homepage = "http://code.google.com/p/mpi4py/";
+    homepage = http://code.google.com/p/mpi4py/;
     license = stdenv.lib.licenses.bsd3;
   };
 }

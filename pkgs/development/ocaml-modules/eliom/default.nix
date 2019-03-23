@@ -1,39 +1,44 @@
-{ buildOcaml, stdenv, fetchurl, which, ocsigen_server, ocsigen_deriving, ocaml,
-  js_of_ocaml, ocaml_react, ocaml_lwt, calendar, cryptokit, tyxml,
-  ipaddr, ocamlnet, ocaml_ssl, ocaml_pcre, ocaml_optcomp,
-  reactivedata, opam, ppx_tools, ppx_deriving, camlp4}:
+{ stdenv, fetchurl, which, ocsigen_server, ocsigen_deriving, ocaml, lwt_camlp4,
+  lwt_react, cryptokit,
+  ipaddr, ocamlnet, ocaml_pcre,
+  opaline, ppx_tools, ppx_deriving, findlib
+, js_of_ocaml-ocamlbuild, js_of_ocaml-ppx, js_of_ocaml-ppx_deriving_json
+, js_of_ocaml-lwt
+, js_of_ocaml-tyxml
+, lwt_ppx
+}:
 
-let ocamlVersion = (stdenv.lib.getVersion ocaml); in
-buildOcaml rec
+stdenv.mkDerivation rec
 {
   pname = "eliom";
-  version = "5.0.0";
+  version = "6.4.0";
   name = "${pname}-${version}";
 
   src = fetchurl {
     url = "https://github.com/ocsigen/eliom/archive/${version}.tar.gz";
-    sha256 = "1g9wq2qpn0sgzyb6iq0h9afq5p68il4h8pc7jppqsislk87m09k7";
+    sha256 = "1ad7ympvj0cb51d9kbp4naxkld3gv8cfp4a037a5dr55761zdhdh";
   };
 
   patches = [ ./camlp4.patch ];
 
-  buildInputs = [ which ocaml_optcomp opam ppx_tools camlp4 ];
+  buildInputs = [ ocaml which findlib js_of_ocaml-ocamlbuild js_of_ocaml-ppx_deriving_json opaline ppx_tools
+    ocsigen_deriving
+  ];
 
-  propagatedBuildInputs = [ ocaml_lwt reactivedata tyxml ipaddr ocsigen_server ppx_deriving
-                            ocsigen_deriving js_of_ocaml
-                            calendar cryptokit ocamlnet ocaml_react ocaml_ssl ocaml_pcre ];
+  propagatedBuildInputs = [
+    js_of_ocaml-lwt
+    js_of_ocaml-ppx
+    js_of_ocaml-tyxml
+    lwt_camlp4
+    lwt_ppx
+    lwt_react
+    ocsigen_server
+    ppx_deriving
+  ];
 
-  preConfigure = stdenv.lib.optionalString (!stdenv.lib.versionAtLeast ocamlVersion "4.02") ''
-      export PPX=false
-    '';
+  installPhase = "opaline -prefix $out -libdir $OCAMLFIND_DESTDIR";
 
-  installPhase =
-  ''opam-installer --script --prefix=$out ${pname}.install > install.sh
-    sh install.sh
-    ln -s $out/lib/${pname} $out/lib/ocaml/${ocamlVersion}/site-lib/
-  '';
-
-  createFindlibDestdir = true;
+  setupHook = [ ./setup-hook.sh ];
 
   meta = {
     homepage = http://ocsigen.org/eliom/;

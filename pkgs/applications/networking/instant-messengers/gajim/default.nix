@@ -1,103 +1,70 @@
-{ stdenv, fetchurl, python, intltool, pkgconfig, libX11
-, ldns, pythonPackages
+{ lib, fetchurl, gettext, wrapGAppsHook
 
-, enableJingle ? true, farstream ? null, gst_plugins_bad ? null
-,                      libnice ? null
+# Native dependencies
+, python3, gtk3, gobject-introspection, gnome3
+
+# Test dependencies
+, xvfb_run, dbus
+
+# Optional dependencies
+, enableJingle ? true, farstream, gstreamer, gst-plugins-base, gst-libav, gst-plugins-ugly
 , enableE2E ? true
-, enableRST ? true
-, enableSpelling ? true, gtkspell2 ? null
-, enableNotifications ? false
+, enableSecrets ? true, libsecret
+, enableRST ? true, docutils
+, enableSpelling ? true, gspell
+, enableUPnP ? true, gupnp-igd
 , enableOmemoPluginDependencies ? true
-, extraPythonPackages ? pkgs: []
+, extraPythonPackages ? ps: []
 }:
 
-assert enableJingle -> farstream != null && gst_plugins_bad != null
-                    && libnice != null;
-assert enableE2E -> pythonPackages.pycrypto != null;
-assert enableRST -> pythonPackages.docutils != null;
-assert enableSpelling -> gtkspell2 != null;
-assert enableNotifications -> pythonPackages.notify != null;
-
-with stdenv.lib;
-
-stdenv.mkDerivation rec {
-  name = "gajim-${version}";
-  version = "0.16.6";
+python3.pkgs.buildPythonApplication rec {
+  pname = "gajim";
+  majorVersion = "1.1";
+  version = "${majorVersion}.2";
 
   src = fetchurl {
-    url = "http://www.gajim.org/downloads/0.16/gajim-${version}.tar.bz2";
-    sha256 = "1p3qwzy07f0wkika9yigyiq167l2k6wn12flqa7x55z4ihbysmqk";
+    url = "https://gajim.org/downloads/${majorVersion}/gajim-${version}.tar.bz2";
+    sha256 = "1lx03cgi58z54xb7mhs6bc715lc00w5mpysf9n3q8zgn759fm0rj";
   };
 
-  patches = [
-    (fetchurl {
-      name = "gajim-icon-index.patch";
-      url = "http://hg.gajim.org/gajim/raw-rev/b9ec78663dfb";
-      sha256 = "0w54hr5dq9y36val55kmh8d6cid7h4fs2nghx09714jylz2nyxxv";
-    })
-  ];
-
   postPatch = ''
-    sed -i -e '0,/^[^#]/ {
-      /^[^#]/i export \\\
-        GST_PLUGIN_PATH="'"\$GST_PLUGIN_PATH''${GST_PLUGIN_PATH:+:}${""
-        }$GST_PLUGIN_PATH"'"
-    }' scripts/gajim.in
-
-    sed -i -e 's/return helpers.is_in_path('"'"'drill.*/return True/' \
-      src/features_window.py
-    sed -i -e "s|'drill'|'${ldns}/bin/drill'|" src/common/resolver.py
-  '' + optionalString enableSpelling ''
-    sed -i -e 's|=.*find_lib.*|= "${gtkspell2}/lib/libgtkspell.so"|'   \
-      src/gtkspell.py
+    # This test requires network access
+    echo "" > test/integration/test_resolver.py
   '';
 
   buildInputs = [
-    python libX11
-  ] ++ optionals enableJingle [ farstream gst_plugins_bad libnice ];
+    gobject-introspection gtk3 gnome3.adwaita-icon-theme
+  ] ++ lib.optionals enableJingle [ farstream gstreamer gst-plugins-base gst-libav gst-plugins-ugly ]
+    ++ lib.optional enableSecrets libsecret
+    ++ lib.optional enableSpelling gspell
+    ++ lib.optional enableUPnP gupnp-igd;
 
   nativeBuildInputs = [
-    pythonPackages.wrapPython intltool pkgconfig
+    gettext wrapGAppsHook
   ];
 
-  propagatedBuildInputs = [
-    pythonPackages.pygobject2 pythonPackages.pyGtkGlade
-    pythonPackages.pyasn1
-    pythonPackages.pyxdg
-    pythonPackages.nbxmpp
-    pythonPackages.pyopenssl pythonPackages.dbus-python
-  ] ++ optional enableE2E pythonPackages.pycrypto
-    ++ optional enableRST pythonPackages.docutils
-    ++ optional enableNotifications pythonPackages.notify
-    ++ optionals enableOmemoPluginDependencies (with pythonPackages; [
-      cryptography python-axolotl python-axolotl-curve25519 qrcode
-    ]) ++ extraPythonPackages pythonPackages;
+  propagatedBuildInputs = with python3.pkgs; [
+    nbxmpp pyasn1 pygobject3 dbus-python pillow cssutils precis-i18n keyring
+  ] ++ lib.optionals enableE2E [ pycrypto python-gnupg ]
+    ++ lib.optional enableRST docutils
+    ++ lib.optionals enableOmemoPluginDependencies [ python-axolotl qrcode ]
+    ++ extraPythonPackages python3.pkgs;
 
-  postFixup = ''
-    install -m 644 -t "$out/share/gajim/icons/hicolor" \
-                      "icons/hicolor/index.theme"
+  checkInputs = [ xvfb_run dbus.daemon ];
 
-    buildPythonPath "$out"
-
-    for i in $out/bin/*; do
-      name="$(basename "$i")"
-      if [ "$name" = "gajim-history-manager" ]; then
-        name="history_manager"
-      fi
-
-      patchPythonScript "$out/share/gajim/src/$name.py"
-    done
+  checkPhase = ''
+    xvfb-run dbus-run-session \
+      --config-file=${dbus.daemon}/share/dbus-1/session.conf \
+      ${python3.interpreter} setup.py test
   '';
 
-  enableParallelBuilding = true;
-
   meta = {
-    homepage = "http://gajim.org/";
+    homepage = http://gajim.org/;
     description = "Jabber client written in PyGTK";
-    license = licenses.gpl3Plus;
-    maintainers = [ maintainers.raskin maintainers.aszlig ];
+    license = lib.licenses.gpl3Plus;
+    maintainers = with lib.maintainers; [ raskin aszlig abbradar ];
     downloadPage = "http://gajim.org/downloads.php";
     updateWalker = true;
-    platforms = stdenv.lib.platforms.linux;
+    platforms = lib.platforms.linux;
   };
 }

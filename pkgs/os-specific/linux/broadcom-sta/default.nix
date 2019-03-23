@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, fetchpatch, kernel }:
+{ stdenv, fetchurl, kernel }:
 
 let
   version = "6.30.223.271";
@@ -7,7 +7,7 @@ let
     x86_64-linux = "1gj485qqr190idilacpxwgqyw21il03zph2rddizgj7fbd6pfyaz";
   };
 
-  arch = stdenv.lib.optionalString (stdenv.system == "x86_64-linux") "_64";
+  arch = stdenv.lib.optionalString (stdenv.hostPlatform.system == "x86_64-linux") "_64";
   tarballVersion = stdenv.lib.replaceStrings ["."] ["_"] version;
   tarball = "hybrid-v35${arch}-nodebug-pcoem-${tarballVersion}.tar.gz";
 in
@@ -16,22 +16,26 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "https://docs.broadcom.com/docs-and-downloads/docs/linux_sta/${tarball}";
-    sha256 = hashes."${stdenv.system}";
+    sha256 = hashes.${stdenv.hostPlatform.system} or (throw "Unsupported system: ${stdenv.hostPlatform.system}");
   };
 
   hardeningDisable = [ "pic" ];
+
+  nativeBuildInputs = kernel.moduleBuildDependencies;
 
   patches = [
     ./i686-build-failure.patch
     ./license.patch
     ./linux-4.7.patch
+    # source: https://git.archlinux.org/svntogit/community.git/tree/trunk/004-linux48.patch?h=packages/broadcom-wl-dkms
+    ./linux-4.8.patch
+    # source: https://aur.archlinux.org/cgit/aur.git/tree/linux411.patch?h=broadcom-wl
+    ./linux-4.11.patch
+    # source: https://aur.archlinux.org/cgit/aur.git/tree/linux412.patch?h=broadcom-wl
+    ./linux-4.12.patch
+    ./linux-4.15.patch
     ./null-pointer-fix.patch
     ./gcc.patch
-    (fetchpatch {
-      name = "linux-4.8.patch";
-      url = "https://aur.archlinux.org/cgit/aur.git/plain/004-linux48.patch?h=broadcom-wl-dkms";
-      sha256 = "1g1gazxx67kxyw242cli6bf62il7ikzmf0w6v14k44j6b4bihcax";
-    })
   ];
 
   makeFlags = "KBASE=${kernel.dev}/lib/modules/${kernel.modDirVersion}";

@@ -1,45 +1,35 @@
-{stdenv, fetchurl, mesa, tcl, tk, file, libXmu, cmake, qt4, freetype}:
+{stdenv, fetchurl, libGLU_combined, tcl, tk, file, libXmu, cmake, libtool, qt4,
+ftgl, freetype}:
 
 stdenv.mkDerivation rec {
-  name = "opencascade-6.6.0";
+  name = "opencascade-oce-0.18.3";
   src = fetchurl {
-    url = http://files.opencascade.com/OCCT/OCC_6.6.0_release/OpenCASCADE660.tgz;
-    sha256 = "0q2xn915w9skv9sj74lxnyv9g3b0yi1j04majyzxk6sv4nra97z3";
+    url = https://github.com/tpaviot/oce/archive/OCE-0.18.3.tar.gz;
+    sha256 = "0v4ny0qhr5hiialb2ss25bllfnd6j4g7mfxnqfmr1xsjpykxcly5";
   };
 
-  buildInputs = [ cmake mesa tcl tk file libXmu qt4 freetype ];
+  buildInputs = [ libGLU_combined tcl tk file libXmu libtool qt4 ftgl freetype cmake ];
 
-  sourceRoot = "ros/adm/cmake";
+  # Fix for glibc 2.26
+  postPatch = ''
+    sed -i -e 's/^\( *#include <\)x\(locale.h>\)//' \
+      src/Standard/Standard_CLocaleSentry.hxx
+  '';
 
-  cmakeFlags = [
-    "-D3RDPARTY_TCL_DIR=${tcl}"
-    "-D3RDPARTY_FREETYPE_DIR=${freetype.dev}"
-
-    # Not used on Linux but must be defined during configuration.
-    "-D3RDPARTY_FREETYPE_DLL=${freetype.dev}"
-  ];
+  preConfigure = ''
+    cmakeFlags="$cmakeFlags -DOCE_INSTALL_PREFIX=$out"
+  '';
 
   # https://bugs.freedesktop.org/show_bug.cgi?id=83631
   NIX_CFLAGS_COMPILE = "-DGLX_GLXEXT_LEGACY";
 
-  hardeningDisable = [ "format" ];
-
-  preConfigure = ''
-    cmakeFlags="$cmakeFlags -DINSTALL_DIR=$out"
-  '';
-
-  postInstall = ''
-    mv $out/inc $out/include
-    mkdir -p $out/share/doc/${name}
-    cp -R ../../../doc $out/share/doc/${name}
-  '';
-
   enableParallelBuilding = true;
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "Open CASCADE Technology, libraries for 3D modeling and numerical simulation";
     homepage = http://www.opencascade.org/;
-    maintainers = with stdenv.lib.maintainers; [viric];
-    platforms = with stdenv.lib.platforms; linux;
+    maintainers = [ maintainers.viric ];
+    platforms = platforms.linux;
+    license = licenses.lgpl21;
   };
 }

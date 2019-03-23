@@ -1,14 +1,31 @@
-{ stdenv, fetchurl, libpcap }:
+{ stdenv, fetchFromGitHub, autoreconfHook, libpcap, makeWrapper, perlPackages }:
 
 stdenv.mkDerivation rec {
-  name = "arp-scan-1.9";
+  name = "arp-scan-${version}";
+  version = "1.9.5";
 
-  src = fetchurl {
-    url = "http://www.nta-monitor.com/files/arp-scan/${name}.tar.gz";
-    sha256 = "14nqjzbmnlx2nac7lwa93y5m5iqk3layakyxyvfmvs283k3qm46f";
+  src = fetchFromGitHub {
+    owner = "royhills";
+    repo = "arp-scan";
+    rev = "4de863c2627a05177eda7159692a588f9f520cd1";
+    sha256 = "15zpfdybk2kh98shqs8qqd0f9nyi2ch2wcyv729rfj7yp0hif5mb";
   };
 
-  buildInputs = [ libpcap ];
+  perlModules = with perlPackages; [
+    HTTPDate
+    HTTPMessage
+    LWP
+    URI
+  ];
+
+  nativeBuildInputs = [ autoreconfHook ];
+  buildInputs = [ libpcap makeWrapper ];
+
+  postInstall = ''
+    for name in get-{oui,iab}; do
+      wrapProgram "$out/bin/$name" --set PERL5LIB "${perlPackages.makePerlPath perlModules }"
+    done;
+  '';
 
   meta = with stdenv.lib; {
     description = "ARP scanning and fingerprinting tool";
@@ -16,9 +33,9 @@ stdenv.mkDerivation rec {
       Arp-scan is a command-line tool that uses the ARP protocol to discover
       and fingerprint IP hosts on the local network.
     '';
-    homepage = http://www.nta-monitor.com/tools-resources/security-tools/arp-scan;
+    homepage = http://www.nta-monitor.com/wiki/index.php/Arp-scan_Documentation;
     license = licenses.gpl3;
     platforms = platforms.linux;
-    maintainers = [ maintainers.bjornfor ];
+    maintainers = with maintainers; [ bjornfor mikoim ];
   };
 }

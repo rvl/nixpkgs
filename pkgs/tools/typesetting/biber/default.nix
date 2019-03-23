@@ -1,43 +1,34 @@
-{ stdenv, fetchFromGitHub, buildPerlPackage, autovivification, BusinessISBN
-, BusinessISMN, BusinessISSN, ConfigAutoConf, DataCompare, DataDump, DateSimple
-, EncodeEUCJPASCII, EncodeHanExtra, EncodeJIS2K, ExtUtilsLibBuilder
-, FileSlurp, IPCRun3, Log4Perl, LWPProtocolHttps, ListAllUtils, ListMoreUtils
-, ModuleBuild, MozillaCA, ReadonlyXS, RegexpCommon, TextBibTeX, UnicodeCollate
-, UnicodeLineBreak, URI, XMLLibXMLSimple, XMLLibXSLT, XMLWriter, ClassAccessor
-, TextRoman, DataUniqid, LinguaTranslit, UnicodeNormalize }:
+{ stdenv, fetchFromGitHub, perlPackages, texlive }:
 
 let
-  version = "2.5";
+  biberSource = stdenv.lib.head (builtins.filter (p: p.tlType == "source") texlive.biber.pkgs);
 in
-buildPerlPackage {
-  name = "biber-${version}";
-  src = fetchFromGitHub {
-    owner = "plk";
-    repo = "biber";
-    rev = "v${version}";
-    sha256 = "1ldkszsr2n11nib4nvmpvsxmvp0qd9w3lxijyqlf01cfaryjdzgr";
-  };
 
-  buildInputs = [
+perlPackages.buildPerlModule rec {
+  name = "biber-${version}";
+  inherit (biberSource) version;
+
+  src = "${biberSource}/source/bibtex/biber/biblatex-biber.tar.gz";
+
+  buildInputs = with perlPackages; [
     autovivification BusinessISBN BusinessISMN BusinessISSN ConfigAutoConf
     DataCompare DataDump DateSimple EncodeEUCJPASCII EncodeHanExtra EncodeJIS2K
-    ExtUtilsLibBuilder FileSlurp IPCRun3 Log4Perl LWPProtocolHttps ListAllUtils
-    ListMoreUtils ModuleBuild MozillaCA ReadonlyXS RegexpCommon TextBibTeX
-    UnicodeCollate UnicodeLineBreak URI XMLLibXMLSimple XMLLibXSLT XMLWriter
-    ClassAccessor TextRoman DataUniqid LinguaTranslit UnicodeNormalize
+    DateTime DateTimeFormatBuilder DateTimeCalendarJulian
+    ExtUtilsLibBuilder FileSlurper FileWhich IPCRun3 LogLog4perl LWPProtocolHttps ListAllUtils
+    ListMoreUtils MozillaCA ReadonlyXS RegexpCommon TextBibTeX
+    UnicodeLineBreak URI XMLLibXMLSimple XMLLibXSLT XMLWriter
+    ClassAccessor TextCSV TextCSV_XS TextRoman DataUniqid LinguaTranslit SortKey
+    TestDifferences
   ];
-  preConfigure = "touch Makefile.PL";
-  buildPhase = "perl Build.PL --prefix=$out; ./Build build";
-  checkPhase = "./Build test";
-  installPhase = "./Build install";
 
-  # Tests seem to be broken
-  doCheck = false;
+  checkInputs = with perlPackages; [
+    UnicodeCollate
+  ];
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "Backend for BibLaTeX";
-    license = with stdenv.lib.licenses; [ artistic1 gpl1Plus ];
-    platforms = stdenv.lib.platforms.unix;
-    maintainers = [ stdenv.lib.maintainers.ttuegel ];
+    license = with licenses; [ artistic1 gpl1Plus ];
+    platforms = platforms.unix;
+    maintainers = [ maintainers.ttuegel ];
   };
 }

@@ -1,4 +1,4 @@
-{ stdenv, fetchzip, vim, avrdude, avrgcclibc, makeWrapper }:
+{ stdenv, fetchzip, vim, makeWrapper }:
 
 stdenv.mkDerivation rec {
   name = "microscheme-${version}";
@@ -14,9 +14,6 @@ stdenv.mkDerivation rec {
 
   installPhase = ''
     make install PREFIX=$out
-
-    wrapProgram $out/bin/microscheme \
-      --prefix PATH : "${stdenv.lib.makeBinPath [ avrdude avrgcclibc ]}"
   '';
 
   meta = with stdenv.lib; {

@@ -1,25 +1,50 @@
-{ stdenv, fetchurl, gettext }:
+{ stdenv, lib, fetchpatch, buildPackages, fetchurl, gettext
+, genPosixLockObjOnly ? false
+}: let
+  genPosixLockObjOnlyAttrs = lib.optionalAttrs genPosixLockObjOnly {
+    buildPhase = ''
+      cd src
+      make gen-posix-lock-obj
+    '';
 
-stdenv.mkDerivation rec {
+    installPhase = ''
+      mkdir -p $out/bin
+      install -m755 gen-posix-lock-obj $out/bin
+    '';
+
+    outputs = [ "out" ];
+    outputBin = "out";
+  };
+in stdenv.mkDerivation (rec {
   name = "libgpg-error-${version}";
-  version = "1.24";
+  version = "1.34";
 
   src = fetchurl {
     url = "mirror://gnupg/libgpg-error/${name}.tar.bz2";
-    sha256 = "0h75sf1ngr750c3fjfn4583q7wz40qm63jhg8vjfdrbx936f2s4j";
+    sha256 = "10cc76y7zi6wsdmpy1abf3i0q17bj59q5ysy8cpnpf3ixsfpk006";
   };
 
-  postPatch = "sed '/BUILD_TIMESTAMP=/s/=.*/=1970-01-01T00:01+0000/' -i ./configure";
+  postPatch = ''
+    sed '/BUILD_TIMESTAMP=/s/=.*/=1970-01-01T00:01+0000/' -i ./configure
+  '' + lib.optionalString (stdenv.hostPlatform.isAarch32 && stdenv.buildPlatform != stdenv.hostPlatform) ''
+    ln -s lock-obj-pub.arm-unknown-linux-gnueabi.h src/syscfg/lock-obj-pub.linux-gnueabihf.h
+  '' + lib.optionalString (stdenv.hostPlatform.isx86_64 && stdenv.hostPlatform.isMusl) ''
+    ln -s lock-obj-pub.x86_64-pc-linux-musl.h src/syscfg/lock-obj-pub.linux-musl.h
+  '' + lib.optionalString (stdenv.hostPlatform.isAarch32 && stdenv.hostPlatform.isMusl) ''
+    ln -s src/syscfg/lock-obj-pub.arm-unknown-linux-gnueabi.h src/syscfg/lock-obj-pub.arm-unknown-linux-musleabihf.h
+    ln -s src/syscfg/lock-obj-pub.arm-unknown-linux-gnueabi.h src/syscfg/lock-obj-pub.linux-musleabihf.h
+  '';
 
   outputs = [ "out" "dev" "info" ];
   outputBin = "dev"; # deps want just the lib, most likely
 
   # If architecture-dependent MO files aren't available, they're generated
   # during build, so we need gettext for cross-builds.
-  crossAttrs.buildInputs = [ gettext ];
+  depsBuildBuild = [ buildPackages.stdenv.cc ];
+  nativeBuildInputs = [ gettext ];
 
   postConfigure =
-    stdenv.lib.optionalString stdenv.isSunOS
+    lib.optionalString stdenv.isSunOS
     # For some reason, /bin/sh on OpenIndiana leads to this at the end of the
     # `config.status' run:
     #   ./config.status[1401]: shift: (null): bad number
@@ -27,10 +52,10 @@ stdenv.mkDerivation rec {
     # Thus, re-run it with Bash.
       "${stdenv.shell} config.status";
 
-  doCheck = true;
+  doCheck = true; # not cross
 
   meta = with stdenv.lib; {
-    homepage = "https://www.gnupg.org/related_software/libgpg-error/index.html";
+    homepage = https://www.gnupg.org/related_software/libgpg-error/index.html;
     description = "A small library that defines common error values for all GnuPG components";
 
     longDescription = ''
@@ -44,5 +69,4 @@ stdenv.mkDerivation rec {
     platforms = platforms.all;
     maintainers = [ maintainers.fuuzetsu maintainers.vrthra ];
   };
-}
-
+} // genPosixLockObjOnlyAttrs)

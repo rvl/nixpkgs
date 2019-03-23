@@ -1,15 +1,23 @@
-{stdenv, fetchurl, ocaml, libgcrypt, fetchFromGitHub, ocamlPackages, perl}:
+{ stdenv, libgcrypt, fetchFromGitHub, ocamlPackages, perl }:
 stdenv.mkDerivation rec {
   name = "obliv-c-${version}";
-  version = "0.0pre20161001";
-  buildInputs = [ ocaml ocamlPackages.findlib perl ];
+  version = "0.0pre20180624";
+  buildInputs = [ perl ]
+  ++ (with ocamlPackages; [ ocaml findlib ocamlbuild ]);
   propagatedBuildInputs = [ libgcrypt ];
   src = fetchFromGitHub {
     owner = "samee";
     repo = "obliv-c";
-    rev = "32d71fb46983aded604045e8cda7874d8fb160a2";
-    sha256 = "05bicvalsfabngvf41q02bcyzkibmyihj7naqd53kdq75xa1yf37";
+    rev = "3d6804ca0fd85868207a0ccbd2509ec064723ac2";
+    sha256 = "1ib21ngn7zr58xxq4sjigrpaxb0wx35x3k9l4qvwflzrmvnman20";
   };
+
+  patches = [ ./ignore-complex-float128.patch ];
+
+  preBuild = ''
+    patchShebangs .
+  '';
+
   preInstall = ''
     mkdir -p "$out/bin"
     cp bin/* "$out/bin"
@@ -23,6 +31,7 @@ stdenv.mkDerivation rec {
     gcc $(ar t _build/libobliv.a | sed -e 's@^@_build/@') --shared -o _build/libobliv.so
     cp _build/lib*.a _build/lib*.so* "$out/lib"
   '';
+
   meta = {
     inherit version;
     description = ''A GCC wrapper that makes it easy to embed secure computation protocols inside regular C programs'';

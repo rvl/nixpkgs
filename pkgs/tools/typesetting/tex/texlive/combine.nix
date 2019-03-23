@@ -14,9 +14,12 @@ let
   };
   pkgList = rec {
     all = lib.filter pkgFilter (combinePkgs pkgSet);
-    splitBin = lib.partition (p: p.tlType == "bin") all;
-    bin = mkUniquePkgs splitBin.right;
-    nonbin = mkUniquePkgs splitBin.wrong;
+    splitBin = builtins.partition (p: p.tlType == "bin") all;
+    bin = mkUniqueOutPaths splitBin.right
+      ++ lib.optional
+          (lib.any (p: p.tlType == "run" && p.pname == "pdfcrop") splitBin.wrong)
+          (lib.getBin ghostscript);
+    nonbin = mkUniqueOutPaths splitBin.wrong;
 
     # extra interpreters needed for shebangs, based on 2015 schemes "medium" and "tetex"
     # (omitted tk needed in pname == "epspdf", bin/epspdftk)
@@ -25,12 +28,19 @@ let
     pkgNeedsRuby = pkg: pkg.tlType == "run" && pkg.pname == "match-parens";
     extraInputs =
       lib.optional (lib.any pkgNeedsPython splitBin.wrong) python
-      ++ lib.optional (lib.any pkgNeedsPython splitBin.wrong) ruby;
+      ++ lib.optional (lib.any pkgNeedsRuby splitBin.wrong) ruby;
   };
 
-  mkUniquePkgs = pkgs: fastUnique (a: b: a < b) # highlighting hack: >
-    # here we deal with those dummy packages needed for hyphenation filtering
-    (map (p: if lib.isDerivation p then builtins.toPath p else "") pkgs);
+  # TODO: replace by buitin once it exists
+  fastUnique = comparator: list: with lib;
+    let un_adj = l: if length l < 2 then l
+      else optional (head l != elemAt l 1) (head l) ++ un_adj (tail l);
+    in un_adj (lib.sort comparator list);
+
+  uniqueStrings = fastUnique (a: b: a < b);
+
+  mkUniqueOutPaths = pkgs: uniqueStrings
+    (map (p: p.outPath) (builtins.filter lib.isDerivation pkgs));
 
 in buildEnv {
   name = "texlive-${extraName}-${bin.texliveYear}";
@@ -111,6 +121,7 @@ in buildEnv {
         -e "s,\$SELFAUTODIR,$out/share,g" \
         -e "s,\$SELFAUTOPARENT,$out/share,g" \
         -e "s,\$SELFAUTOGRANDPARENT,$out/share,g" \
+        -e "/^mpost,/d" `# CVE-2016-10243` \
         "$cnfOrig" > ./texmf.cnf
 
       patchCnfLua "./texmfcnf.lua"
@@ -121,10 +132,15 @@ in buildEnv {
     # updmap.cfg seems like not needing changes
 
     # now filter hyphenation patterns, in a hacky way ATM
-  (let script =
-    writeText "hyphens.sed" (
-      lib.concatMapStrings (pkg: "/^\% from ${pkg.pname}/,/^\%/p;\n") pkgList.splitBin.wrong
-      + "1,/^\% from/p;" );
+  (let
+    pnames = uniqueStrings (map (p: p.pname) pkgList.splitBin.wrong);
+    script =
+      writeText "hyphens.sed" (
+        # pick up the header
+        "1,/^\% from/p;"
+        # pick up all sections matching packages that we combine
+        + lib.concatMapStrings (pname: "/^\% from ${pname}:$/,/^\%/p;\n") pnames
+      );
   in ''
     (
       cd ./share/texmf/tex/generic/config/
@@ -154,18 +170,24 @@ in buildEnv {
         --prefix PERL5LIB : "$out/share/texmf/scripts/texlive"
 
       # avoid using non-nix shebang in $target by calling interpreter
-      if [[ "$(head -c 2 $target)" = "#!" ]]; then
-        local cmdline="$(head -n 1 $target | sed 's/^\#\! *//;s/ *$//')"
+      if [[ "$(head -c 2 "$target")" = "#!" ]]; then
+        local cmdline="$(head -n 1 "$target" | sed 's/^\#\! *//;s/ *$//')"
         local relative=`basename "$cmdline" | sed 's/^env //' `
         local newInterp=`echo "$relative" | cut -d\  -f1`
         local params=`echo "$relative" | cut -d\  -f2- -s`
-        local newPath="$(type -P $newInterp)"
+        local newPath="$(type -P "$newInterp")"
         if [[ -z "$newPath" ]]; then
           echo " Warning: unknown shebang '$cmdline' in '$target'"
           continue
         fi
         echo " and patching shebang '$cmdline'"
         sed "s|^exec |exec $newPath $params |" -i "$link"
+
+      elif head -n 1 "$target" | grep -q 'exec perl'; then
+        # see #24343 for details of the problem
+        echo " and patching weird perl shebang"
+        sed "s|^exec |exec '${perl}/bin/perl' -w |" -i "$link"
+
       else
         sed 's|^exec |exec -a "$0" |' -i "$link"
         echo
@@ -191,7 +213,7 @@ in buildEnv {
 
     perl `type -P mktexlsr.pl` ./share/texmf
     texlinks.sh "$out/bin" && wrapBin
-    perl `type -P fmtutil.pl` --sys --refresh | grep '^fmtutil' # too verbose
+    (perl `type -P fmtutil.pl` --sys --all || true) | grep '^fmtutil' # too verbose
     #texlinks.sh "$out/bin" && wrapBin # do we need to regenerate format links?
     perl `type -P updmap.pl` --sys --syncwithtrees --force
     perl `type -P mktexlsr.pl` ./share/texmf-* # to make sure
@@ -208,8 +230,29 @@ in buildEnv {
         ln -sv "$(realpath $s)" "$out/bin/$tName" # wrapped below
       done
     )
+  '' +
+    # A hacky way to provide repstopdf
+    #  * Copy is done to have a correct "$0" so that epstopdf enables the restricted mode
+    #  * ./bin/repstopdf needs to be a symlink to be processed by wrapBin
+  ''
+    if [[ -e ./bin/epstopdf ]]; then
+      cp $(realpath ./bin/epstopdf) ./share/texmf/scripts/repstopdf
+      ln -s "$out"/share/texmf/scripts/repstopdf ./bin/repstopdf
+    fi
+  '' +
+    # finish up the wrappers
+  ''
     rm "$out"/bin/*-sys
     wrapBin
+  '' +
+    # Perform a small test to verify that the restricted mode get enabled when
+    # needed (detected by checking if it disallows --gscmd)
+  ''
+    if [[ -e ./bin/epstopdf ]]; then
+      echo "Testing restricted mode for {,r}epstopdf"
+      ! (epstopdf --gscmd echo /dev/null 2>&1 || true) | grep forbidden
+      (repstopdf --gscmd echo /dev/null 2>&1 || true) | grep forbidden
+    fi
   '' +
   # TODO: a context trigger https://www.preining.info/blog/2015/06/debian-tex-live-2015-the-new-layout/
     # http://wiki.contextgarden.net/ConTeXt_Standalone#Unix-like_platforms_.28Linux.2FMacOS_X.2FFreeBSD.2FSolaris.29
@@ -225,10 +268,22 @@ in buildEnv {
         ln -s -t . ../texmf/doc/"$d"/*
       )
     done
+  '' +
+  # MkIV uses its own lookup mechanism and we need to initialize
+  # caches for it. Unsetting TEXMFCNF is needed to let mtxrun
+  # determine it from kpathsea so that the config path is given with
+  # "selfautodir:" as it will be in runtime. This is important because
+  # the cache is identified by a hash of this path.
+  ''
+    if [[ -e "$out/bin/mtxrun" ]]; then
+      (
+        unset TEXMFCNF
+        mtxrun --generate
+      )
+    fi
   ''
     + bin.cleanBrokenLinks
   ;
 }
 # TODO: make TeX fonts visible by fontconfig: it should be enough to install an appropriate file
 #       similarly, deal with xe(la)tex font visibility?
-

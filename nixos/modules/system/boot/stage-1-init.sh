@@ -8,6 +8,14 @@ export LD_LIBRARY_PATH=@extraUtils@/lib
 export PATH=@extraUtils@/bin
 ln -s @extraUtils@/bin /bin
 
+# Copy the secrets to their needed location
+if [ -d "@extraUtils@/secrets" ]; then
+    for secret in $(cd "@extraUtils@/secrets"; find . -type f); do
+        mkdir -p $(dirname "/$secret")
+        ln -s "@extraUtils@/secrets/$secret" "$secret"
+    done
+fi
+
 # Stop LVM complaining about fd3
 export LVM_SUPPRESS_FD_WARNINGS=true
 
@@ -65,6 +73,32 @@ touch /etc/fstab # to shut up mount
 ln -s /proc/mounts /etc/mtab # to shut up mke2fs
 touch /etc/udev/hwdb.bin # to shut up udev
 touch /etc/initrd-release
+
+# Function for waiting a device to appear.
+waitDevice() {
+    local device="$1"
+
+    # USB storage devices tend to appear with some delay.  It would be
+    # great if we had a way to synchronously wait for them, but
+    # alas...  So just wait for a few seconds for the device to
+    # appear.
+    if test ! -e $device; then
+        echo -n "waiting for device $device to appear..."
+        try=20
+        while [ $try -gt 0 ]; do
+            sleep 1
+            # also re-try lvm activation now that new block devices might have appeared
+            lvm vgchange -ay
+            # and tell udev to create nodes for the new LVs
+            udevadm trigger --action=add
+            if test -e $device; then break; fi
+            echo -n "."
+            try=$((try - 1))
+        done
+        echo
+        [ $try -ne 0 ]
+    fi
+}
 
 # Mount special file systems.
 specialMount() {
@@ -146,6 +180,9 @@ for o in $(cat /proc/cmdline); do
             fi
             ln -s "$root" /dev/root
             ;;
+        copytoram)
+            copytoram=1
+            ;;
     esac
 done
 
@@ -156,6 +193,7 @@ done
 # Load the required kernel modules.
 mkdir -p /lib
 ln -s @modulesClosure@/lib/modules /lib/modules
+ln -s @modulesClosure@/lib/firmware /lib/firmware
 echo @extraUtils@/bin/modprobe > /proc/sys/kernel/modprobe
 for i in @kernelModules@; do
     echo "loading module $(basename $i)..."
@@ -208,7 +246,10 @@ checkFS() {
     if [ "$fsType" = iso9660 -o "$fsType" = udf ]; then return 0; fi
 
     # Don't check resilient COWs as they validate the fs structures at mount time
-    if [ "$fsType" = btrfs -o "$fsType" = zfs ]; then return 0; fi
+    if [ "$fsType" = btrfs -o "$fsType" = zfs -o "$fsType" = bcachefs ]; then return 0; fi
+
+    # Skip fsck for nilfs2 - not needed by design and no fsck tool for this filesystem.
+    if [ "$fsType" = nilfs2 ]; then return 0; fi
 
     # Skip fsck for inherently readonly filesystems.
     if [ "$fsType" = squashfs ]; then return 0; fi
@@ -216,6 +257,13 @@ checkFS() {
     # If we couldn't figure out the FS type, then skip fsck.
     if [ "$fsType" = auto ]; then
         echo 'cannot check filesystem with type "auto"!'
+        return 0
+    fi
+
+    # Device might be already mounted manually 
+    # e.g. NBD-device or the host filesystem of the file which contains encrypted root fs
+    if mount | grep -q "^$device on "; then
+        echo "skip checking already mounted $device"
         return 0
     fi
 
@@ -290,7 +338,12 @@ mountFS() {
         *x-nixos.autoresize*)
             if [ "$fsType" = ext2 -o "$fsType" = ext3 -o "$fsType" = ext4 ]; then
                 echo "resizing $device..."
+                e2fsck -fp "$device"
                 resize2fs "$device"
+            elif [ "$fsType" = f2fs ]; then
+                echo "resizing $device..."
+                fsck.f2fs -fp "$device"
+                resize.f2fs "$device" 
             fi
             ;;
     esac
@@ -361,40 +414,7 @@ lustrateRoot () {
     exec 4>&-
 }
 
-# Function for waiting a device to appear.
-waitDevice() {
-    local device="$1"
 
-    # USB storage devices tend to appear with some delay.  It would be
-    # great if we had a way to synchronously wait for them, but
-    # alas...  So just wait for a few seconds for the device to
-    # appear.
-    if test ! -e $device; then
-        echo -n "waiting for device $device to appear..."
-        try=20
-        while [ $try -gt 0 ]; do
-            sleep 1
-            # also re-try lvm activation now that new block devices might have appeared
-            lvm vgchange -ay
-            # and tell udev to create nodes for the new LVs
-            udevadm trigger --action=add
-            if test -e $device; then break; fi
-            echo -n "."
-            try=$((try - 1))
-        done
-        echo
-        [ $try -ne 0 ]
-    fi
-}
-
-
-# Try to resume - all modules are loaded now.
-if test -e /sys/power/tuxonice/resume; then
-    if test -n "$(cat /sys/power/tuxonice/resume)"; then
-        echo 0 > /sys/power/tuxonice/user_interface/enabled
-        echo 1 > /sys/power/tuxonice/do_resume || echo "failed to resume..."
-    fi
-fi
 
 if test -e /sys/power/resume -a -e /sys/power/disk; then
     if test -n "@resumeDevice@" && waitDevice "@resumeDevice@"; then
@@ -465,6 +485,22 @@ while read -u 3 mountPoint; do
     # Wait once more for the udev queue to empty, just in case it's
     # doing something with $device right now.
     udevadm settle
+
+    # If copytoram is enabled: skip mounting the ISO and copy its content to a tmpfs.
+    if [ -n "$copytoram" ] && [ "$device" = /dev/root ] && [ "$mountPoint" = /iso ]; then
+      fsType=$(blkid -o value -s TYPE "$device")
+      fsSize=$(blockdev --getsize64 "$device")
+
+      mkdir -p /tmp-iso
+      mount -t "$fsType" /dev/root /tmp-iso
+      mountFS tmpfs /iso size="$fsSize" tmpfs
+
+      cp -r /tmp-iso/* /mnt-root/iso/
+
+      umount /tmp-iso
+      rmdir /tmp-iso
+      continue
+    fi
 
     mountFS "$device" "$mountPoint" "$options" "$fsType"
 done

@@ -1,28 +1,37 @@
-{ stdenv, fetchurl, ncurses, ocamlPackages, graphviz
-, ltl2ba, coq, alt-ergo, why3 }:
+{ stdenv, fetchurl, makeWrapper, ncurses, ocamlPackages, graphviz
+, ltl2ba, coq, why3, autoconf
+}:
+
+let
+  mkocamlpath = p: "${p}/lib/ocaml/${ocamlPackages.ocaml.version}/site-lib";
+  ocamlpath = "${mkocamlpath ocamlPackages.apron}:${mkocamlpath ocamlPackages.mlgmpidl}";
+in
 
 stdenv.mkDerivation rec {
   name    = "frama-c-${version}";
-  version = "20160501";
-  slang   = "Aluminium";
+  version = "18.0";
+  slang   = "Argon";
 
   src = fetchurl {
-    url    = "http://frama-c.com/download/frama-c-${slang}-${version}.tar.gz";
-    sha256 = "02z4d1lg2cs4hgbjx74crfrabv39dyhdrq5lvhv0q3hx5c8w7p90";
+    url    = "http://frama-c.com/download/frama-c-${version}-${slang}.tar.gz";
+    sha256 = "0a88k2mhafj7pz3dzgsqkrc9digkxpnvr9jqq9nbzwq8qr02bca2";
   };
 
   why2 = fetchurl {
-    url    = "http://why.lri.fr/download/why-2.34.tar.gz";
-    sha256 = "1335bhq9v3h46m8aba2c5myi9ghm87q41in0m15xvdrwq5big1jg";
+    url    = "http://why.lri.fr/download/why-2.40.tar.gz";
+    sha256 = "0h1mbpxsgwvf3pbl0qbg22j6f4v1ffka24ap1ajbjk9b1yb3ali8";
   };
 
+  nativeBuildInputs = [ autoconf makeWrapper ];
+
   buildInputs = with ocamlPackages; [
-    ncurses ocaml findlib alt-ergo ltl2ba ocamlgraph
-    lablgtk coq graphviz zarith why3 zarith
+    ncurses ocaml findlib ltl2ba ocamlgraph
+    lablgtk coq graphviz zarith why3 apron
   ];
 
 
-  enableParallelBuilding = true;
+  # Experimentally, the build segfaults with high core counts
+  enableParallelBuilding = false;
 
   unpackPhase = ''
     tar xf $src
@@ -32,26 +41,33 @@ stdenv.mkDerivation rec {
   buildPhase = ''
     cd frama*
     ./configure --prefix=$out
-    make -j$NIX_BUILD_CORES
+    # It is not parallel safe
+    make
     make install
     cd ../why*
     FRAMAC=$out/bin/frama-c ./configure --prefix=$out
     make
     make install
+    for p in $out/bin/frama-c{,-gui};
+    do
+      wrapProgram $p --prefix OCAMLPATH ':' ${ocamlpath}
+    done
   '';
-
 
   # Enter frama-c directory before patching
   prePatch = ''cd frama*'';
+  patches = [ ./dynamic.diff ];
   postPatch = ''
     # strip absolute paths to /usr/bin
-    for file in ./configure ./share/Makefile.common ./src/*/configure; do
+    for file in ./configure ./share/Makefile.common ./src/*/configure; do #*/
       substituteInPlace $file  --replace '/usr/bin/' ""
     done
 
     substituteInPlace ./src/plugins/aorai/aorai_register.ml --replace '"ltl2ba' '"${ltl2ba}/bin/ltl2ba'
 
     cd ../why*
+
+    substituteInPlace ./Makefile.in --replace '-warn-error A' '-warn-error A-3'    
     substituteInPlace ./frama-c-plugin/Makefile --replace 'shell frama-c' "shell $out/bin/frama-c"
     substituteInPlace ./jc/jc_make.ml --replace ' why-dp '       " $out/bin/why-dp "
     substituteInPlace ./jc/jc_make.ml --replace "?= why@\n"      "?= $out/bin/why@\n"

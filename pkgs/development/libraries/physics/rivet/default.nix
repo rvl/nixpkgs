@@ -2,16 +2,12 @@
 
 stdenv.mkDerivation rec {
   name = "rivet-${version}";
-  version = "2.5.3";
+  version = "2.7.0";
 
   src = fetchurl {
-    url = "http://www.hepforge.org/archive/rivet/Rivet-${version}.tar.bz2";
-    sha256 = "1r0x575ivvm68nnh9qlfvdra5298i047qcbxcg37ki2aaqq07qcr";
+    url = "https://www.hepforge.org/archive/rivet/Rivet-${version}.tar.bz2";
+    sha256 = "1bxcb99a3l5d2gl93zgfzgw6v95kx1ss5045mkz3ciyw8w5nmb9l";
   };
-
-  postPatch = "patchShebangs ./src/Analyses/cat_with_lines";
-
-  pythonPath = []; # python wrapper support
 
   patches = [
     ./darwin.patch # configure relies on impure sw_vers to -Dunix
@@ -28,8 +24,17 @@ stdenv.mkDerivation rec {
     xcolor
     xkeyval
     ;};
-  buildInputs = [ ghostscript hepmc imagemagick python2 latex makeWrapper ];
-  propagatedBuildInputs = [ fastjet gsl yoda ];
+  buildInputs = [ hepmc imagemagick python2 latex makeWrapper ];
+  propagatedBuildInputs = [ fastjet ghostscript gsl yoda ];
+
+  preConfigure = ''
+    substituteInPlace analyses/Makefile.in \
+      --replace "!(tmp)" ""
+    substituteInPlace bin/rivet-buildplugin.in \
+      --replace 'which' '"${which}/bin/which"' \
+      --replace 'mycxx=' 'mycxx=${stdenv.cc}/bin/${if stdenv.cc.isClang or false then "clang++" else "g++"}  #' \
+      --replace 'mycxxflags="' "mycxxflags=\"-std=c++11 $NIX_CFLAGS_COMPILE $NIX_CXXSTDLIB_COMPILE $NIX_CFLAGS_LINK "
+  '';
 
   preInstall = ''
     substituteInPlace bin/make-plots \
@@ -42,10 +47,6 @@ stdenv.mkDerivation rec {
       --replace '"convert"' '"${imagemagick.out}/bin/convert"'
     substituteInPlace bin/rivet \
       --replace '"less"' '"${less}/bin/less"'
-    substituteInPlace bin/rivet-buildplugin \
-      --replace '"which"' '"${which}/bin/which"' \
-      --replace 'mycxx=' 'mycxx=${stdenv.cc}/bin/${if stdenv.cc.isClang or false then "clang++" else "g++"}  #' \
-      --replace 'mycxxflags="' "mycxxflags=\"-std=c++11 $NIX_CFLAGS_COMPILE $NIX_CXXSTDLIB_COMPILE $NIX_CFLAGS_LINK "
     substituteInPlace bin/rivet-mkhtml \
       --replace '"make-plots"' \"$out/bin/make-plots\" \
       --replace '"rivet-cmphistos"' \"$out/bin/rivet-cmphistos\"

@@ -1,18 +1,21 @@
-{ stdenv, fetchurl, openssl, lua, pcre }:
+{ stdenv, fetchFromGitHub, openssl, lua, pcre }:
 
 stdenv.mkDerivation rec {
-  name = "imapfilter-2.6.3";
+  name = "imapfilter-${version}";
+  version = "2.6.12";
 
-  src = fetchurl {
-    url = "https://github.com/lefcha/imapfilter/archive/v2.6.3.tar.gz";
-    sha256 = "0i6j9ilzh43b9gyqs3y3rv0d9yvbbg12gcbqbar9i92wdlnqcx0i";
+  src = fetchFromGitHub {
+    owner = "lefcha";
+    repo = "imapfilter";
+    rev = "v${version}";
+    sha256 = "0vzpc54fjf5vb5vx5w0fl20xvx1k9cg6a3hbl86mm8kwsqf3wrab";
   };
 
   makeFlagsArray = "PREFIX=$(out)";
   propagatedBuildInputs = [ openssl pcre lua ];
 
   meta = {
-    homepage = "https://github.com/lefcha/imapfilter";
+    homepage = https://github.com/lefcha/imapfilter;
     description = "Mail filtering utility";
     license = stdenv.lib.licenses.mit;
     platforms = stdenv.lib.platforms.unix;

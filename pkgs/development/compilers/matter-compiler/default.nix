@@ -1,13 +1,11 @@
 
-{ stdenv, lib, bundlerEnv, ruby }:
+{ lib, bundlerEnv, ruby }:
 
 bundlerEnv {
   name = "matter_compiler-0.5.1";
 
   inherit ruby;
-  gemfile = ./Gemfile;
-  lockfile = ./Gemfile.lock;
-  gemset = ./gemset.nix;
+  gemdir = ./.;
 
   meta = with lib; {
     description = ''

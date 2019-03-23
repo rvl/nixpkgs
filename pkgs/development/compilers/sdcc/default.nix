@@ -1,24 +1,27 @@
-{ stdenv, fetchurl, bison, flex, boost, gputils ? null }:
+{ stdenv, fetchurl, autoconf, bison, boost, flex, texinfo, gputils ? null
+, excludePorts ? [] }:
+
+with stdenv.lib;
+
+let
+  # choices: mcs51 z80 z180 r2k r3ka gbz80 tlcs90 ds390 ds400 pic14 pic16 hc08 s08 stm8
+  excludedPorts = excludePorts ++ (optionals (gputils == null) [ "pic14" "pic16" ]);
+in
 
 stdenv.mkDerivation rec {
-  version = "3.5.0";
   name = "sdcc-${version}";
+  version = "3.7.0";
 
   src = fetchurl {
     url = "mirror://sourceforge/sdcc/sdcc-src-${version}.tar.bz2";
-    sha256 = "1aazz0yynr694q0rich7r03qls0zvsjc00il14pb4i22c78phagq";
+    sha256 = "13llvx0j3v5qa7qd4fh7nix4j3alpd3ccprxvx163c4q8q4lfkc5";
   };
 
-  # TODO: remove this comment when gputils != null is tested
-  buildInputs = [ bison flex boost gputils ];
+  buildInputs = [ autoconf bison boost flex gputils texinfo ];
 
-  configureFlags = ''
-    ${if gputils == null then "--disable-pic14-port --disable-pic16-port" else ""}
-  '';
+  configureFlags = map (f: "--disable-${f}-port") excludedPorts;
 
-  NIX_CFLAGS_COMPILE = "--std=c99"; # http://sourceforge.net/p/sdcc/code/9106/
-
-  meta = with stdenv.lib; {
+  meta = {
     description = "Small Device C Compiler";
     longDescription = ''
       SDCC is a retargettable, optimizing ANSI - C compiler suite that targets
@@ -29,8 +32,8 @@ stdenv.mkDerivation rec {
       PIC18 targets. It can be retargeted for other microprocessors.
     '';
     homepage = http://sdcc.sourceforge.net/;
-    license = licenses.gpl2;
+    license = with licenses; if (gputils == null) then gpl2 else unfreeRedistributable;
+    maintainers = with maintainers; [ bjornfor yorickvp ];
     platforms = platforms.linux;
-    maintainers = [ maintainers.bjornfor ];
   };
 }

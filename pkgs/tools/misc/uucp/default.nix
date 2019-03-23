@@ -10,6 +10,13 @@ stdenv.mkDerivation rec {
 
   hardeningDisable = [ "format" ];
 
+  prePatch = ''
+    # do not set sticky bit in nix store
+    substituteInPlace Makefile.in \
+      --replace 4555 0555
+    sed -i '/chown $(OWNER)/d' Makefile.in
+  '';
+
   meta = {
     description = "Unix-unix cp over serial line, also includes cu program";
 
@@ -20,7 +27,7 @@ stdenv.mkDerivation rec {
          just found one of the finest UUCP implementations available.
       '';
 
-    homepage = http://www.gnu.org/software/uucp/uucp.html;
+    homepage = https://www.gnu.org/software/uucp/uucp.html;
 
     license = stdenv.lib.licenses.gpl2Plus;
 

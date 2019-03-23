@@ -7,7 +7,7 @@ stdenv.mkDerivation rec {
   buildInputs = [ judy ];
 
   src = fetchurl {
-    url = "http://www.remlab.net/files/miredo/miredo-${version}.tar.xz";
+    url = "https://www.remlab.net/files/miredo/miredo-${version}.tar.xz";
     sha256 = "0j9ilig570snbmj48230hf7ms8kvcwi2wblycqrmhh85lksd49ps";
   };
 
@@ -26,7 +26,7 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "Teredo IPv6 Tunneling Daemon";
-    homepage = http://www.remlab.net/miredo/;
+    homepage = https://www.remlab.net/miredo/;
     license = licenses.gpl2;
     maintainers = [ maintainers.volth ];
     platforms = platforms.unix;

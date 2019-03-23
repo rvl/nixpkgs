@@ -1,16 +1,10 @@
 { stdenv
 , fetchgit
 , mtdev
-, xorgserver
-, xproto
 , pixman
-, xextproto
-, inputproto
-, randrproto
+, xorg
 , libpciaccess
 }:
-
-assert stdenv.isLinux;
 
 stdenv.mkDerivation {
   name = "xf86-input-multitouch-20110312";
@@ -30,10 +24,12 @@ stdenv.mkDerivation {
     EndSection
   '';
 
-  buildInputs = [ mtdev xproto xextproto inputproto libpciaccess randrproto ];
+  buildInputs = with xorg; [
+    mtdev xorgproto libpciaccess libxcb
+  ];
 
   buildPhase = ''
-    make INCLUDE="$NIX_CFLAGS_COMPILE -I${xorgserver.dev}/include/xorg -I${pixman}/include/pixman-1 -Iinclude"
+    make INCLUDE="$NIX_CFLAGS_COMPILE -I${xorg.xorgserver.dev}/include/xorg -I${pixman}/include/pixman-1 -Iinclude"
   '';
 
   installPhase = ''

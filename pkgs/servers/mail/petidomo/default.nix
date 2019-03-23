@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, flex, bison, sendmailPath ? "/var/setuid-wrappers/sendmail" }:
+{ stdenv, fetchurl, flex, bison, sendmailPath ? "/run/wrappers/bin/sendmail" }:
 
 stdenv.mkDerivation rec {
   name = "petidomo-4.3";
@@ -10,14 +10,14 @@ stdenv.mkDerivation rec {
 
   buildInputs = [ flex bison ];
 
-  configureFlags = "--with-mta=${sendmailPath}";
+  configureFlags = [ "--with-mta=${sendmailPath}" ];
 
   enableParallelBuilding = true;
 
   doCheck = true;
 
   meta = {
-    homepage = "http://petidomo.sourceforge.net/";
+    homepage = http://petidomo.sourceforge.net/;
     description = "A simple and easy to administer mailing list server";
     license = stdenv.lib.licenses.gpl3Plus;
 

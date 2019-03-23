@@ -5,7 +5,7 @@
 # not, a X server (Xvfb) is started for that user.  The Xvfb instances
 # persist across VNC sessions.
 
-{ config, lib, pkgs, ... }:
+{ lib, pkgs, ... }:
 
 with lib;
 
@@ -16,18 +16,8 @@ with lib;
     services.xserver.enable = true;
     services.xserver.videoDrivers = [];
 
-    # Enable KDM.  Any display manager will do as long as it supports XDMCP.
-    services.xserver.displayManager.kdm.enable = true;
-    services.xserver.displayManager.kdm.enableXDMCP = true;
-    services.xserver.displayManager.kdm.extraConfig =
-      ''
-        [General]
-        # We're headless, so don't bother starting an X server.
-        StaticServers=
-
-        [Xdmcp]
-        Xaccess=${pkgs.writeText "Xaccess" "localhost"}
-      '';
+    # Enable GDM.  Any display manager will do as long as it supports XDMCP.
+    services.xserver.displayManager.gdm.enable = true;
 
     systemd.sockets.terminal-server =
       { description = "Terminal Server Socket";

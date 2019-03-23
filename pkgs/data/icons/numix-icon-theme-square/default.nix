@@ -1,33 +1,35 @@
-{ stdenv, fetchFromGitHub, numix-icon-theme }:
+{ stdenv, fetchFromGitHub, gtk3, numix-icon-theme }:
 
 stdenv.mkDerivation rec {
-  version = "2016-11-23";
-
-  package-name = "numix-icon-theme-square";
-
-  name = "${package-name}-${version}";
+  pname = "numix-icon-theme-square";
+  version = "19.02.22";
 
   src = fetchFromGitHub {
     owner = "numixproject";
-    repo = package-name;
-    rev = "1c30eb02aea3d95c49f95c212702b56e93ac9043";
-    sha256 = "1d2car4dsh1dnim9jlakm035ydqd1f115cagm6zm8gwa5w9annag";
+    repo = pname;
+    rev = version;
+    sha256 = "0qn0s7cd795pm0hbx85gxd1s272zxrzf3r9r6da54h149v3wkgzw";
   };
 
-  buildInputs = [ numix-icon-theme ];
-
-  dontBuild = true;
+  nativeBuildInputs = [ gtk3 numix-icon-theme ];
 
   installPhase = ''
     mkdir -p $out/share/icons
     cp -a Numix-Square{,-Light} $out/share/icons/
   '';
 
+  postFixup = ''
+    for theme in $out/share/icons/*; do
+      gtk-update-icon-cache $theme
+    done
+  '';
+
   meta = with stdenv.lib; {
     description = "Numix icon theme (square version)";
-    homepage = https://numixproject.org;
+    homepage = https://numixproject.github.io;
     license = licenses.gpl3;
-    platforms = with platforms; allBut darwin;
+    # darwin cannot deal with file names differing only in case
+    platforms = platforms.linux;
     maintainers = with maintainers; [ romildo ];
   };
 }

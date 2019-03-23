@@ -1,53 +1,39 @@
-{ stdenv, fetchurl, perl }:
+{ stdenv
+, fetchFromGitHub
+
+, cmake
+, ninja
+, perl # Project uses Perl for scripting and testing
+, python
+
+, enableThreading ? true # Threading can be disabled to increase security https://tls.mbed.org/kb/development/thread-safety-and-multi-threading
+}:
 
 stdenv.mkDerivation rec {
-  name = "mbedtls-2.4.0";
+  name = "mbedtls-${version}";
+  version = "2.15.1";
 
-  src = fetchurl {
-    url = "https://tls.mbed.org/download/${name}-gpl.tgz";
-    sha256 = "0gwyxsz7av8fyzrz4zxhcy9jmszlvg9zskz3srar75lg0bhg1vw0";
+  src = fetchFromGitHub {
+    owner = "ARMmbed";
+    repo = "mbedtls";
+    rev = name;
+    sha256 = "0w6cm2f7d43wp8cx6r5h4icq8zcix1jnvivshypir1rbk1q83gx8";
   };
 
-  nativeBuildInputs = [ perl ];
+  nativeBuildInputs = [ cmake ninja perl python ];
 
-  patchPhase = stdenv.lib.optionalString stdenv.isDarwin ''
-    substituteInPlace library/Makefile --replace "-soname" "-install_name"
-    substituteInPlace tests/scripts/run-test-suites.pl --replace "LD_LIBRARY_PATH" "DYLD_LIBRARY_PATH"
-    # Necessary for install_name_tool below
-    echo "LOCAL_LDFLAGS += -headerpad_max_install_names" >> programs/Makefile
+  postConfigure = stdenv.lib.optionals enableThreading ''
+    perl scripts/config.pl set MBEDTLS_THREADING_C    # Threading abstraction layer
+    perl scripts/config.pl set MBEDTLS_THREADING_PTHREAD    # POSIX thread wrapper layer for the threading layer.
   '';
 
-  postPatch = ''
-    patchShebangs .
-  '';
-
-  makeFlags = [
-    "SHARED=1"
-  ];
-
-  installFlags = [
-    "DESTDIR=\${out}"
-  ];
-
-  postInstall = stdenv.lib.optionalString stdenv.isDarwin ''
-      install_name_tool -change libmbedcrypto.so.0 $out/lib/libmbedcrypto.so.0 $out/lib/libmbedtls.so.10
-      install_name_tool -change libmbedcrypto.so.0 $out/lib/libmbedcrypto.so.0 $out/lib/libmbedx509.so.0
-      install_name_tool -change libmbedx509.so.0 $out/lib/libmbedx509.so.0 $out/lib/libmbedtls.so.10
-
-      for exe in $out/bin/*; do
-          install_name_tool -change libmbedtls.so.10 $out/lib/libmbedtls.so.10 $exe
-          install_name_tool -change libmbedx509.so.0 $out/lib/libmbedx509.so.0 $exe
-          install_name_tool -change libmbedcrypto.so.0 $out/lib/libmbedcrypto.so.0 $exe
-      done
-  '';
-
-  doCheck = true;
+  cmakeFlags = [ "-DUSE_SHARED_MBEDTLS_LIBRARY=on" ];
 
   meta = with stdenv.lib; {
     homepage = https://tls.mbed.org/;
-    description = "Portable cryptographic and SSL/TLS library, aka polarssl";
-    license = licenses.gpl3;
+    description = "Portable cryptographic and TLS library, formerly known as PolarSSL";
+    license = licenses.asl20;
     platforms = platforms.all;
-    maintainers = with maintainers; [ wkennington fpletz ];
+    maintainers = with maintainers; [ fpletz ];
   };
 }

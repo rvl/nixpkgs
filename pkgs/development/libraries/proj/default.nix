@@ -1,14 +1,14 @@
 { stdenv, fetchurl }:
 
 stdenv.mkDerivation {
-  name = "proj-4.9.2";
+  name = "proj-5.2.0";
 
   src = fetchurl {
-    url = http://download.osgeo.org/proj/proj-4.9.2.tar.gz;
-    sha256 = "15kpcmz3qjxfrs6vq48mgyvb4vxscmwgkzrdcn71a60wxp8rmgv0";
+    url = https://download.osgeo.org/proj/proj-5.2.0.tar.gz;
+    sha256 = "0q3ydh2j8qhwlxmnac72pg69rw2znbi5b6k5wama8qmwzycr94gg";
   };
 
-  doCheck = true;
+  doCheck = stdenv.is64bit;
 
   meta = with stdenv.lib; {
     description = "Cartographic Projections Library";

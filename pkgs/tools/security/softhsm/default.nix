@@ -1,13 +1,13 @@
-{ stdenv, fetchurl, botan }:
+{ stdenv, fetchurl, botan, libobjc, Security }:
 
 stdenv.mkDerivation rec {
 
   name = "softhsm-${version}";
-  version = "2.1.0";
+  version = "2.5.0";
 
   src = fetchurl {
     url = "https://dist.opendnssec.org/source/${name}.tar.gz";
-    sha256 = "0399b06f196fbfaebe73b4aeff2e2d65d0dc1901161513d0d6a94f031dcd827e";
+    sha256 = "1cijq78jr3mzg7jj11r0krawijp99p253f4qdqr94n728p7mdalj";
   };
 
   configureFlags = [
@@ -16,6 +16,9 @@ stdenv.mkDerivation rec {
     "--sysconfdir=$out/etc"
     "--localstatedir=$out/var"
     ];
+
+  propagatedBuildInputs =
+    stdenv.lib.optionals stdenv.isDarwin [ libobjc Security ];
 
   buildInputs = [ botan ];
 
@@ -26,6 +29,6 @@ stdenv.mkDerivation rec {
     description = "Cryptographic store accessible through a PKCS #11 interface";
     license = licenses.bsd2;
     maintainers = [ maintainers.leenaars ];
-    platforms = platforms.linux;
+    platforms = platforms.unix;
   };
 }

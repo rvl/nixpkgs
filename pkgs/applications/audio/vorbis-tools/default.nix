@@ -20,7 +20,8 @@ stdenv.mkDerivation {
     done
   '';
 
-  buildInputs = [ libogg libvorbis libao pkgconfig curl speex flac ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ libogg libvorbis libao curl speex flac ];
 
   meta = with stdenv.lib; {
     description = "Extra tools for Ogg-Vorbis audio codec";
@@ -28,7 +29,7 @@ stdenv.mkDerivation {
       A set of command-line tools to manipulate Ogg Vorbis audio
       files, notably the `ogg123' player and the `oggenc' encoder.
     '';
-    homepage = http://xiph.org/vorbis/;
+    homepage = https://xiph.org/vorbis/;
     license = licenses.gpl2;
     platforms = platforms.all;
   };

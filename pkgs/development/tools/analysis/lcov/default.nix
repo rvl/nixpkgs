@@ -1,18 +1,18 @@
 {stdenv, fetchurl, perl}:
 
 stdenv.mkDerivation rec {
-  name = "lcov-1.12";
+  name = "lcov-1.14";
 
   src = fetchurl {
     url = "mirror://sourceforge/ltp/${name}.tar.gz";
-    sha256 = "19wfifdpxxivhq9adbphanjfga9bg9spms9v7c3589wndjff8x5l";
+    sha256 = "06h7ixyznf6vz1qvksjgy5f3q2nw9akf6zx59npf0h3l32cmd68l";
   };
 
   buildInputs = [ perl ];
 
   preBuild = ''
     patchShebangs bin/
-    makeFlagsArray=(PREFIX=$out BIN_DIR=$out/bin MAN_DIR=$out/share/man)
+    makeFlagsArray=(PREFIX=$out LCOV_PERL_PATH=$(command -v perl))
   '';
 
   meta = with stdenv.lib; {
@@ -30,7 +30,7 @@ stdenv.mkDerivation rec {
     homepage = http://ltp.sourceforge.net/coverage/lcov.php;
     license = stdenv.lib.licenses.gpl2Plus;
 
-    maintainers = with maintainers; [ dezgeg mornfall ];
+    maintainers = with maintainers; [ dezgeg ];
     platforms = platforms.all;
   };
 }

@@ -1,7 +1,7 @@
 { stdenv, fetchurl, fetchzip, pkgconfig, SDL, libpng, zlib, xz, freetype, fontconfig
 , withOpenGFX ? true, withOpenSFX ? true, withOpenMSX ? true
 , withFluidSynth ? true, audioDriver ? "alsa", fluidsynth, soundfont-fluid, procps
-, writeScriptBin, makeWrapper
+, writeScriptBin, makeWrapper, runtimeShell
 }:
 
 let
@@ -21,7 +21,7 @@ let
   };
 
   playmidi = writeScriptBin "playmidi" ''
-    #!/bin/sh
+    #!${runtimeShell}
     trap "${procps}/bin/pkill fluidsynth" EXIT
     ${fluidsynth}/bin/fluidsynth -a ${audioDriver} -i ${soundfont-fluid}/share/soundfonts/FluidR3_GM2-2.sf2 $*
   '';
@@ -29,11 +29,11 @@ let
 in
 stdenv.mkDerivation rec {
   name = "openttd-${version}";
-  version = "1.6.1";
+  version = "1.8.0";
 
   src = fetchurl {
     url = "http://binaries.openttd.org/releases/${version}/${name}-source.tar.xz";
-    sha256 = "1ak32fj5xkk2fvmm3g8i7wzmk4bh2ijsp8fzvvw5wj6365p9j24v";
+    sha256 = "0zq8xdg0k92p3s4j9x76591zaqz7k9ra69q008m209vdfffjvly2";
   };
 
   nativeBuildInputs = [ pkgconfig makeWrapper ];

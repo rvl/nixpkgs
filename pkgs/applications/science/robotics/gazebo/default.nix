@@ -1,11 +1,12 @@
 { stdenv, fetchurl, cmake, pkgconfig, boost, protobuf, freeimage
   , boost-build, boost_process
   , xorg_sys_opengl, tbb, ogre, tinyxml-2
-  , libtar, glxinfo,  libusb, libxslt, ruby, ignition
+  , libtar, glxinfo,  libusb, libxslt, ignition
   , pythonPackages, utillinux
 
   # these deps are hidden; cmake doesn't catch them
-  , gazeboSimulator, sdformat ? gazeboSimulator.sdformat, curl, tinyxml, kde4, x11
+  , gazeboSimulator, sdformat ? gazeboSimulator.sdformat, curl, tinyxml, qt4
+  , xlibsWrapper
   , withIgnitionTransport ? true
   , libav, withLibAvSupport ? true
   , openal, withAudioSupport ? false
@@ -26,7 +27,7 @@ stdenv.mkDerivation rec {
   name = "gazebo-${version}";
 
   src = fetchurl {
-    url = "http://osrf-distributions.s3.amazonaws.com/gazebo/releases/${name}.tar.bz2";
+    url = "https://osrf-distributions.s3.amazonaws.com/gazebo/releases/${name}.tar.bz2";
     sha256 = src-sha256;
   };
 
@@ -38,8 +39,12 @@ stdenv.mkDerivation rec {
     ++ optional withLowMemorySupport [ "-DUSE_LOW_MEMORY_TESTS=True" ]
     ++ optional withHeadless [ "-DENABLE_SCREEN_TESTS=False" ];
 
+  nativeBuildInputs = [ cmake pkgconfig ];
+
+  propagatedNativeBuildInputs = [ boost boost-build boost_process protobuf ];
+
   buildInputs = [
-    #cmake pkgconfig boost protobuf
+    #cmake boost protobuf
     freeimage
     xorg_sys_opengl
     tbb
@@ -56,8 +61,8 @@ stdenv.mkDerivation rec {
     # TODO: add these hidden deps to cmake configuration & submit upstream
     curl
     tinyxml
-    x11
-    kde4.qt4
+    xlibsWrapper
+    qt4
   ] ++ optional stdenv.isLinux utillinux # on Linux needs uuid/uuid.h
     ++ optional withDocs doxygen
     ++ optional withLibAvSupport libav  #TODO: package rubygem-ronn and put it here
@@ -68,10 +73,6 @@ stdenv.mkDerivation rec {
     ++ optional withDigitalElevationTerrainsSupport gdal
     ++ optional withConstructiveSolidGeometrySupport gts
     ++ optional withHdf5Support hdf5;
-
-  nativeBuildInputs = [ cmake pkgconfig ];
-
-  propagatedNativeBuildInputs = [ boost boost-build boost_process protobuf ];
 
   meta = with stdenv.lib; {
     homepage = http://gazebosim.org/;

@@ -32,8 +32,7 @@ in
 
     environment.systemPackages = [
       pkgs.fluxbox
-      pkgs.kde5.kwindowsystem
-      pkgs.kde5.oxygen-icons5
+      pkgs.libsForQt5.kwindowsystem
       pkgs.lumina
       pkgs.numlockx
       pkgs.qt5.qtsvg
@@ -42,9 +41,8 @@ in
 
     # Link some extra directories in /run/current-system/software/share
     environment.pathsToLink = [
-      "/share/desktop-directories"
-      "/share/icons"
       "/share/lumina"
+      # FIXME: modules should link subdirs of `/share` rather than relying on this
       "/share"
     ];
 

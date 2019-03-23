@@ -1,15 +1,13 @@
-{ stdenv, lib, fetchFromGitHub, which, go, go-bindata, makeWrapper, rsync
-, iptables, coreutils
+{ stdenv, lib, fetchFromGitHub, removeReferencesTo, which, go, go-bindata, makeWrapper, rsync
 , components ? [
+    "cmd/kubeadm"
     "cmd/kubectl"
     "cmd/kubelet"
     "cmd/kube-apiserver"
     "cmd/kube-controller-manager"
     "cmd/kube-proxy"
-    "plugin/cmd/kube-scheduler"
-    "cmd/kube-dns"
-    "federation/cmd/federation-apiserver"
-    "federation/cmd/federation-controller-manager"
+    "cmd/kube-scheduler"
+    "test/e2e/e2e.test"
   ]
 }:
 
@@ -17,59 +15,63 @@ with lib;
 
 stdenv.mkDerivation rec {
   name = "kubernetes-${version}";
-  version = "1.4.6";
+  version = "1.13.4";
 
   src = fetchFromGitHub {
     owner = "kubernetes";
     repo = "kubernetes";
     rev = "v${version}";
-    sha256 = "1n5ppzr9hnn7ljfdgx40rnkn6n6a9ya0qyrhjhpnbfwz5mdp8ws3";
+    sha256 = "1q3dc416fr9nzy64pl7rydahygnird0vpk9yflssw7v9gx84m6x9";
   };
 
-  buildInputs = [ makeWrapper which go rsync go-bindata ];
+  buildInputs = [ removeReferencesTo makeWrapper which go rsync go-bindata ];
 
   outputs = ["out" "man" "pause"];
 
   postPatch = ''
     substituteInPlace "hack/lib/golang.sh" --replace "_cgo" ""
     substituteInPlace "hack/generate-docs.sh" --replace "make" "make SHELL=${stdenv.shell}"
-    substituteInPlace "hack/update-munge-docs.sh" --replace "make" "make SHELL=${stdenv.shell}"
-    substituteInPlace "hack/update-munge-docs.sh" --replace "kube::util::git_upstream_remote_name" "echo origin"
+    # hack/update-munge-docs.sh only performs some tests on the documentation.
+    # They broke building k8s; disabled for now.
+    echo "true" > "hack/update-munge-docs.sh"
 
     patchShebangs ./hack
   '';
 
-  WHAT="--use_go_build ${concatStringsSep " " components}";
+  WHAT="${concatStringsSep " " components}";
 
   postBuild = ''
     ./hack/generate-docs.sh
-    (cd build/pause && gcc pause.c -o pause)
+    (cd build/pause && cc pause.c -o pause)
   '';
 
   installPhase = ''
-    mkdir -p "$out/bin" "$out/share/bash-completion/completions" "$man/share/man" "$pause/bin"
+    mkdir -p "$out/bin" "$out/share/bash-completion/completions" "$out/share/zsh/site-functions" "$man/share/man" "$pause/bin"
 
     cp _output/local/go/bin/* "$out/bin/"
     cp build/pause/pause "$pause/bin/pause"
     cp -R docs/man/man1 "$man/share/man"
 
+    cp cluster/addons/addon-manager/namespace.yaml $out/share
+    cp cluster/addons/addon-manager/kube-addons.sh $out/bin/kube-addons
+    patchShebangs $out/bin/kube-addons
+    substituteInPlace $out/bin/kube-addons \
+      --replace /opt/namespace.yaml $out/share/namespace.yaml
+    wrapProgram $out/bin/kube-addons --set "KUBECTL_BIN" "$out/bin/kubectl"
+
     $out/bin/kubectl completion bash > $out/share/bash-completion/completions/kubectl
+    $out/bin/kubectl completion zsh > $out/share/zsh/site-functions/_kubectl
   '';
 
   preFixup = ''
-    # Remove references to go compiler
-    while read file; do
-      cat $file | sed "s,${go},$(echo "${go}" | sed "s,$NIX_STORE/[^-]*,$NIX_STORE/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,"),g" > $file.tmp
-      mv $file.tmp $file
-      chmod +x $file
-    done < <(find $out/bin $pause/bin -type f 2>/dev/null)
+    find $out/bin $pause/bin -type f -exec remove-references-to -t ${go} '{}' +
   '';
 
   meta = {
     description = "Production-Grade Container Scheduling and Management";
     license = licenses.asl20;
-    homepage = http://kubernetes.io;
-    maintainers = with maintainers; [offline];
-    platforms = platforms.linux;
+    homepage = https://kubernetes.io;
+    maintainers = with maintainers; [johanot offline];
+    platforms = platforms.unix;
   };
 }

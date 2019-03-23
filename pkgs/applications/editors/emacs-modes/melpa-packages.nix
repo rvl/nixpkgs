@@ -13,7 +13,7 @@ To update the list of packages from MELPA,
 
 */
 
-{ lib }:
+{ lib, external }:
 
 self:
 
@@ -36,6 +36,9 @@ self:
     });
 
     overrides = {
+      # Expects bash to be at /bin/bash
+      ac-rtags = markBroken super.ac-rtags;
+
       # upstream issue: mismatched filename
       ack-menu = markBroken super.ack-menu;
 
@@ -47,24 +50,20 @@ self:
       bufshow = markBroken super.bufshow;
 
       # part of a larger package
-      # upstream issue: missing package version
-      cmake-mode = markBroken (dontConfigure super.cmake-mode);
+      caml = dontConfigure super.caml;
 
-      # upstream issue: missing file header
-      cn-outline = markBroken super.cn-outline;
-
-      # upstream issue: missing file header
-      connection = markBroken super.connection;
-
-      # upstream issue: missing file header
-      dictionary = markBroken super.dictionary;
+      # Expects bash to be at /bin/bash
+      company-rtags = markBroken super.company-rtags;
 
       easy-kill-extras = super.easy-kill-extras.override {
         inherit (self.melpaPackages) easy-kill;
       };
 
-      # missing git
-      egg = markBroken super.egg;
+      egg = super.egg.overrideAttrs (attrs: {
+        # searches for Git at build time
+        nativeBuildInputs =
+          (attrs.nativeBuildInputs or []) ++ [ external.git ];
+      });
 
       # upstream issue: missing file header
       elmine = markBroken super.elmine;
@@ -73,15 +72,28 @@ self:
         inherit (self.melpaPackages) ess ctable popup;
       };
 
-      ess-R-object-popup = super.ess-R-object-popup.override {
-        inherit (self.melpaPackages) ess popup;
-      };
+      evil-magit = super.evil-magit.overrideAttrs (attrs: {
+        # searches for Git at build time
+        nativeBuildInputs =
+          (attrs.nativeBuildInputs or []) ++ [ external.git ];
+      });
+
+      # missing dependencies
+      evil-search-highlight-persist = super.evil-search-highlight-persist.overrideAttrs (attrs: {
+        packageRequires = with self; [ evil highlight ];
+      });
 
       # missing OCaml
       flycheck-ocaml = markBroken super.flycheck-ocaml;
 
-      # upstream issue: missing file header
-      fold-dwim = markBroken super.fold-dwim;
+      # Expects bash to be at /bin/bash
+      flycheck-rtags = markBroken super.flycheck-rtags;
+
+      forge = super.forge.overrideAttrs (attrs: {
+        # searches for Git at build time
+        nativeBuildInputs =
+          (attrs.nativeBuildInputs or []) ++ [ external.git ];
+      });
 
       # build timeout
       graphene = markBroken super.graphene;
@@ -89,29 +101,83 @@ self:
       # upstream issue: mismatched filename
       helm-lobsters = markBroken super.helm-lobsters;
 
-      # upstream issue: missing file header
-      helm-words = markBroken super.helm-words;
+      # Expects bash to be at /bin/bash
+      helm-rtags = markBroken super.helm-rtags;
+
+      # Build same version as Haskell package
+      hindent = super.hindent.overrideAttrs (attrs: {
+        version = external.hindent.version;
+        src = external.hindent.src;
+        packageRequires = [ self.haskell-mode ];
+        propagatedUserEnvPkgs = [ external.hindent ];
+      });
 
       # upstream issue: missing file header
       ido-complete-space-or-hyphen = markBroken super.ido-complete-space-or-hyphen;
 
       # upstream issue: missing file header
-      initsplit = markBroken super.initsplit;
+      initsplit = super.initsplit;
+
+      # tries to write a log file to $HOME
+      insert-shebang = super.insert-shebang.overrideAttrs (attrs: {
+        HOME = "/tmp";
+      });
+
+      # Expects bash to be at /bin/bash
+      ivy-rtags = markBroken super.ivy-rtags;
 
       # upstream issue: missing file header
       jsfmt = markBroken super.jsfmt;
 
       # upstream issue: missing file header
-      link = markBroken super.link;
-
-      # upstream issue: mismatched filename
-      link-hint = markBroken super.link-hint;
-
-      # part of a larger package
-      llvm-mode = dontConfigure super.llvm-mode;
-
-      # upstream issue: missing file header
       maxframe = markBroken super.maxframe;
+
+      magit =
+        (super.magit.override {
+          # version of magit-popup needs to match magit
+          # https://github.com/magit/magit/issues/3286
+          inherit (self.melpaPackages) magit-popup;
+        }).overrideAttrs (attrs: {
+          # searches for Git at build time
+          nativeBuildInputs =
+            (attrs.nativeBuildInputs or []) ++ [ external.git ];
+        });
+
+      magit-annex = super.magit-annex.overrideAttrs (attrs: {
+        # searches for Git at build time
+        nativeBuildInputs =
+          (attrs.nativeBuildInputs or []) ++ [ external.git ];
+      });
+
+      magit-gitflow = super.magit-gitflow.overrideAttrs (attrs: {
+        # searches for Git at build time
+        nativeBuildInputs =
+          (attrs.nativeBuildInputs or []) ++ [ external.git ];
+      });
+
+      magithub = super.magithub.overrideAttrs (attrs: {
+        # searches for Git at build time
+        nativeBuildInputs =
+          (attrs.nativeBuildInputs or []) ++ [ external.git ];
+      });
+
+      magit-svn = super.magit-svn.overrideAttrs (attrs: {
+        # searches for Git at build time
+        nativeBuildInputs =
+          (attrs.nativeBuildInputs or []) ++ [ external.git ];
+      });
+
+      magit-todos = super.magit-todos.overrideAttrs (attrs: {
+        # searches for Git at build time
+        nativeBuildInputs =
+          (attrs.nativeBuildInputs or []) ++ [ external.git ];
+      });
+
+      magit-filenotify = super.magit-filenotify.overrideAttrs (attrs: {
+        # searches for Git at build time
+        nativeBuildInputs =
+          (attrs.nativeBuildInputs or []) ++ [ external.git ];
+      });
 
       # missing OCaml
       merlin = markBroken super.merlin;
@@ -129,11 +195,17 @@ self:
       # missing OCaml
       ocp-indent = markBroken super.ocp-indent;
 
-      # upstream issue: missing file header
-      perl-completion = markBroken super.perl-completion;
+      orgit =
+        (super.orgit.overrideAttrs (attrs: {
+          # searches for Git at build time
+          nativeBuildInputs =
+            (attrs.nativeBuildInputs or []) ++ [ external.git ];
+         }));
 
-      # upstream issue: truncated file
-      powershell = markBroken super.powershell;
+      # tries to write to $HOME
+      php-auto-yasnippets = super.php-auto-yasnippets.overrideAttrs (attrs: {
+        HOME = "/tmp";
+      });
 
       # upstream issue: mismatched filename
       processing-snippets = markBroken super.processing-snippets;
@@ -141,11 +213,12 @@ self:
       # upstream issue: missing file header
       qiita = markBroken super.qiita;
 
-      # upstream issue: missing package version
-      quack = markBroken super.quack;
-
-      # upstream issue: missing file header
-      railgun = markBroken super.railgun;
+      racer = super.racer.overrideAttrs (attrs: {
+        postPatch = attrs.postPatch or "" + ''
+          substituteInPlace racer.el \
+            --replace /usr/local/src/rust/src ${external.rustPlatform.rustcSrc}
+        '';
+      });
 
       # upstream issue: missing file footer
       seoul256-theme = markBroken super.seoul256-theme;
@@ -161,10 +234,19 @@ self:
       stgit = markBroken super.stgit;
 
       # upstream issue: missing file header
+      tawny-mode = markBroken super.tawny-mode;
+
+      # upstream issue: missing file header
       textmate = markBroken super.textmate;
 
       # missing OCaml
       utop = markBroken super.utop;
+
+      vdiff-magit =
+        (super.vdiff-magit.overrideAttrs (attrs: {
+          nativeBuildInputs =
+            (attrs.nativeBuildInputs or []) ++ [ external.git ];
+        }));
 
       # upstream issue: missing file header
       voca-builder = markBroken super.voca-builder;
@@ -172,10 +254,22 @@ self:
       # upstream issue: missing file header
       window-numbering = markBroken super.window-numbering;
 
-      # upstream issue: missing file header
-      zeitgeist = markBroken super.zeitgeist;
+      w3m = super.w3m.override (args: {
+        melpaBuild = drv: args.melpaBuild (drv // {
+          prePatch =
+            let w3m = "${lib.getBin external.w3m}/bin/w3m"; in ''
+              substituteInPlace w3m.el \
+                --replace 'defcustom w3m-command nil' \
+                          'defcustom w3m-command "${w3m}"'
+            '';
+        });
+      });
     };
 
-    melpaPackages = super // overrides;
+    melpaPackages =
+      removeAttrs (super // overrides)
+      [
+        "show-marks"  # missing dependency: fm
+      ];
   in
     melpaPackages // { inherit melpaPackages; }

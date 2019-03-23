@@ -1,34 +1,69 @@
-{ stdenv, requireFile, cudatoolkit }:
+{ callPackage, cudatoolkit_7, cudatoolkit_7_5, cudatoolkit_8, cudatoolkit_9_0, cudatoolkit_9_1, cudatoolkit_9_2, cudatoolkit_10_0 }:
 
-stdenv.mkDerivation rec {
-  version = "4.0";
-
-  name = "cudnn-${version}";
-
-  src = requireFile rec {
-    name = "cudnn-7.0-linux-x64-v${version}-prod.tgz";
-    message = '' 
-      This nix expression requires that ${name} is
-      already part of the store. Register yourself to NVIDIA Accelerated Computing Developer Program
-      and download cuDNN library at https://developer.nvidia.com/cudnn, and store it to the nix store with nix-store --add-fixed sha256 <FILE>.
-    '';
-    sha256 = "0zgr6qdbc29qw6sikhrh6diwwz7150rqc8a49f2qf37j2rvyyr2f";
-
+let
+  generic = args: callPackage (import ./generic.nix (removeAttrs args ["cudatoolkit"])) {
+    inherit (args) cudatoolkit;
   };
 
-  phases = "unpackPhase installPhase fixupPhase";
-
-  propagatedBuildInputs = [ cudatoolkit ];
-
-  installPhase = ''
-    mkdir -p $out
-    cp -a include $out/include
-    cp -a lib64 $out/lib64
-  '';
-
-  meta = {
-    description = "NVIDIA CUDA Deep Neural Network library (cuDNN)";
-    homepage = "https://developer.nvidia.com/cudnn";
-    license = stdenv.lib.licenses.unfree;
+in rec {
+  cudnn_cudatoolkit_7 = generic rec {
+    # Old URL is v4 instead of v4.0 for some reason...
+    version = "4";
+    cudatoolkit = cudatoolkit_7;
+    srcName = "cudnn-${cudatoolkit.majorVersion}-linux-x64-v4.0-prod.tgz";
+    sha256 = "01a4v5j4v9n2xjqcc4m28c3m67qrvsx87npvy7zhx7w8smiif2fd";
   };
+
+  cudnn_cudatoolkit_7_5 = generic rec {
+    version = "6.0";
+    cudatoolkit = cudatoolkit_7_5;
+    srcName = "cudnn-${cudatoolkit.majorVersion}-linux-x64-v${version}.tgz";
+    sha256 = "0b68hv8pqcvh7z8xlgm4cxr9rfbjs0yvg1xj2n5ap4az1h3lp3an";
+  };
+
+  cudnn6_cudatoolkit_8 = generic rec {
+    version = "6.0";
+    cudatoolkit = cudatoolkit_8;
+    srcName = "cudnn-${cudatoolkit.majorVersion}-linux-x64-v${version}.tgz";
+    sha256 = "173zpgrk55ri8if7s5yngsc89ajd6hz4pss4cdxlv6lcyh5122cv";
+  };
+
+  cudnn_cudatoolkit_8 = generic rec {
+    version = "7.0.5";
+    cudatoolkit = cudatoolkit_8;
+    srcName = "cudnn-${cudatoolkit.majorVersion}-linux-x64-v7.tgz";
+    sha256 = "9e0b31735918fe33a79c4b3e612143d33f48f61c095a3b993023cdab46f6d66e";
+  };
+
+  cudnn_cudatoolkit_9_0 = generic rec {
+    version = "7.3.0";
+    cudatoolkit = cudatoolkit_9_0;
+    srcName = "cudnn-${cudatoolkit.majorVersion}-linux-x64-v7.3.0.29.tgz";
+    sha256 = "16z4vgbcmbayk4hppz0xshgs3g07blkp4j25cxcjqyrczx1r0gs0";
+  };
+
+  cudnn_cudatoolkit_9_1 = generic rec {
+    version = "7.1.3";
+    cudatoolkit = cudatoolkit_9_1;
+    srcName = "cudnn-${cudatoolkit.majorVersion}-linux-x64-v7.1.tgz";
+    sha256 = "0a0237gpr0p63s92njai0xvxmkbailzgfsvh7n9fnz0njhvnsqfx";
+  };
+
+  cudnn_cudatoolkit_9_2 = generic rec {
+    version = "7.2.1";
+    cudatoolkit = cudatoolkit_9_2;
+    srcName = "cudnn-${cudatoolkit.majorVersion}-linux-x64-v7.2.1.38.tgz";
+    sha256 = "1sf215wm6zgr17gs6sxfhw61b7a0qmcxiwhgy1b4nqdyxpqgay1y";
+  };
+
+  cudnn_cudatoolkit_9 = cudnn_cudatoolkit_9_2;
+
+  cudnn_cudatoolkit_10_0 = generic rec {
+    version = "7.3.1";
+    cudatoolkit = cudatoolkit_10_0;
+    srcName = "cudnn-${cudatoolkit.majorVersion}-linux-x64-v7.3.1.20.tgz";
+    sha256 = "1yp35mng4ym40g5rqp63dcpa6jg4q1pnjkspnhlakzzdy8is65af";
+  };
+
+  cudnn_cudatoolkit_10 = cudnn_cudatoolkit_10_0;
 }

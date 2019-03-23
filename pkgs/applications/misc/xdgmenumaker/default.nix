@@ -2,13 +2,13 @@
 
 stdenv.mkDerivation rec {
   name = "xdgmenumaker-${version}";
-  version = "1.1";
+  version = "1.5";
 
   src = fetchFromGitHub {
     owner = "gapan";
     repo = "xdgmenumaker";
     rev = version;
-    sha256 = "11mqafpgfnz0h0d6fxd1xsfsjxzg1abvwqgwy9jmm5xhcjx3c3l7";
+    sha256 = "1vrsp5c1ah7p4dpwd6aqvinpwzd8crdimvyyr3lbm3c6cwpyjmif";
   };
 
   nativeBuildInputs = [

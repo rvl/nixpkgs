@@ -1,40 +1,115 @@
 { stdenv, callPackage, fetchurl, makeWrapper
-, alsaLib, libX11, libXcursor, libXinerama, libXrandr, libXi, mesa_noglu
+, alsaLib, libX11, libXcursor, libXinerama, libXrandr, libXi, libGL
 , factorio-utils
 , releaseType
 , mods ? []
-, username ? "" , password ? ""
+, username ? "", token ? "" # get/reset token at https://factorio.com/profile
+, experimental ? false # true means to always use the latest branch
 }:
 
-assert releaseType == "alpha" || releaseType == "headless";
+assert releaseType == "alpha"
+    || releaseType == "headless"
+    || releaseType == "demo";
 
-with stdenv.lib;
 let
-  version = "0.13.20";
-  isHeadless = releaseType == "headless";
 
-  arch = if stdenv.system == "x86_64-linux" then {
-    inUrl = "linux64";
-    inTar = "x64";
-  } else if stdenv.system == "i686-linux" then {
-    inUrl = "linux32";
-    inTar = "i386";
-  } else abort "Unsupported platform";
+  helpMsg = ''
 
-  authenticatedFetch = callPackage ./fetch.nix { inherit username password; };
+    ===FETCH FAILED===
+    Please ensure you have set the username and token with config.nix, or
+    /etc/nix/nixpkgs-config.nix if on NixOS.
 
-  fetch = rec {
-    url = "https://www.factorio.com/get-download/${version}/${releaseType}/${arch.inUrl}";
-    name = "factorio_${releaseType}_${arch.inTar}-${version}.tar.gz";
-    x64 = {
-      headless = fetchurl        { inherit name url; sha256 = "0nf1sxcgnbx52iwx7jgkjxass10lzz1iyskvgk0gq3ky9cg4ixfb"; };
-      alpha = authenticatedFetch { inherit      url; sha256 = "0rgjdxdcqf9m3ghzr076q3xi1g01ix14jldjwn6jgnvggzqkph9l"; };
+    Your token can be seen at https://factorio.com/profile (after logging in). It is
+    not as sensitive as your password, but should still be safeguarded. There is a
+    link on that page to revoke/invalidate the token, if you believe it has been
+    leaked or wish to take precautions.
+
+    Example:
+    {
+      packageOverrides = pkgs: {
+        factorio = pkgs.factorio.override {
+          username = "FactorioPlayer1654";
+          token = "d5ad5a8971267c895c0da598688761";
+        };
+      };
+    }
+
+    Alternatively, instead of providing the username+token, you may manually
+    download the release through https://factorio.com/download , then add it to
+    the store using e.g.:
+
+      releaseType=alpha
+      version=0.16.51
+      nix-prefetch-url file://$HOME/Downloads/factorio_\''${releaseType}_x64_\''${version}.tar.xz --name factorio_\''${releaseType}_x64-\''${version}.tar.xz
+
+    Note the ultimate "_" is replaced with "-" in the --name arg!
+  '';
+
+  branch = if experimental then "experimental" else "stable";
+
+  # NB `experimental` directs us to take the latest build, regardless of its branch;
+  # hence the (stable, experimental) pairs may sometimes refer to the same distributable.
+  binDists = {
+    x86_64-linux = let bdist = bdistForArch { inUrl = "linux64"; inTar = "x64"; }; in {
+      alpha = {
+        stable        = bdist { sha256 = "0b4hbpdcrh5hgip9q5dkmw22p66lcdhnr0kmb0w5dw6yi7fnxxh0"; version = "0.16.51"; withAuth = true; };
+        experimental  = bdist { sha256 = "11vwyyf3him2bi0c5cgv0h0k304kvw667ygqplq5giyzcvadjix8"; version = "0.17.16"; withAuth = true; };
+      };
+      headless = {
+        stable        = bdist { sha256 = "0zrnpg2js0ysvx9y50h3gajldk16mv02dvrwnkazh5kzr1d9zc3c"; version = "0.16.51"; };
+        experimental  = bdist { sha256 = "1sxv4kc5vg53lgjrm5c250hvbg6hqz0ijfxpvfjk7bzps5g6n1fx"; version = "0.17.16"; };
+      };
+      demo = {
+        stable        = bdist { sha256 = "0zf61z8937yd8pyrjrqdjgd0rjl7snwrm3xw86vv7s7p835san6a"; version = "0.16.51"; };
+      };
     };
-    i386 = {
-      headless = abort "Factorio 32-bit headless binaries are not available for download.";
-      alpha = authenticatedFetch { inherit      url; sha256 = "0hda2z1q22xanl328kic5q09ck59mr3aa5cy4dbjv86s4dx9kxfq"; };
+    i686-linux = let bdist = bdistForArch { inUrl = "linux32"; inTar = "i386"; }; in {
+      alpha = {
+        stable        = bdist { sha256 = "0nnfkxxqnywx1z05xnndgh71gp4izmwdk026nnjih74m2k5j086l"; version = "0.14.23"; withAuth = true; nameMut = asGz; };
+      };
     };
   };
+
+  actual = binDists.${stdenv.hostPlatform.system}.${releaseType}.${branch} or (throw "Factorio ${releaseType}-${branch} binaries for ${stdenv.hostPlatform.system} are not available for download.");
+
+  bdistForArch = arch: { version
+                       , sha256
+                       , withAuth ? false
+                       , nameMut ? x: x
+                       }:
+    let
+      url = "https://factorio.com/get-download/${version}/${releaseType}/${arch.inUrl}";
+      name = nameMut "factorio_${releaseType}_${arch.inTar}-${version}.tar.xz";
+    in {
+      inherit version arch;
+      src =
+        if withAuth then
+          (stdenv.lib.overrideDerivation
+            (fetchurl {
+              inherit name url sha256;
+              curlOpts = [
+                "--get"
+                "--data-urlencode" "username@username"
+                "--data-urlencode" "token@token"
+              ];
+            })
+            (_: { # This preHook hides the credentials from /proc
+                  preHook = ''
+                    echo -n "${username}" >username
+                    echo -n "${token}"    >token
+                  '';
+                  failureHook = ''
+                    cat <<EOF
+                    ${helpMsg}
+                    EOF
+                  '';
+            })
+          )
+        else
+          fetchurl { inherit name url sha256; };
+    };
+
+  asGz = builtins.replaceStrings [".xz"] [".gz"];
 
   configBaseCfg = ''
     use-system-read-write-data-directories=false
@@ -58,10 +133,10 @@ let
 
   modDir = factorio-utils.mkModDirDrv mods;
 
-  base = {
+  base = with actual; {
     name = "factorio-${releaseType}-${version}";
 
-    src = fetch.${arch.inTar}.${releaseType};
+    inherit src;
 
     preferLocalBuild = true;
     dontBuild = true;
@@ -95,55 +170,64 @@ let
       platforms = [ "i686-linux" "x86_64-linux" ];
     };
   };
-  headless = base;
-  alpha = base // {
 
-    buildInputs = [ makeWrapper ];
+  releases = rec {
+    headless = base;
+    demo = base // {
 
-    libPath = stdenv.lib.makeLibraryPath [
-      alsaLib
-      libX11
-      libXcursor
-      libXinerama
-      libXrandr
-      libXi
-      mesa_noglu
-    ];
+      buildInputs = [ makeWrapper ];
 
-    installPhase = base.installPhase + ''
-      wrapProgram $out/bin/factorio                                \
-        --prefix LD_LIBRARY_PATH : /run/opengl-driver/lib:$libPath \
-        --run "$out/share/factorio/update-config.sh"               \
-        --argv0 "" \
-        --add-flags "-c \$HOME/.factorio/config.cfg ${optionalString (mods != []) "--mod-directory=${modDir}"}"
+      libPath = stdenv.lib.makeLibraryPath [
+        alsaLib
+        libX11
+        libXcursor
+        libXinerama
+        libXrandr
+        libXi
+        libGL
+      ];
 
-        # TODO Currently, every time a mod is changed/added/removed using the
-        # modlist, a new derivation will take up the entire footprint of the
-        # client. The only way to avoid this is to remove the mods arg from the
-        # package function. The modsDir derivation will have to be built
-        # separately and have the user specify it in the .factorio config or
-        # right along side it using a symlink into the store I think i will
-        # just remove mods for the client derivation entirely. this is much
-        # cleaner and more useful for headless mode.
+      installPhase = base.installPhase + ''
+        wrapProgram $out/bin/factorio                                \
+          --prefix LD_LIBRARY_PATH : /run/opengl-driver/lib:$libPath \
+          --run "$out/share/factorio/update-config.sh"               \
+          --argv0 ""                                                 \
+          --add-flags "-c \$HOME/.factorio/config.cfg"               \
+          ${if mods!=[] then "--add-flags --mod-directory=${modDir}" else ""}
 
-        # TODO: trying to toggle off a mod will result in read-only-fs-error.
-        # not much we can do about that except warn the user somewhere. In
-        # fact, no exit will be clean, since this error will happen on close
-        # regardless. just prints an ugly stacktrace but seems to be otherwise
-        # harmless, unless maybe the user forgets and tries to use the mod
-        # manager.
+          # TODO Currently, every time a mod is changed/added/removed using the
+          # modlist, a new derivation will take up the entire footprint of the
+          # client. The only way to avoid this is to remove the mods arg from the
+          # package function. The modsDir derivation will have to be built
+          # separately and have the user specify it in the .factorio config or
+          # right along side it using a symlink into the store I think i will
+          # just remove mods for the client derivation entirely. this is much
+          # cleaner and more useful for headless mode.
 
-      install -m0644 <(cat << EOF
-      ${configBaseCfg}
-      EOF
-      ) $out/share/factorio/config-base.cfg
+          # TODO: trying to toggle off a mod will result in read-only-fs-error.
+          # not much we can do about that except warn the user somewhere. In
+          # fact, no exit will be clean, since this error will happen on close
+          # regardless. just prints an ugly stacktrace but seems to be otherwise
+          # harmless, unless maybe the user forgets and tries to use the mod
+          # manager.
 
-      install -m0755 <(cat << EOF
-      ${updateConfigSh}
-      EOF
-      ) $out/share/factorio/update-config.sh
+        install -m0644 <(cat << EOF
+        ${configBaseCfg}
+        EOF
+        ) $out/share/factorio/config-base.cfg
 
-      cp -a doc-html $out/share/factorio
-    '';
+        install -m0755 <(cat << EOF
+        ${updateConfigSh}
+        EOF
+        ) $out/share/factorio/update-config.sh
+      '';
+    };
+    alpha = demo // {
+
+      installPhase = demo.installPhase + ''
+        cp -a doc-html $out/share/factorio
+      '';
+    };
   };
-in stdenv.mkDerivation (if isHeadless then headless else alpha)
+
+in stdenv.mkDerivation (releases.${releaseType})

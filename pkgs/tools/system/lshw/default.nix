@@ -6,10 +6,10 @@ let numVersion = "02.18"; # :(
 in
 stdenv.mkDerivation rec {
   name = "lshw-${numVersion}b";
-  version = "B.${numVersion}";
+  version = "${numVersion}";
 
   src = fetchurl {
-    url = "http://ezix.org/software/files/lshw-${version}.tar.gz";
+    url = "https://ezix.org/software/files/lshw-B.${version}.tar.gz";
     sha256 = "0brwra4jld0d53d7jsgca415ljglmmx1l2iazpj4ndilr48yy8mf";
   };
 
@@ -19,7 +19,15 @@ stdenv.mkDerivation rec {
     sha256 = "147wyr5m185f8swsmb4q1ahs9r1rycapbpa2548aqbv298bbish3";
   })];
 
-  buildInputs = lib.optionals withGUI [ gtk2 pkgconfig sqlite ];
+  nativeBuildInputs = [ pkgconfig ];
+
+  buildInputs = lib.optionals withGUI [ gtk2 sqlite ];
+
+  # Fix version info.
+  preConfigure = ''
+    sed -e "s/return \"unknown\"/return \"${version}\"/" \
+        -i src/core/version.cc
+  '';
 
   makeFlags = [ "PREFIX=$(out)" ];
 
@@ -30,10 +38,10 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
 
   meta = with stdenv.lib; {
-    homepage = http://ezix.org/project/wiki/HardwareLiSter;
+    homepage = https://ezix.org/project/wiki/HardwareLiSter;
     description = "Provide detailed information on the hardware configuration of the machine";
     license = licenses.gpl2;
-    maintainers = with maintainers; [ phreedom jgeerds ];
+    maintainers = with maintainers; [ phreedom ];
     platforms = platforms.linux;
   };
 }

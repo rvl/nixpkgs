@@ -1,29 +1,24 @@
-{ stdenv, fetchurl, perl, zlib, gnutls, gss, openssl, libssh2, libidn, libpsl, openldap }:
+{ stdenv, fetchurl, libtool, groff, perl, pkgconfig, python2, zlib, gnutls,
+  libidn2, libunistring, nghttp2 }:
 
 stdenv.mkDerivation rec {
-  version = "7.48.0";
+  version = "7.64.0";
 
   name = "libgnurl-${version}";
 
   src = fetchurl {
-    url = "https://gnunet.org/sites/default/files/gnurl-7_48_0.tar.bz2";
-    sha256 = "14gch4rdibrc8qs4mijsczxvl45dsclf234g17dk6c8nc2s4bm0a";
+    url = "mirror://gnu/gnunet/gnurl-${version}.tar.gz";
+    sha256 = "0pvmbi32lixcpk10prplmwrmi4wzp3bc1aiyhr552kx0wqdqmdk8";
   };
 
-  buildInputs = [ perl gnutls gss openssl zlib libidn libssh2 libpsl openldap ];
-
-  preConfigure = ''
-    sed -e 's|/usr/bin|/no-such-path|g' -i.bak configure
-  '';
+  nativeBuildInputs = [ libtool groff perl pkgconfig python2 ];
+    
+  buildInputs = [ gnutls zlib libidn2 libunistring nghttp2 ];
 
   configureFlags = [
-    "--with-zlib"
-    "--with-gssapi"
-    "--with-libssh2"
-    "--with-libidn"
-    "--with-libpsl"
-    "--enable-ldap"
-    "--enable-ldaps"
+    "--disable-ntlm-wb"
+    "--without-ca-bundle"
+    "--with-ca-fallback"
   ];
 
   meta = with stdenv.lib; {
@@ -31,5 +26,6 @@ stdenv.mkDerivation rec {
     homepage    = https://gnunet.org/gnurl;
     maintainers = with maintainers; [ falsifian vrthra ];
     platforms = platforms.linux;
+    license = licenses.curl;
   };
 }

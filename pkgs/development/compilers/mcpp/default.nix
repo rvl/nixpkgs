@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, mcpp }:
+{ stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
   name = "mcpp-2.7.2";
@@ -11,7 +11,7 @@ stdenv.mkDerivation rec {
   configureFlags = [ "--enable-mcpplib" ];
 
   meta = with stdenv.lib; {
-    homepage = "http://mcpp.sourceforge.net/";
+    homepage = http://mcpp.sourceforge.net/;
     description = "A portable c preprocessor";
     license = licenses.bsd2;
     platforms = platforms.unix;

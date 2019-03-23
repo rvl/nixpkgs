@@ -2,11 +2,11 @@
 
 stdenv.mkDerivation rec {
   name = "libev-${version}";
-  version="4.22";
+  version="4.25";
 
   src = fetchurl {
     url = "http://dist.schmorp.de/libev/Attic/${name}.tar.gz";
-    sha256 = "1mhvy38g9947bbr0n0hzc34zwfvvfd99qgzpkbap8g2lmkl7jq3k";
+    sha256 = "1295q0lkkbrlpd5dl5i48bh1rm8mjzh9y795jlvjz3bp4wf7wxbq";
   };
 
   meta = {

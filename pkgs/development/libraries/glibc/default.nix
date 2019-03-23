@@ -1,21 +1,20 @@
-{ lib, stdenv, fetchurl, linuxHeaders
-, installLocales ? true
+{ stdenv, callPackage
+, withLinuxHeaders ? true
 , profilingLibraries ? false
-, gccCross ? null
-, withGd ? false, gd ? null, libpng ? null
+, withGd ? false
+, buildPackages
 }:
 
-assert stdenv.cc.isGNU;
+callPackage ./common.nix { inherit stdenv; } {
+    name = "glibc" + stdenv.lib.optionalString withGd "-gd";
 
-let
-  build = import ./common.nix;
-  cross = if gccCross != null then gccCross.target else null;
-in
-  build cross ({
-    name = "glibc" + lib.optionalString withGd "-gd";
+    inherit withLinuxHeaders profilingLibraries withGd;
 
-    inherit lib stdenv fetchurl linuxHeaders installLocales
-      profilingLibraries gccCross withGd gd libpng;
+    # Note:
+    # Things you write here override, and do not add to,
+    # the values in `common.nix`.
+    # (For example, if you define `patches = [...]` here, it will
+    # override the patches in `common.nix`.)
 
     NIX_NO_SELF_RPATH = true;
 
@@ -36,7 +35,10 @@ in
     # The stackprotector and fortify hardening flags are autodetected by glibc
     # and enabled by default if supported. Setting it for every gcc invocation
     # does not work.
-    hardeningDisable = [ "stackprotector" "fortify" ];
+    hardeningDisable = [ "stackprotector" "fortify" ]
+    # XXX: Not actually musl-speciic but since only musl enables pie by default,
+    #      limit rebuilds by only disabling pie w/musl
+      ++ stdenv.lib.optional stdenv.hostPlatform.isMusl "pie";
 
     # When building glibc from bootstrap-tools, we need libgcc_s at RPATH for
     # any program we run, because the gcc will have been placed at a new
@@ -54,10 +56,29 @@ in
       fi
     '';
 
-    postInstall = ''
-      if test -n "$installLocales"; then
-          make -j''${NIX_BUILD_CORES:-1} -l''${NIX_BUILD_CORES:-1} localedata/install-locales
-      fi
+    postInstall = (if stdenv.hostPlatform == stdenv.buildPlatform then ''
+      echo SUPPORTED-LOCALES=C.UTF-8/UTF-8 > ../glibc-2*/localedata/SUPPORTED
+      make -j''${NIX_BUILD_CORES:-1} -l''${NIX_BUILD_CORES:-1} localedata/install-locales
+    '' else stdenv.lib.optionalString stdenv.buildPlatform.isLinux ''
+      # This is based on http://www.linuxfromscratch.org/lfs/view/development/chapter06/glibc.html
+      # Instead of using their patch to build a build-native localedef,
+      # we simply use the one from buildPackages
+      pushd ../glibc-2*/localedata
+      export I18NPATH=$PWD GCONV_PATH=$PWD/../iconvdata
+      mkdir -p $NIX_BUILD_TOP/${buildPackages.glibc}/lib/locale
+      ${stdenv.lib.getBin buildPackages.glibc}/bin/localedef \
+        --alias-file=../intl/locale.alias \
+        -i locales/C \
+        -f charmaps/UTF-8 \
+        --prefix $NIX_BUILD_TOP \
+        ${if stdenv.hostPlatform.parsed.cpu.significantByte.name == "littleEndian" then
+            "--little-endian"
+          else
+            "--big-endian"} \
+        C.UTF-8
+      cp -r $NIX_BUILD_TOP/${buildPackages.glibc}/lib/locale $out/lib
+      popd
+    '') + ''
 
       test -f $out/etc/ld.so.cache && rm $out/etc/ld.so.cache
 
@@ -76,14 +97,15 @@ in
 
       # Get rid of more unnecessary stuff.
       rm -rf $out/var $bin/bin/sln
-
+    ''
       # For some reason these aren't stripped otherwise and retain reference
       # to bootstrap-tools; on cross-arm this stripping would break objects.
-      if [ -z "$crossConfig" ]; then
-        for i in "$out"/lib/*.a; do
-            strip -S "$i"
-        done
-      fi
+    + stdenv.lib.optionalString (stdenv.hostPlatform == stdenv.buildPlatform) ''
+
+      for i in "$out"/lib/*.a; do
+          [ "$i" = "$out/lib/libm.a" ] || $STRIP -S "$i"
+      done
+    '' + ''
 
       # Put libraries for static linking in a separate output.  Note
       # that libc_nonshared.a and libpthread_nonshared.a are required
@@ -91,6 +113,9 @@ in
       mkdir -p $static/lib
       mv $out/lib/*.a $static/lib
       mv $static/lib/lib*_nonshared.a $out/lib
+      # Some of *.a files are linker scripts where moving broke the paths.
+      sed "/^GROUP/s|$out/lib/lib|$static/lib/lib|g" \
+        -i "$static"/lib/*.a
 
       # Work around a Nix bug: hard links across outputs cause a build failure.
       cp $bin/bin/getconf $bin/bin/getconf_
@@ -101,36 +126,3 @@ in
 
     meta.description = "The GNU C Library";
   }
-
-  //
-
-  (if cross != null
-   then {
-      preConfigure = ''
-        sed -i s/-lgcc_eh//g "../$sourceRoot/Makeconfig"
-
-        cat > config.cache << "EOF"
-        libc_cv_forced_unwind=yes
-        libc_cv_c_cleanup=yes
-        libc_cv_gnu89_inline=yes
-        # Only due to a problem in gcc configure scripts:
-        libc_cv_sparc64_tls=${if cross.withTLS then "yes" else "no"}
-        EOF
-        export BUILD_CC=gcc
-        export CC="$crossConfig-gcc"
-        export AR="$crossConfig-ar"
-        export RANLIB="$crossConfig-ranlib"
-
-        dontStrip=1
-      '';
-
-      preInstall = null; # clobber the native hook
-
-      separateDebugInfo = false; # this is currently broken for crossDrv
-
-      # To avoid a dependency on the build system 'bash'.
-      preFixup = ''
-        rm $bin/bin/{ldd,tzselect,catchsegv,xtrace}
-      '';
-    }
-   else {}))

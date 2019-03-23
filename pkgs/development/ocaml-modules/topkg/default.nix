@@ -1,22 +1,42 @@
-{ stdenv, fetchurl, ocaml, findlib, ocamlbuild, result, opam }:
+/* Topkg is a packager for distributing OCaml software. This derivation
+provides facilities to describe derivations for OCaml libraries
+using topkg.
+The `buildPhase` and `installPhase` attributes can be reused directly
+in many cases. When more fine-grained control on how to run the “topkg”
+build system is required, the attribute `run` can be used.
+*/
+{ stdenv, fetchurl, ocaml, findlib, ocamlbuild, result, opaline }:
+
+if !stdenv.lib.versionAtLeast ocaml.version "4.01"
+then throw "topkg is not available for OCaml ${ocaml.version}"
+else
+
+let
+/* This command allows to run the “topkg” build system.
+ * It is usually called with `build` or `test` as argument.
+ * Packages that use `topkg` may call this command as part of
+ *  their `buildPhase` or `checkPhase`.
+*/
+  run = "ocaml -I ${findlib}/lib/ocaml/${ocaml.version}/site-lib/ pkg/pkg.ml";
+in
 
 stdenv.mkDerivation rec {
   name = "ocaml${ocaml.version}-topkg-${version}";
-  version = "0.7.8";
+  version = "1.0.0";
 
   src = fetchurl {
     url = "http://erratique.ch/software/topkg/releases/topkg-${version}.tbz";
-    sha256 = "029lbmabczpmcgkj53mc20vmpcn3f7rf7xms4xf0nywswfzsash6";
+    sha256 = "1df61vw6v5bg2mys045682ggv058yqkqb67w7r2gz85crs04d5fw";
   };
 
-  nativeBuildInputs = [ opam ];
   buildInputs = [ ocaml findlib ocamlbuild ];
   propagatedBuildInputs = [ result ];
 
-  unpackCmd = "tar xjf ${src}";
-  buildPhase = "ocaml -I ${findlib}/lib/ocaml/${ocaml.version}/site-lib/ pkg/pkg.ml build";
+  buildPhase = "${run} build";
   createFindlibDestdir = true;
-  installPhase = "opam-installer -i --prefix=$out --libdir=$OCAMLFIND_DESTDIR";
+  installPhase = "${opaline}/bin/opaline -prefix $out -libdir $OCAMLFIND_DESTDIR";
+
+  passthru = { inherit run; };
 
   meta = {
     homepage = http://erratique.ch/software/topkg;

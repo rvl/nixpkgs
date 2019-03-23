@@ -1,9 +1,8 @@
-{stdenv, buildOcamlJane, fetchurl,
+{stdenv, buildOcamlJane,
  core,
  bin_prot, fieldslib, sexplib, typerep, variantslib,
  ppx_assert, ppx_bench, ppx_driver, ppx_expect, ppx_inline_test, ppx_jane,
- re2, textutils,
- ocaml_oasis, opam, js_build_tools}:
+ re2, textutils}:
 
 buildOcamlJane rec {
   name = "core_extended";
@@ -12,6 +11,13 @@ buildOcamlJane rec {
     [ core bin_prot fieldslib sexplib typerep variantslib
       ppx_assert ppx_bench ppx_driver ppx_expect ppx_inline_test ppx_jane
       re2 textutils ];
+
+  patchPhase = stdenv.lib.optionalString stdenv.isLinux ''
+    patch src/extended_unix_stubs.c <<EOF
+0a1
+> #define _LINUX_QUOTA_VERSION 2
+EOF
+  '';
 
   meta = with stdenv.lib; {
     homepage = https://github.com/janestreet/core_extended;

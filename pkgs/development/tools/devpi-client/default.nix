@@ -1,26 +1,47 @@
-{ stdenv, fetchurl, pythonPackages, glibcLocales} :
+{ stdenv
+, pythonPackages
+, glibcLocales
+, devpi-server
+, git
+, mercurial
+} :
 
 pythonPackages.buildPythonApplication rec {
-  name = "devpi-client-${version}";
-  version = "2.7.0";
+  name = "${pname}-${version}";
+  pname = "devpi-client";
+  version = "4.1.0";
 
-  src = fetchurl {
-    url = "mirror://pypi/d/devpi-client/${name}.tar.gz";
-    sha256 = "0z7vaf0a66n82mz0vx122pbynjvkhp2mjf9lskgyv09y3bxzzpj3";
+  src = pythonPackages.fetchPypi {
+    inherit pname version;
+    sha256 = "0f5jkvxx9fl8v5vwbwmplqhjsdfgiib7j3zvn0zxd8krvi2s38fq";
   };
 
-  doCheck = false;
+  checkInputs = with pythonPackages; [
+                    pytest pytest-flakes webtest mock
+                    devpi-server tox
+                    sphinx wheel git mercurial detox
+                    setuptools
+                    ];
+  checkPhase = ''
+    export PATH=$PATH:$out/bin
+    export HOME=$TMPDIR # fix tests failing in sandbox due to "/homeless-shelter"
+
+    # setuptools do not get propagated into the tox call (cannot import setuptools)
+    rm testing/test_test.py
+
+    # test_pypi_index_attributes tries to connect to upstream pypi
+    py.test -k 'not test_pypi_index_attributes' testing
+  '';
 
   LC_ALL = "en_US.UTF-8";
-  buildInputs = with pythonPackages; [ glibcLocales tox check-manifest pkginfo ];
+  buildInputs = with pythonPackages; [ glibcLocales pkginfo check-manifest ];
+  propagatedBuildInputs = with pythonPackages; [ py devpi-common pluggy setuptools ];
 
-  propagatedBuildInputs = with pythonPackages; [ py devpi-common ];
-
-  meta = {
+  meta = with stdenv.lib; {
     homepage = http://doc.devpi.net;
-    description = "Github-style pypi index server and packaging meta tool";
-    license = stdenv.lib.licenses.mit;
-    maintainers = with stdenv.lib.maintainers; [ lewo makefu ];
-
+    description = "Client for devpi, a pypi index server and packaging meta tool";
+    license = licenses.mit;
+    maintainers = with maintainers; [ lewo makefu ];
   };
+
 }

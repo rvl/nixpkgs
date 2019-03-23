@@ -1,13 +1,13 @@
 {stdenv, fetchFromGitHub}:
 stdenv.mkDerivation rec {
-  version = "1.6.1";
+  version = "1.8.2";
   name = "libsixel-${version}";
 
   src = fetchFromGitHub {
     repo = "libsixel";
-    rev = "ef4374f80385edc48e0844cf324d7ef757688e44";
+    rev = "v${version}";
     owner = "saitoha";
-    sha256 = "08m5q2ppk235bzbwff1wg874vr1bh4080qdj26l39v8lw1xzlqcp";
+    sha256 = "1jn5z2ylccjkp9i12n5x53x2zzhhsgmgs6xxi7aja6qimfw90h1n";
   };
 
   meta = with stdenv.lib; {

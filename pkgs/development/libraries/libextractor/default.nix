@@ -7,11 +7,11 @@ assert gtkSupport -> glib != null && gtk3 != null;
 assert videoSupport -> ffmpeg != null && libmpeg2 != null;
 
 stdenv.mkDerivation rec {
-  name = "libextractor-1.2";
+  name = "libextractor-1.8";
 
   src = fetchurl {
     url = "mirror://gnu/libextractor/${name}.tar.gz";
-    sha256 = "1n7z6s5ils6xmf6b0z1xda41maxj94c1n6wlyyxmacs5lrkh2a96";
+    sha256 = "1z1cb35griqzvshqdv5ck98dy0sgpsswn7fgiy7lbzi34sma8dg2";
   };
 
   preConfigure =
@@ -27,10 +27,12 @@ stdenv.mkDerivation rec {
    ] ++ stdenv.lib.optionals gtkSupport [ glib gtk3 ]
      ++ stdenv.lib.optionals videoSupport [ ffmpeg libmpeg2 ];
 
-  configureFlags = "--disable-ltdl-install "
-    + "--with-ltdl-include=${libtool}/include "
-    + "--with-ltdl-lib=${libtool.lib}/lib "
-    + "--enable-xpdf";
+  configureFlags = [
+    "--disable-ltdl-install"
+    "--with-ltdl-include=${libtool}/include"
+    "--with-ltdl-lib=${libtool.lib}/lib"
+    "--enable-xpdf"
+  ];
 
   # Checks need to be run after "make install", otherwise plug-ins are not in
   # the search path, etc.

@@ -1,20 +1,27 @@
-{ stdenv, fetchurl, makeWrapper, SDL , alsaLib, gtk2, libjack2, ladspaH
+{ stdenv, fetchFromGitHub, makeWrapper, SDL, alsaLib, autoreconfHook, gtk2, libjack2, ladspaH
 , ladspaPlugins, libsamplerate, libsndfile, pkgconfig, libpulseaudio, lame
 , vorbis-tools }:
 
-stdenv.mkDerivation  rec {
+stdenv.mkDerivation rec {
   name = "mhwaveedit-${version}";
-  version = "1.4.23";
+  version = "1.4.24";
 
-  src = fetchurl {
-    url = "http://download.gna.org/mhwaveedit/${name}.tar.bz2";
-    sha256 = "010rk4mr631s440q9cfgdxx2avgzysr9aq52diwdlbq9cddifli3";
+  src = fetchFromGitHub {
+    owner = "magnush";
+    repo = "mhwaveedit";
+    rev = "v${version}";
+    sha256 = "037pbq23kh8hsih994x2sv483imglwcrqrx6m8visq9c46fi0j1y";
   };
 
-  buildInputs = [ SDL alsaLib gtk2 libjack2 ladspaH libsamplerate libsndfile
-     pkgconfig libpulseaudio makeWrapper ];
+  nativeBuildInputs = [ autoreconfHook makeWrapper pkgconfig ];
 
-  configureFlags = "--with-default-ladspa-path=${ladspaPlugins}/lib/ladspa";
+  preAutoreconf = "(cd docgen && sh gendocs.sh)";
+
+  buildInputs = [
+    SDL alsaLib gtk2 libjack2 ladspaH libsamplerate libsndfile libpulseaudio
+  ];
+
+  configureFlags = [ "--with-default-ladspa-path=${ladspaPlugins}/lib/ladspa" ];
 
   postInstall = ''
     wrapProgram $out/bin/mhwaveedit \
@@ -24,7 +31,7 @@ stdenv.mkDerivation  rec {
 
   meta = with stdenv.lib; {
     description = "Graphical program for editing, playing and recording sound files";
-    homepage = https://gna.org/projects/mhwaveedit;
+    homepage = https://github.com/magnush/mhwaveedit;
     license = licenses.gpl2Plus;
     platforms = platforms.linux;
     maintainers = [ maintainers.goibhniu ];

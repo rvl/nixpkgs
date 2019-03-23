@@ -13,7 +13,7 @@ To update the list of packages from MELPA,
 
 */
 
-{ lib }:
+{ external }:
 
 self:
 
@@ -35,8 +35,8 @@ self:
     });
 
     overrides = {
-      # upstream issue: mismatched filename
-      ack-menu = markBroken super.ack-menu;
+      # Expects bash to be at /bin/bash
+      ac-rtags = markBroken super.ac-rtags;
 
       airline-themes = super.airline-themes.override {
         inherit (self.melpaPackages) powerline;
@@ -46,8 +46,14 @@ self:
       bufshow = markBroken super.bufshow;
 
       # part of a larger package
+      caml = dontConfigure super.caml;
+
+      # part of a larger package
       # upstream issue: missing package version
       cmake-mode = markBroken (dontConfigure super.cmake-mode);
+
+      # Expects bash to be at /bin/bash
+      company-rtags = markBroken super.company-rtags;
 
       # upstream issue: missing file header
       connection = markBroken super.connection;
@@ -65,25 +71,44 @@ self:
       # upstream issue: missing file header
       elmine = markBroken super.elmine;
 
+      # upstream issue: missing dependency redshank
+      emr = markBroken super.emr;
+
       ess-R-data-view = super.ess-R-data-view.override {
         inherit (self.melpaPackages) ess ctable popup;
       };
 
-      ess-R-object-popup = super.ess-R-object-popup.override {
-        inherit (self.melpaPackages) ess popup;
-      };
+      # upstream issue: doesn't build
+      eterm-256color = markBroken super.eterm-256color;
+
+      # upstream issue: missing dependency highlight
+      evil-search-highlight-persist = markBroken super.evil-search-highlight-persist;
+
+      # upstream issue: missing dependency highlight
+      floobits  = markBroken super.floobits;
 
       # missing OCaml
       flycheck-ocaml = markBroken super.flycheck-ocaml;
 
-      # upstream issue: missing file header
-      fold-dwim = markBroken super.fold-dwim;
+      # Expects bash to be at /bin/bash
+      flycheck-rtags = markBroken super.flycheck-rtags;
+
+      # upstream issue: missing dependency
+      fold-dwim-org = markBroken super.fold-dwim-org;
 
       # build timeout
       graphene = markBroken super.graphene;
 
-      # upstream issue: mismatched filename
-      helm-lobsters = markBroken super.helm-lobsters;
+      # Expects bash to be at /bin/bash
+      helm-rtags = markBroken super.helm-rtags;
+
+      # Build same version as Haskell package
+      hindent = super.hindent.overrideAttrs (attrs: {
+        version = external.hindent.version;
+        src = external.hindent.src;
+        packageRequires = [ self.haskell-mode ];
+        propagatedUserEnvPkgs = [ external.hindent ];
+      });
 
       # upstream issue: missing file header
       ido-complete-space-or-hyphen = markBroken super.ido-complete-space-or-hyphen;
@@ -91,17 +116,43 @@ self:
       # upstream issue: missing file header
       initsplit = markBroken super.initsplit;
 
+      # upstream issue: recipe fails
+      insert-shebang = markBroken super.insert-shebang;
+
+      # Expects bash to be at /bin/bash
+      ivy-rtags = markBroken super.ivy-rtags;
+
       # upstream issue: missing file header
       jsfmt = markBroken super.jsfmt;
 
       # upstream issue: missing file header
       link = markBroken super.link;
 
-      # upstream issue: mismatched filename
-      link-hint = markBroken super.link-hint;
-
       # upstream issue: missing file header
       maxframe = markBroken super.maxframe;
+
+      magit =
+        (super.magit.override {
+          # version of magit-popup needs to match magit
+          # https://github.com/magit/magit/issues/3286
+          inherit (self.melpaStablePackages) magit-popup;
+        }).overrideAttrs (attrs: {
+          # searches for Git at build time
+          nativeBuildInputs =
+            (attrs.nativeBuildInputs or []) ++ [ external.git ];
+        });
+
+      magit-todos = super.magit-todos.overrideAttrs (attrs: {
+        # searches for Git at build time
+        nativeBuildInputs =
+          (attrs.nativeBuildInputs or []) ++ [ external.git ];
+      });
+
+      magit-filenotify = super.magit-filenotify.overrideAttrs (attrs: {
+        # searches for Git at build time
+        nativeBuildInputs =
+          (attrs.nativeBuildInputs or []) ++ [ external.git ];
+      });
 
       # missing OCaml
       merlin = markBroken super.merlin;
@@ -119,11 +170,11 @@ self:
       # missing OCaml
       ocp-indent = markBroken super.ocp-indent;
 
+      # upstream issue: missing file header
+      po-mode = markBroken super.po-mode;
+
       # upstream issue: truncated file
       powershell = markBroken super.powershell;
-
-      # upstream issue: mismatched filename
-      processing-snippets = markBroken super.processing-snippets;
 
       # upstream issue: missing file header
       qiita = markBroken super.qiita;
@@ -135,10 +186,19 @@ self:
       stgit = markBroken super.stgit;
 
       # upstream issue: missing file header
+      tawny-mode = markBroken super.tawny-mode;
+
+      # upstream issue: missing file header
       textmate = markBroken super.textmate;
 
       # missing OCaml
       utop = markBroken super.utop;
+
+      vdiff-magit =
+        (super.vdiff-magit.overrideAttrs (attrs: {
+          nativeBuildInputs =
+            (attrs.nativeBuildInputs or []) ++ [ external.git ];
+        }));
 
       # upstream issue: missing file header
       voca-builder = markBroken super.voca-builder;

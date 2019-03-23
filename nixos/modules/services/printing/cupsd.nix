@@ -4,15 +4,16 @@ with lib;
 
 let
 
-  inherit (pkgs) cups cups-pk-helper cups-filters gutenprint;
+  inherit (pkgs) cups cups-pk-helper cups-filters;
 
   cfg = config.services.printing;
 
   avahiEnabled = config.services.avahi.enable;
   polkitEnabled = config.security.polkit.enable;
 
-  additionalBackends = pkgs.runCommand "additional-cups-backends" { }
-    ''
+  additionalBackends = pkgs.runCommand "additional-cups-backends" {
+      preferLocalBuild = true;
+    } ''
       mkdir -p $out
       if [ ! -e ${cups.out}/lib/cups/backend/smb ]; then
         mkdir -p $out/lib/cups/backend
@@ -35,9 +36,8 @@ let
     name = "cups-progs";
     paths =
       [ cups.out additionalBackends cups-filters pkgs.ghostscript ]
-      ++ optional cfg.gutenprint gutenprint
       ++ cfg.drivers;
-    pathsToLink = [ "/lib/cups" "/share/cups" "/bin" ];
+    pathsToLink = [ "/lib" "/share/cups" "/bin" ];
     postBuild = cfg.bindirCmds;
     ignoreCollisions = true;
   };
@@ -52,6 +52,7 @@ let
 
     ServerBin ${bindir}/lib/cups
     DataDir ${bindir}/share/cups
+    DocumentRoot ${cups.out}/share/doc/cups
 
     AccessLog syslog
     ErrorLog syslog
@@ -83,6 +84,8 @@ let
 
     WebInterface ${if cfg.webInterface then "Yes" else "No"}
 
+    LogLevel ${cfg.logLevel}
+
     ${cfg.extraConf}
   '';
 
@@ -96,11 +99,14 @@ let
       (writeConf "client.conf" cfg.clientConf)
       (writeConf "snmp.conf" cfg.snmpConf)
     ] ++ optional avahiEnabled browsedFile
-      ++ optional cfg.gutenprint gutenprint
       ++ cfg.drivers;
     pathsToLink = [ "/etc/cups" ];
     ignoreCollisions = true;
   };
+
+  filterGutenprint = pkgs: filter (pkg: pkg.meta.isGutenprint or false == true) pkgs;
+  containsGutenprint = pkgs: length (filterGutenprint pkgs) > 0;
+  getGutenprint = pkgs: head (filterGutenprint pkgs);
 
 in
 
@@ -119,9 +125,19 @@ in
         '';
       };
 
+      startWhenNeeded = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          If set, CUPS is socket-activated; that is,
+          instead of having it permanently running as a daemon,
+          systemd will start it on the first incoming connection.
+        '';
+      };
+
       listenAddresses = mkOption {
         type = types.listOf types.str;
-        default = [ "127.0.0.1:631" ];
+        default = [ "localhost:631" ];
         example = [ "*:631" ];
         description = ''
           A list of addresses and ports on which to listen.
@@ -162,6 +178,15 @@ in
         '';
       };
 
+      logLevel = mkOption {
+        type = types.str;
+        default = "info";
+        example = "debug";
+        description = ''
+          Specifies the cupsd logging verbosity.
+        '';
+      };
+
       extraFilesConf = mkOption {
         type = types.lines;
         default = "";
@@ -177,7 +202,7 @@ in
         example =
           ''
             BrowsePoll cups.example.com
-            LogLevel debug
+            MaxCopies 42
           '';
         description = ''
           Extra contents of the configuration file of the CUPS daemon
@@ -223,23 +248,17 @@ in
         '';
       };
 
-      gutenprint = mkOption {
-        type = types.bool;
-        default = false;
-        description = ''
-          Whether to enable Gutenprint drivers for CUPS. This includes auto-updating
-          Gutenprint PPD files.
-        '';
-      };
-
       drivers = mkOption {
         type = types.listOf types.path;
         default = [];
-        example = literalExample "[ pkgs.splix ]";
+        example = literalExample "with pkgs; [ gutenprint hplip splix cups-googlecloudprint ]";
         description = ''
-          CUPS drivers to use. Drivers provided by CUPS, cups-filters, Ghostscript
-          and Samba are added unconditionally. For adding Gutenprint, see
-          <literal>gutenprint</literal>.
+          CUPS drivers to use. Drivers provided by CUPS, cups-filters,
+          Ghostscript and Samba are added unconditionally. If this list contains
+          Gutenprint (i.e. a derivation with
+          <literal>meta.isGutenprint = true</literal>) the PPD files in
+          <filename>/var/lib/cups/ppd</filename> will be updated automatically
+          to avoid errors due to incompatible versions.
         '';
       };
 
@@ -260,7 +279,7 @@ in
 
   config = mkIf config.services.printing.enable {
 
-    users.extraUsers = singleton
+    users.users = singleton
       { name = "cups";
         uid = config.ids.uids.cups;
         group = "lp";
@@ -279,8 +298,13 @@ in
 
     systemd.packages = [ cups.out ];
 
+    systemd.sockets.cups = mkIf cfg.startWhenNeeded {
+      wantedBy = [ "sockets.target" ];
+      listenStreams = map (x: replaceStrings ["localhost"] ["127.0.0.1"] (removePrefix "*:" x)) cfg.listenAddresses;
+    };
+
     systemd.services.cups =
-      { wantedBy = [ "multi-user.target" ];
+      { wantedBy = optionals (!cfg.startWhenNeeded) [ "multi-user.target" ];
         wants = [ "network.target" ];
         after = [ "network.target" ];
 
@@ -293,6 +317,10 @@ in
             mkdir -m 0755 -p ${cfg.tempDir}
 
             mkdir -m 0755 -p /var/lib/cups
+            # While cups will automatically create self-signed certificates if accessed via TLS,
+            # this directory to store the certificates needs to be created manually.
+            mkdir -m 0700 -p /var/lib/cups/ssl
+
             # Backwards compatibility
             if [ ! -L /etc/cups ]; then
               mv /etc/cups/* /var/lib/cups
@@ -317,12 +345,17 @@ in
             [ ! -e /var/lib/cups/path ] && \
               ln -s ${bindir} /var/lib/cups/path
 
-            ${optionalString cfg.gutenprint ''
+            ${optionalString (containsGutenprint cfg.drivers) ''
               if [ -d /var/lib/cups/ppd ]; then
-                ${gutenprint}/bin/cups-genppdupdate -p /var/lib/cups/ppd
+                ${getGutenprint cfg.drivers}/bin/cups-genppdupdate -p /var/lib/cups/ppd
               fi
             ''}
           '';
+
+          serviceConfig = {
+            PrivateTmp = true;
+            RuntimeDirectory = [ "cups" ];
+          };
       };
 
     systemd.services.cups-browsed = mkIf avahiEnabled
@@ -343,8 +376,6 @@ in
 
     services.printing.extraConf =
       ''
-        LogLevel info
-
         DefaultAuthType Basic
 
         <Location />

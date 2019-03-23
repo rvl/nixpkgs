@@ -1,18 +1,29 @@
-{stdenv, fetchurl, ncurses, gettext}:
+{ stdenv, fetchurl, ncurses, gettext, python3, python3Packages, makeWrapper }:
 
-stdenv.mkDerivation {
-  name = "calcurse-4.0.0";
+stdenv.mkDerivation rec {
+  name = "calcurse-${version}";
+  version = "4.4.0";
 
   src = fetchurl {
-    url = http://calcurse.org/files/calcurse-4.0.0.tar.gz;
-    sha256 = "0d33cpkbhyidvm3xx6iw9ljqdvl6477c2kcwix3bs63nj0ch06v2";
+    url = "https://calcurse.org/files/${name}.tar.gz";
+    sha256 = "0vw2xi6a2lrhrb8n55zq9lv4mzxhby4xdf3hmi1vlfpyrpdwkjzd";
   };
 
-  buildInputs = [ncurses gettext];
+  buildInputs = [ ncurses gettext python3 ];
+  nativeBuildInputs = [ makeWrapper ];
 
-  meta = {
+  # Build Python environment with httplib2 for calcurse-caldav
+  pythonEnv = python3Packages.python.buildEnv.override {
+    extraLibs = [ python3Packages.httplib2 ];
+  };
+  propagatedBuildInputs = [ pythonEnv ];
+
+  postInstall = ''
+    substituteInPlace $out/bin/calcurse-caldav --replace /usr/bin/python3 ${pythonEnv}/bin/python3
+  '';
+
+  meta = with stdenv.lib; {
     description = "A calendar and scheduling application for the command line";
-    version = "4.0.0";
     longDescription = ''
       calcurse is a calendar and scheduling application for the command line. It helps
       keep track of events, appointments and everyday tasks. A configurable notification
@@ -21,7 +32,7 @@ stdenv.mkDerivation {
       be used to filter and format appointments, making it suitable for use in scripts.
     '';
     homepage = http://calcurse.org/;
-    license = stdenv.lib.licenses.bsd2;
-    platforms = stdenv.lib.platforms.linux;
+    license = licenses.bsd2;
+    platforms = platforms.linux;
   };
 }

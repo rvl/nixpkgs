@@ -1,4 +1,4 @@
-{ stdenv, appleDerivation, fetchzip, version, bsdmake, perl, flex, yacc, writeScriptBin
+{ stdenv, appleDerivation, fetchzip, bsdmake, perl, flex, yacc
 }:
 
 # this derivation sucks
@@ -11,12 +11,13 @@
 # the more recent adv_cmds release is used for everything else in this package
 
 let recentAdvCmds = fetchzip {
-  url = "http://opensource.apple.com/tarballs/adv_cmds/adv_cmds-158.tar.gz";
+  url = "https://opensource.apple.com/tarballs/adv_cmds/adv_cmds-158.tar.gz";
   sha256 = "0z081kcprzg5jcvqivfnwvvv6wfxzkjg2jc2lagsf8c7j7vgm8nn";
 };
 
 in appleDerivation {
-  buildInputs = [ bsdmake perl yacc flex ];
+  nativeBuildInputs = [ bsdmake perl yacc flex ];
+  buildInputs = [ flex ];
 
   patchPhase = ''
     substituteInPlace BSDmakefile \
@@ -64,6 +65,12 @@ in appleDerivation {
   '';
 
   installPhase = ''
+    for f in Products/Release/*; do
+      if [ -f $f ]; then
+        install -D $file $out/bin/$(basename $f)
+      fi
+    done
+
     bsdmake -C usr-share-locale.tproj install DESTDIR="$locale/share/locale"
 
     # need to get rid of runtime dependency on flex
@@ -82,9 +89,6 @@ in appleDerivation {
     "locale"
   ];
   setOutputFlags = false;
-
-  # ps uses this syscall to get process info
-  propagatedSandboxProfile = stdenv.lib.sandbox.allow "mach-priv-task-port";
 
   meta = {
     platforms = stdenv.lib.platforms.darwin;

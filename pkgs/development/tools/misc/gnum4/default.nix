@@ -10,16 +10,13 @@ stdenv.mkDerivation rec {
 
   doCheck = false;
 
-  configureFlags = "--with-syscmd-shell=${stdenv.shell}";
+  configureFlags = [ "--with-syscmd-shell=${stdenv.shell}" ];
 
   # Upstream is aware of it; it may be in the next release.
-  patches = [ ./s_isdir.patch ];
-
-  # FIXME needs gcc 4.9 in bootstrap tools
-  hardeningDisable = [ "stackprotector" ];
+  patches = [ ./s_isdir.patch ] ++ stdenv.lib.optional stdenv.hostPlatform.isDarwin stdenv.secure-format-patch;
 
   meta = {
-    homepage = http://www.gnu.org/software/m4/;
+    homepage = https://www.gnu.org/software/m4/;
     description = "GNU M4, a macro processor";
 
     longDescription = ''
@@ -40,7 +37,7 @@ stdenv.mkDerivation rec {
     '';
 
     license = stdenv.lib.licenses.gpl3Plus;
-    platforms = stdenv.lib.platforms.unix;
+    platforms = stdenv.lib.platforms.unix ++ stdenv.lib.platforms.windows;
   };
 
 }

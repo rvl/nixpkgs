@@ -1,24 +1,26 @@
 { stdenv, fetchurl, openssl, pkgconfig, gnutls, gsasl, libidn, Security }:
 
+with stdenv.lib;
+
 stdenv.mkDerivation rec {
-  version = "1.2.4";
+  version = "1.4.3";
   name = "mpop-${version}";
 
   src = fetchurl {
-    url = "mirror://sourceforge/mpop/${name}.tar.xz";
-    sha256 = "158zl6clxrl2id4kvdig2lvdvm0vg2byqcgn1dnxfjg5mw16ngwk";
+    url = "https://marlam.de/mpop/releases/${name}.tar.xz";
+    sha256 = "1di86frxv4gj8fasni409m87qmv0j0vmj13lawkz1pwv9hbynhjb";
   };
 
-  buildInputs = [ openssl pkgconfig gnutls gsasl libidn ]
-    ++ stdenv.lib.optional stdenv.isDarwin Security;
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ gnutls gsasl libidn ]
+    ++ optional stdenv.isDarwin Security;
 
-  configureFlags =
-    stdenv.lib.optional stdenv.isDarwin [ "--with-macosx-keyring" ];
+  configureFlags = optional stdenv.isDarwin [ "--with-macosx-keyring" ];
 
   meta = {
       description = "POP3 mail retrieval agent";
-      homepage = "http://mpop.sourceforge.net/";
-      license = stdenv.lib.licenses.gpl3Plus;
-      platforms = stdenv.lib.platforms.unix;
+      homepage = https://marlam.de/mpop;
+      license = licenses.gpl3Plus;
+      platforms = platforms.unix;
     };
 }

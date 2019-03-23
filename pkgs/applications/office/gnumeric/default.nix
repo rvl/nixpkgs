@@ -1,41 +1,42 @@
-{ stdenv, fetchurl, pkgconfig, intltool, perl, perlXMLParser
-, goffice, gnome3, makeWrapper, gtk3, bison, pythonPackages
+{ stdenv, fetchurl, pkgconfig, intltool, perlPackages
+, goffice, gnome3, wrapGAppsHook, gtk3, bison, pythonPackages
+, itstool
 }:
 
 let
   inherit (pythonPackages) python pygobject3;
 in stdenv.mkDerivation rec {
-  name = "gnumeric-1.12.32";
+  pname = "gnumeric";
+  version = "1.12.44";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/gnumeric/1.12/${name}.tar.xz";
-    sha256 = "a07bc83e2adaeb94bfa2c737c9a19d90381a19cb203dd7c4d5f7d6cfdbee6de8";
+    url = "mirror://gnome/sources/${pname}/${stdenv.lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
+    sha256 = "0147962c6ybdsj57rz95nla0rls7g545wc2n7pz59zmzyd5pksk0";
   };
 
-  configureFlags = "--disable-component";
+  configureFlags = [ "--disable-component" ];
+
+  nativeBuildInputs = [ pkgconfig intltool bison itstool wrapGAppsHook ];
 
   # ToDo: optional libgda, introspection?
   buildInputs = [
-    pkgconfig intltool perl perlXMLParser bison
-    goffice gtk3 makeWrapper gnome3.defaultIconTheme
+    goffice gtk3 gnome3.adwaita-icon-theme
     python pygobject3
-  ];
+  ] ++ (with perlPackages; [ perl XMLParser ]);
 
   enableParallelBuilding = true;
 
-  preFixup = ''
-    for f in "$out"/bin/gnumeric-*; do
-      wrapProgram $f \
-        --prefix XDG_DATA_DIRS : "$XDG_ICON_DIRS:$GSETTINGS_SCHEMAS_PATH" \
-        ${stdenv.lib.optionalString (!stdenv.isDarwin) "--prefix GIO_EXTRA_MODULES : '${gnome3.dconf}/lib/gio/modules'"}
-    done
-  '';
+  passthru = {
+    updateScript = gnome3.updateScript {
+      packageName = pname;
+    };
+  };
 
   meta = with stdenv.lib; {
     description = "The GNOME Office Spreadsheet";
     license = stdenv.lib.licenses.gpl2Plus;
     homepage = http://projects.gnome.org/gnumeric/;
-    platforms = platforms.linux;
+    platforms = platforms.unix;
     maintainers = [ maintainers.vcunat ];
   };
 }

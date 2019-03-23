@@ -1,14 +1,21 @@
-{ stdenv, lib, fetchurl, openssl, libtool, perl, libxml2
-, libseccomp ? null }:
+{ config, stdenv, lib, fetchurl
+, perl
+, libcap, libtool, libxml2, openssl
+, enablePython ? config.bind.enablePython or false, python3 ? null
+, enableSeccomp ? false, libseccomp ? null, buildPackages
+}:
 
-let version = "9.10.4-P5"; in
+assert enableSeccomp -> libseccomp != null;
+assert enablePython -> python3 != null;
+
+let version = "9.12.3-P4"; in
 
 stdenv.mkDerivation rec {
   name = "bind-${version}";
 
   src = fetchurl {
-    url = "http://ftp.isc.org/isc/bind9/${version}/${name}.tar.gz";
-    sha256 = "1sqg7wg05h66vdjc8j215r04f8pg7lphkb93nsqxvzhk6r0ppi49";
+    url = "https://ftp.isc.org/isc/bind9/${version}/${name}.tar.gz";
+    sha256 = "01pj47z5582rd538dmbzf1msw4jc8j4zr0zx4ciy88r6qr9l80fi";
   };
 
   outputs = [ "out" "lib" "dev" "man" "dnsutils" "host" ];
@@ -16,24 +23,39 @@ stdenv.mkDerivation rec {
   patches = [ ./dont-keep-configure-flags.patch ./remove-mkdir-var.patch ] ++
     stdenv.lib.optional stdenv.isDarwin ./darwin-openssl-linking-fix.patch;
 
-  buildInputs = [ openssl libtool perl libxml2 ] ++
-    stdenv.lib.optional stdenv.isLinux libseccomp;
+  nativeBuildInputs = [ perl ];
+  buildInputs = [ libtool libxml2 openssl ]
+    ++ lib.optional stdenv.isLinux libcap
+    ++ lib.optional enableSeccomp libseccomp
+    ++ lib.optional enablePython (python3.withPackages (ps: with ps; [ ply ]));
+
+  STD_CDEFINES = [ "-DDIG_SIGCHASE=1" ]; # support +sigchase
+
+  depsBuildBuild = [ buildPackages.stdenv.cc ];
 
   configureFlags = [
     "--localstatedir=/var"
     "--with-libtool"
     "--with-libxml2=${libxml2.dev}"
     "--with-openssl=${openssl.dev}"
+    (if enablePython then "--with-python" else "--without-python")
     "--without-atf"
     "--without-dlopen"
     "--without-docbook-xsl"
     "--without-gssapi"
     "--without-idn"
     "--without-idnlib"
+    "--without-lmdb"
+    "--without-libjson"
     "--without-pkcs11"
     "--without-purify"
-    "--without-python"
-  ] ++ lib.optional (stdenv.isi686 || stdenv.isx86_64) "--enable-seccomp";
+    "--with-randomdev=/dev/random"
+    "--with-ecdsa"
+    "--with-gost"
+    "--without-eddsa"
+    "--with-aes"
+  ] ++ lib.optional stdenv.isLinux "--with-libcap=${libcap.dev}"
+    ++ lib.optional enableSeccomp "--enable-seccomp";
 
   postInstall = ''
     moveToOutput bin/bind9-config $dev
@@ -50,12 +72,14 @@ stdenv.mkDerivation rec {
     done
   '';
 
-  meta = {
-    homepage = "http://www.isc.org/software/bind";
-    description = "Domain name server";
-    license = stdenv.lib.licenses.isc;
+  doCheck = false; # requires root and the net
 
-    maintainers = with stdenv.lib.maintainers; [viric peti];
+  meta = {
+    homepage = http://www.isc.org/software/bind;
+    description = "Domain name server";
+    license = stdenv.lib.licenses.mpl20;
+
+    maintainers = with stdenv.lib.maintainers; [peti];
     platforms = with stdenv.lib.platforms; unix;
 
     outputsToInstall = [ "out" "dnsutils" "host" ];

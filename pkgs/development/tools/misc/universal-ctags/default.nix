@@ -1,24 +1,25 @@
-{ stdenv, fetchFromGitHub, autoreconfHook, pkgconfig, perl }:
+{ stdenv, fetchFromGitHub, autoreconfHook, pkgconfig, perl, pythonPackages, libiconv }:
 
 stdenv.mkDerivation rec {
   name = "universal-ctags-${version}";
-  version = "2017-01-08";
+  version = "2018-07-23";
 
   src = fetchFromGitHub {
     owner = "universal-ctags";
     repo = "ctags";
-    rev = "9668032d8715265ca5b4ff16eb2efa8f1c450883";
-    sha256 = "0nwcf5mh3ba0g23zw7ym73pgpfdass412k2fy67ryr9vnc709jkj";
+    rev = "3522685695ad3312cf4b19399e0c44f3395dd089";
+    sha256 = "1f67hy8c2yr9z4ydsqd7wg8iagzn01qjw2ccx6g8mngv3i3jz9mv";
   };
 
-  buildInputs = [ autoreconfHook pkgconfig ];
+  nativeBuildInputs = [ autoreconfHook pkgconfig pythonPackages.docutils ];
+  buildInputs = stdenv.lib.optional stdenv.isDarwin libiconv;
 
-  # remove when https://github.com/universal-ctags/ctags/pull/1267 is merged
-  patches = [ ./sed-test.patch ];
-
+  # to generate makefile.in
   autoreconfPhase = ''
-    ./autogen.sh --tmpdir
+    ./autogen.sh
   '';
+
+  configureFlags = [ "--enable-tmpdir=/tmp" ];
 
   postConfigure = ''
     sed -i 's|/usr/bin/env perl|${perl}/bin/perl|' misc/optlib2c
@@ -30,7 +31,7 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "A maintained ctags implementation";
-    homepage = "https://ctags.io/";
+    homepage = https://ctags.io/;
     license = licenses.gpl2Plus;
     platforms = platforms.unix;
     # universal-ctags is preferred over emacs's ctags

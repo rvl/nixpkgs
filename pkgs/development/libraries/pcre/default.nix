@@ -1,5 +1,6 @@
 { stdenv, fetchurl
-, windows ? null, variant ? null, pcre
+, pcre, windows ? null
+, variant ? null
 }:
 
 with stdenv.lib;
@@ -7,7 +8,7 @@ with stdenv.lib;
 assert elem variant [ null "cpp" "pcre16" "pcre32" ];
 
 let
-  version = "8.39";
+  version = "8.42";
   pname = if (variant == null) then "pcre"
     else  if (variant == "cpp") then "pcre-cpp"
     else  variant;
@@ -16,20 +17,28 @@ in stdenv.mkDerivation rec {
   name = "${pname}-${version}";
 
   src = fetchurl {
-    url = "ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-${version}.tar.bz2";
-    sha256 = "12wyajlqx2v7dsh39ra9v9m5hibjkrl129q90bp32c28haghjn5q";
+    url = "https://ftp.pcre.org/pub/pcre/pcre-${version}.tar.bz2";
+    sha256 = "00ckpzlgyr16bnqx8fawa3afjgqxw5yxgs2l081vw23qi1y4pl1c";
   };
 
   outputs = [ "bin" "dev" "out" "doc" "man" ];
 
-  configureFlags = [
-    "--enable-jit"
+  configureFlags = optional (!stdenv.hostPlatform.isRiscV) "--enable-jit" ++ [
     "--enable-unicode-properties"
     "--disable-cpp"
   ]
     ++ optional (variant != null) "--enable-${variant}";
 
-  doCheck = with stdenv; !(isCygwin || isFreeBSD);
+  buildInputs = optional (stdenv.hostPlatform.libc == "msvcrt") windows.mingw_w64_pthreads;
+
+  # https://bugs.exim.org/show_bug.cgi?id=2173
+  patches = [ ./stacksize-detection.patch ];
+
+  preCheck = ''
+    patchShebangs RunGrepTest
+  '';
+
+  doCheck = !(with stdenv.hostPlatform; isCygwin || isFreeBSD) && stdenv.hostPlatform == stdenv.buildPlatform;
     # XXX: test failure on Cygwin
     # we are running out of stack on both freeBSDs on Hydra
 
@@ -40,12 +49,8 @@ in stdenv.mkDerivation rec {
     ln -sf -t "$out/lib/" '${pcre.out}'/lib/libpcre{,posix}.{so.*.*.*,*dylib}
   '';
 
-  crossAttrs = optionalAttrs (stdenv.cross.libc == "msvcrt") {
-    buildInputs = [ windows.mingw_w64_pthreads.crossDrv ];
-  };
-
   meta = {
-    homepage = "http://www.pcre.org/";
+    homepage = http://www.pcre.org/;
     description = "A library for Perl Compatible Regular Expressions";
     license = stdenv.lib.licenses.bsd3;
 

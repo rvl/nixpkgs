@@ -6,18 +6,16 @@ import ./make-test.nix ({ pkgs, ...} : {
 
   nodes = {
     master =
-      { pkgs, config, ... }:
+      { pkgs, ... }:
 
       {
-        services.postgresql = let mypg = pkgs.postgresql95; in {
+        services.postgresql = let mypg = pkgs.postgresql_11; in {
             enable = true;
             package = mypg;
-            extraPlugins = [ (pkgs.postgis.override { postgresql = mypg; }).v_2_2_1 ];
-            initialScript =  pkgs.writeText "postgresql-init.sql"
-          ''
-          CREATE ROLE postgres WITH superuser login createdb;
-          '';
-          };
+            extraPlugins = with mypg.pkgs; [
+              postgis
+            ];
+        };
       };
   };
 
@@ -26,5 +24,6 @@ import ./make-test.nix ({ pkgs, ...} : {
     $master->waitForUnit("postgresql");
     $master->sleep(10); # Hopefully this is long enough!!
     $master->succeed("sudo -u postgres psql -c 'CREATE EXTENSION postgis;'");
+    $master->succeed("sudo -u postgres psql -c 'CREATE EXTENSION postgis_topology;'");
   '';
 })

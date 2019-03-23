@@ -1,23 +1,34 @@
-{ stdenv, fetchFromGitHub, fetchpatch, pythonPackages }:
+{ stdenv, python3Packages, bash }:
 
-pythonPackages.buildPythonApplication rec {
-  name = "simp_le-2016-12-16";
+python3Packages.buildPythonApplication rec {
+  pname = "simp_le-client";
+  version = "0.9.0";
 
-  # kuba/simp_le seems unmaintained
-  src = fetchFromGitHub {
-    owner = "zenhack";
-    repo = "simp_le";
-    rev = "63a43b8547cd9fbc87db6bcd9497c6e37f73abef";
-    sha256 = "04dr8lvcpi797722lsy06nxhlihrxdqgdy187pg3hl1ki2iq3ixx";
+  src = python3Packages.fetchPypi {
+    inherit pname version;
+    sha256 = "1yxfznd78zkg2f657v520zj5w4dvq5n594d0kpm4lra8xnpg4zcv";
   };
 
-  propagatedBuildInputs = with pythonPackages; [ acme ];
+  postPatch = ''
+    # drop upper bound of acme requirement
+    sed -ri "s/'(acme>=[^,]+),<[^']+'/'\1'/" setup.py
+    # drop upper bound of idna requirement
+    sed -ri "s/'(idna)<[^']+'/'\1'/" setup.py
+    substituteInPlace simp_le.py \
+      --replace "/bin/sh" "${bash}/bin/sh"
+  '';
+
+  checkPhase = ''
+    $out/bin/simp_le --test
+  '';
+
+  propagatedBuildInputs = with python3Packages; [ acme setuptools_scm josepy idna ];
 
   meta = with stdenv.lib; {
-    inherit (src.meta) homepage;
+    homepage = https://github.com/zenhack/simp_le;
     description = "Simple Let's Encrypt client";
     license = licenses.gpl3;
-    maintainers = with maintainers; [ gebner nckx ];
-    platforms = platforms.all;
+    maintainers = with maintainers; [ gebner makefu ];
+    platforms = platforms.linux;
   };
 }

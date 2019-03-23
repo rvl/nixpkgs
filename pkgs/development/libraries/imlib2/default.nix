@@ -1,18 +1,18 @@
 { stdenv, fetchurl, libjpeg, libtiff, giflib, libpng, bzip2, pkgconfig
-, freetype
+, freetype, libid3tag
 , x11Support ? true, xlibsWrapper ? null }:
 
 with stdenv.lib;
 
 stdenv.mkDerivation rec {
-  name = "imlib2-1.4.9";
+  name = "imlib2-1.5.1";
 
   src = fetchurl {
     url = "mirror://sourceforge/enlightenment/${name}.tar.bz2";
-    sha256 = "08809xxk2555yj6glixzw9a0x3x8cx55imd89kj3r0h152bn8a3x";
+    sha256 = "1bms2iwmvnvpz5jqq3r52glarqkafif47zbh1ykz8hw85d2mfkps";
   };
 
-  buildInputs = [ libjpeg libtiff giflib libpng bzip2 freetype ]
+  buildInputs = [ libjpeg libtiff giflib libpng bzip2 freetype libid3tag ]
     ++ optional x11Support xlibsWrapper;
 
   nativeBuildInputs = [ pkgconfig ];
@@ -29,7 +29,7 @@ stdenv.mkDerivation rec {
   configureFlags = optional stdenv.isDarwin "--enable-amd64=no"
     ++ optional (!x11Support) "--without-x";
 
-  outputs = [ "out" "bin" "dev" ];
+  outputs = [ "bin" "out" "dev" ];
 
   postInstall = ''
     moveToOutput bin/imlib2-config "$dev"
@@ -46,6 +46,7 @@ stdenv.mkDerivation rec {
       easily, without sacrificing speed.
     '';
 
+    homepage = http://docs.enlightenment.org/api/imlib2/html;
     license = licenses.free;
     platforms = platforms.unix;
     maintainers = with maintainers; [ spwhitt ];

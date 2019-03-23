@@ -1,22 +1,22 @@
 { fetchurl, stdenv, gtk, pkgconfig, libofx, intltool, wrapGAppsHook
-, hicolor_icon_theme, libsoup, gnome3 }:
+, hicolor-icon-theme, libsoup, gnome3 }:
 
 stdenv.mkDerivation rec {
-  name = "homebank-5.1.2";
+  name = "homebank-5.2.3";
   src = fetchurl {
     url = "http://homebank.free.fr/public/${name}.tar.gz";
-    sha256 = "09zsq5l3s8cg4slhsyybsq8v1arnhh07i0rzka3j6ahysky15pfh";
+    sha256 = "1wdg86gwd0rc9m3mni9qlh746kxmjn4mk5q7fplxrcp2ajdcqr3a";
   };
 
   nativeBuildInputs = [ pkgconfig wrapGAppsHook ];
-  buildInputs = [ gtk libofx intltool hicolor_icon_theme libsoup
-    gnome3.defaultIconTheme ];
+  buildInputs = [ gtk libofx intltool hicolor-icon-theme libsoup
+    gnome3.adwaita-icon-theme ];
 
   meta = with stdenv.lib; {
     description = "Free, easy, personal accounting for everyone";
     homepage = http://homebank.free.fr/;
     license = licenses.gpl2Plus;
-    maintainers = with maintainers; [ viric pSub ];
+    maintainers = with maintainers; [ pSub ];
     platforms = platforms.linux;
   };
 }

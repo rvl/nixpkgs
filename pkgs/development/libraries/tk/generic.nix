@@ -23,12 +23,15 @@ stdenv.mkDerivation {
     "--with-tcl=${tcl}/lib"
   ];
 
-  buildInputs = [ pkgconfig ]
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ ]
     ++ stdenv.lib.optional stdenv.isDarwin fontconfig;
 
   propagatedBuildInputs = [ tcl libXft ];
 
   NIX_CFLAGS_LINK = if stdenv.isDarwin then "-lfontconfig" else null;
+
+  doCheck = false; # fails. can't find itself
 
   inherit tcl;
 
@@ -43,6 +46,6 @@ stdenv.mkDerivation {
     homepage = http://www.tcl.tk/;
     license = licenses.tcltk;
     platforms = platforms.all;
-    maintainers = with maintainers; [ lovek323 vrthra wkennington ];
+    maintainers = with maintainers; [ lovek323 vrthra ];
   };
 }

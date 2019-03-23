@@ -1,20 +1,20 @@
-{ stdenv, fetchurl, pkgconfig, bc, perl, pam, libXext, libXScrnSaver, libX11
-, libXrandr, libXmu, libXxf86vm, libXrender, libXxf86misc, libjpeg, mesa, gtk2
+{ stdenv, fetchurl, pkgconfig, bc, perl, perlPackages, pam, libXext, libXScrnSaver, libX11
+, libXrandr, libXmu, libXxf86vm, libXrender, libXxf86misc, libjpeg, libGLU_combined, gtk2
 , libxml2, libglade, intltool, xorg, makeWrapper, gle
 , forceInstallAllHacks ? false
 }:
 
 stdenv.mkDerivation rec {
-  version = "5.36";
+  version = "5.40";
   name = "xscreensaver-${version}";
 
   src = fetchurl {
-    url = "http://www.jwz.org/xscreensaver/${name}.tar.gz";
-    sha256 = "0v60mdhvv42jla5hljp77igng11kxpah5fs9j7ci65kz0hw552vb";
+    url = "https://www.jwz.org/xscreensaver/${name}.tar.gz";
+    sha256 = "1q2sr7h6ps6d3hk8895g12rrcqiihjl7py1ly077ikv4866r181h";
   };
 
   buildInputs =
-    [ pkgconfig bc perl libjpeg mesa gtk2 libxml2 libglade pam
+    [ pkgconfig bc perl libjpeg libGLU_combined gtk2 libxml2 libglade pam
       libXext libXScrnSaver libX11 libXrandr libXmu libXxf86vm libXrender
       libXxf86misc intltool xorg.appres makeWrapper gle
     ];
@@ -37,6 +37,11 @@ stdenv.mkDerivation rec {
   postInstall = ''
       wrapProgram $out/bin/xscreensaver-text \
         --prefix PATH : ${stdenv.lib.makeBinPath [xorg.appres]}
+      wrapProgram $out/bin/xscreensaver-getimage-file \
+        --set PERL5LIB "$out/${perlPackages.perl.libPrefix}:${with perlPackages; makePerlPath [
+              EncodeLocale HTTPDate HTTPMessage IOSocketSSL LWP LWPProtocolHttps
+              MozillaCA NetHTTP NetSSLeay TryTiny URI
+              ]}"
   ''
   + stdenv.lib.optionalString forceInstallAllHacks ''
     make -C hacks/glx dnalogo
@@ -47,12 +52,12 @@ stdenv.mkDerivation rec {
   ;
 
   meta = {
-    homepage = "http://www.jwz.org/xscreensaver/";
+    homepage = https://www.jwz.org/xscreensaver/;
     description = "A set of screensavers";
-    maintainers = with stdenv.lib.maintainers; [ raskin urkud ];
-    platforms = with stdenv.lib.platforms; allBut cygwin;
+    maintainers = with stdenv.lib.maintainers; [ raskin ];
+    platforms = stdenv.lib.platforms.unix; # Once had cygwin problems
     inherit version;
-    downloadPage = "http://www.jwz.org/xscreensaver/download.html";
+    downloadPage = "https://www.jwz.org/xscreensaver/download.html";
     updateWalker = true;
   };
 }

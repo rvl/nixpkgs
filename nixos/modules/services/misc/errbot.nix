@@ -76,15 +76,15 @@ in {
   };
 
   config = mkIf (cfg.instances != {}) {
-    users.extraUsers.errbot.group = "errbot";
-    users.extraGroups.errbot = {};
+    users.users.errbot.group = "errbot";
+    users.groups.errbot = {};
 
     systemd.services = mapAttrs' (name: instanceCfg: nameValuePair "errbot-${name}" (
     let
       dataDir = if !isNull instanceCfg.dataDir then instanceCfg.dataDir else
         "/var/lib/errbot/${name}";
     in {
-      after = [ "network.target" ];
+      after = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
       preStart = ''
         mkdir -p ${dataDir}

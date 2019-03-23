@@ -1,7 +1,9 @@
-{ stdenv, fetchzip, kernel }:
+{ stdenv, fetchFromGitHub, kernel }:
+
+assert stdenv.lib.versionOlder kernel.version "4.18";
 
 let
-  sourceAttrs = (import ./source.nix) { inherit fetchzip; };
+  sourceAttrs = (import ./source.nix) { inherit fetchFromGitHub; };
 in
 
 stdenv.mkDerivation {
@@ -9,6 +11,7 @@ stdenv.mkDerivation {
 
   src = sourceAttrs.src;
 
+  nativeBuildInputs = kernel.moduleBuildDependencies;
   hardeningDisable = [ "pic" ];
 
   prePatch = ''

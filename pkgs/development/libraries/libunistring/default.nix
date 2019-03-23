@@ -1,14 +1,15 @@
 { fetchurl, stdenv, libiconv }:
 
 stdenv.mkDerivation rec {
-  name = "libunistring-0.9.7";
+  name = "libunistring-${version}";
+  version = "0.9.10";
 
   src = fetchurl {
     url = "mirror://gnu/libunistring/${name}.tar.gz";
-    sha256 = "1ra1baz2187kbw9im47g6kqb5mx9plq703mkjxaval8rxv5q3q4w";
+    sha256 = "02v17za10mxnj095x4pvm80jxyqwk93kailfc2j8xa1r6crmnbm8";
   };
 
-  patches = stdenv.lib.optional stdenv.isDarwin [ ./clang.patch ];
+  outputs = [ "out" "dev" "info" "doc" ];
 
   propagatedBuildInputs = stdenv.lib.optional (!stdenv.isLinux) libiconv;
 
@@ -16,12 +17,24 @@ stdenv.mkDerivation rec {
     "--with-libiconv-prefix=${libiconv}"
   ];
 
-  # XXX: There are test failures on non-GNU systems, see
-  # http://lists.gnu.org/archive/html/bug-libunistring/2010-02/msg00004.html .
-  doCheck = stdenv ? glibc;
+  doCheck = true;
+
+  /* This seems to cause several random failures like these, which I assume
+     is because of bad or missing target dependencies in their build system:
+
+        ./unistdio/test-u16-vasnprintf2.sh: line 16: ./test-u16-vasnprintf1: No such file or directory
+        FAIL unistdio/test-u16-vasnprintf2.sh (exit status: 1)
+
+        FAIL: unistdio/test-u16-vasnprintf3.sh
+        ======================================
+
+        ./unistdio/test-u16-vasnprintf3.sh: line 16: ./test-u16-vasnprintf1: No such file or directory
+        FAIL unistdio/test-u16-vasnprintf3.sh (exit status: 1)
+  */
+  enableParallelBuilding = false;
 
   meta = {
-    homepage = http://www.gnu.org/software/libunistring/;
+    homepage = https://www.gnu.org/software/libunistring/;
 
     description = "Unicode string library";
 

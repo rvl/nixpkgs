@@ -1,50 +1,62 @@
-{ stdenv, fetchzip, autoconf, automake, openssl, libxml2, fetchFromGitHub, ncurses }:
+{ stdenv, cmake, fetchFromGitLab
+, json_c, libsodium, libxml2, ncurses }:
 
 let
-  scrypt_src = fetchzip {
-    url = "http://www.tarsnap.com/scrypt/scrypt-1.2.0.tgz";
-    sha256 = "0ahylib2pimlhjcm566kpim6n16jci5v749xwdkr9ivgfjrv3xn4";
+  rev = "22796663dcad81684ab24308d9db570f6781ba2c";
+
+in stdenv.mkDerivation rec {
+  name = "mpw-${version}-${builtins.substring 0 8 rev}";
+  version = "2.6";
+
+  src = fetchFromGitLab {
+    owner  = "MasterPassword";
+    repo   = "MasterPassword";
+    sha256 = "1f2vqacgbyam1mazawrfim8zwp38gnwf5v3xkkficsfnv789g6fw";
+    inherit rev;
   };
 
-in stdenv.mkDerivation {
-  name = "mpw-2.1-6834f36";
+  sourceRoot = "./source/platform-independent/c/cli";
 
-  src = fetchFromGitHub {
-    owner = "Lyndir";
-    repo = "MasterPassword";
-    rev = "6834f3689f5dfd4e59ad6959961d349c224977ee";
-    sha256 = "0zlpx3hb1y2l60hg961h05lb9yf3xb5phnyycvazah2674gkwb2p";
-  };
-
-  postUnpack = ''
-    sourceRoot+=/MasterPassword/C
+  postPatch = ''
+    rm build
+    substituteInPlace mpw-cli-tests \
+      --replace '/usr/bin/env bash' ${stdenv.shell} \
+      --replace ./mpw ./build/mpw
   '';
 
-  prePatch = ''
-    patchShebangs .
-    mkdir lib/scrypt/src
-    cp -R --no-preserve=ownership ${scrypt_src}/* lib/scrypt/src
-    chmod +w -R lib/scrypt/src
-    substituteInPlace lib/scrypt/src/libcperciva/cpusupport/Build/cpusupport.sh \
-      --replace dirname "$(type -P dirname)"
-    substituteInPlace lib/scrypt/src/Makefile.in --replace "command -p mv" "mv"
-  '';
+  cmakeFlags = [
+    "-Dmpw_version=${version}"
+    "-DBUILD_MPW_TESTS=ON"
+  ];
 
-  NIX_CFLAGS_COMPILE = "-I${libxml2.dev}/include/libxml2";
+  nativeBuildInputs = [ cmake ];
 
-  buildInputs = [ autoconf automake openssl libxml2 ncurses ];
-
-  buildPhase = ''
-    substituteInPlace build --replace '"curses"' '"ncurses"'
-    targets="mpw mpw-tests" ./build
-  '';
+  buildInputs = [ json_c libxml2 libsodium ncurses ];
 
   installPhase = ''
-    mkdir -p $out/bin
-    mv mpw $out/bin/mpw
+    runHook preInstall
+
+    install -Dm755 mpw                    $out/bin/mpw
+    install -Dm644 ../mpw.completion.bash $out/share/bash-completion/completions/_mpw
+    install -Dm644 ../../../../README.md  $out/share/doc/mpw/README.md
+
+    runHook postInstall
   '';
 
-  meta = {
-    platforms = stdenv.lib.platforms.unix;
+  doCheck = true;
+
+  checkPhase = ''
+    runHook preCheck
+
+    ../mpw-cli-tests
+
+    runHook postCheck
+  '';
+
+  meta = with stdenv.lib; {
+    description = "A stateless password management solution";
+    homepage = https://masterpasswordapp.com/;
+    license = licenses.gpl3;
+    platforms = platforms.unix;
   };
 }

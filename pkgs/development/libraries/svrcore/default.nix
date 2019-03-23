@@ -9,12 +9,12 @@ stdenv.mkDerivation rec {
     sha256 = "0n3alg6bxml8952fb6h0bi0l29farvq21q6k20gy2ba90m3znwj7";
   };
 
-  buildInputs = [ pkgconfig nss nspr ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ nss nspr ];
 
   meta = with stdenv.lib; {
     description = "Secure PIN handling using NSS crypto";
     license = licenses.mpl11;
     platforms = platforms.all;
-    maintainers = with maintainers; [ wkennington ];
   };
 }

@@ -1,12 +1,10 @@
-{ stdenv, lib, bundlerEnv, ruby }:
+{ lib, bundlerEnv, ruby }:
 
 bundlerEnv {
   name = "pt-0.7.3";
 
   inherit ruby;
-  gemfile = ./Gemfile;
-  lockfile = ./Gemfile.lock;
-  gemset = ./gemset.nix;
+  gemdir = ./.;
 
   meta = with lib; {
     description = "Minimalist command-line Pivotal Tracker client";

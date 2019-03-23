@@ -8,14 +8,14 @@ stdenv.mkDerivation {
 
   src = source.src;
 
-  buildInputs = [ cmake pkgconfig libtiff ilmbase openexr ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ cmake libtiff ilmbase openexr ];
 
   meta = with stdenv.lib; {
     description = "Color Transformation Language";
     homepage = http://ampasctl.sourceforge.net;
     license = "A.M.P.A.S";
     platforms = platforms.all;
-    maintainers = with maintainers; [ wkennington ];
   };
 
   passthru.source = source;

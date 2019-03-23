@@ -1,4 +1,4 @@
-{ stdenv, fetchgit, graphviz, gtk2, gtkmm2, pkgconfig, python }:
+{ stdenv, fetchgit, graphviz, gtk2, gtkmm2, pkgconfig, python, wafHook }:
 
 stdenv.mkDerivation rec {
   name = "ganv-unstable-${rev}";
@@ -10,13 +10,8 @@ stdenv.mkDerivation rec {
     sha256 = "0xmbykdl42jn9cgzrqrys5lng67d26nk5xq10wkkvjqldiwdck56";
   };
 
-  buildInputs = [ graphviz gtk2 gtkmm2 pkgconfig python ];
-
-  configurePhase = "${python.interpreter} waf configure --prefix=$out";
-
-  buildPhase = "${python.interpreter} waf";
-
-  installPhase = "${python.interpreter} waf install";
+  nativeBuildInputs = [ pkgconfig wafHook ];
+  buildInputs = [ graphviz gtk2 gtkmm2 python ];
 
   meta = with stdenv.lib; {
     description = "An interactive Gtk canvas widget for graph-based interfaces";

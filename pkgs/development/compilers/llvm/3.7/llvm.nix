@@ -1,13 +1,13 @@
 { stdenv
 , fetch
+, fetchpatch
 , perl
 , groff
 , cmake
 , python2
 , libffi
-, binutils
+, libbfd
 , libxml2
-, valgrind
 , ncurses
 , version
 , zlib
@@ -45,6 +45,18 @@ in stdenv.mkDerivation rec {
   # those always succeed has the net effect of disabling all bindings.
   prePatch = ''
     substituteInPlace cmake/config-ix.cmake --replace "if(WIN32)" "if(1)"
+  ''
+  + stdenv.lib.optionalString (stdenv ? glibc) ''
+    (
+      cd projects/compiler-rt
+      patch -p1 < ${
+        fetchpatch {
+          name = "sigaltstack.patch"; # for glibc-2.26
+          url = https://github.com/llvm-mirror/compiler-rt/commit/8a5e425a68d.diff;
+          sha256 = "0h4y5vl74qaa7dl54b1fcyqalvlpd8zban2d1jxfkxpzyi7m8ifi";
+        }
+      }
+    )
   '';
 
   # hacky fix: created binaries need to be run before installation
@@ -52,6 +64,11 @@ in stdenv.mkDerivation rec {
     mkdir -p $out/
     ln -sv $PWD/lib $out
   '';
+
+  patches = stdenv.lib.optionals (!stdenv.isDarwin) [
+    # llvm-config --libfiles returns (non-existing) static libs
+    ../fix-llvm-config.patch
+  ];
 
   cmakeFlags = with stdenv; [
     "-DCMAKE_BUILD_TYPE=${if debugVersion then "Debug" else "Release"}"
@@ -62,7 +79,7 @@ in stdenv.mkDerivation rec {
   ] ++ stdenv.lib.optional enableSharedLibraries
     "-DBUILD_SHARED_LIBS=ON"
     ++ stdenv.lib.optional (!isDarwin)
-    "-DLLVM_BINUTILS_INCDIR=${binutils.dev}/include"
+    "-DLLVM_BINUTILS_INCDIR=${libbfd.dev}/include"
     ++ stdenv.lib.optionals ( isDarwin) [
     "-DLLVM_ENABLE_LIBCXX=ON"
     "-DCAN_TARGET_i386=false"
@@ -72,8 +89,6 @@ in stdenv.mkDerivation rec {
 
   postBuild = ''
     rm -fR $out
-
-    paxmark m bin/{lli,llvm-rtdyld}
   '';
 
   enableParallelBuilding = true;
@@ -83,8 +98,8 @@ in stdenv.mkDerivation rec {
   meta = {
     description = "Collection of modular and reusable compiler and toolchain technologies";
     homepage    = http://llvm.org/;
-    license     = stdenv.lib.licenses.bsd3;
-    maintainers = with stdenv.lib.maintainers; [ lovek323 raskin viric ];
+    license     = stdenv.lib.licenses.ncsa;
+    maintainers = with stdenv.lib.maintainers; [ lovek323 raskin ];
     platforms   = stdenv.lib.platforms.all;
   };
 }

@@ -5,7 +5,13 @@ stdenv.mkDerivation rec {
     url = "mirror://sourceforge/jack-rack/${name}.tar.bz2";
     sha256 = "1lmibx9gicagcpcisacj6qhq6i08lkl5x8szysjqvbgpxl9qg045";
   };
-  buildInputs = [ pkgconfig libjack2 ladspaH gtk2 alsaLib libxml2 librdf ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ libjack2 ladspaH gtk2 alsaLib libxml2 librdf ];
+  NIX_LDFLAGS = [
+    "-ldl"
+    "-lm"
+    "-lpthread"
+  ];
 
   meta = {
     description = ''An effects "rack" for the JACK low latency audio API'';

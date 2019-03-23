@@ -1,14 +1,14 @@
-{ stdenv, fetchurl, rpmextract, glibc
+{ config, stdenv, fetchurl, rpmextract, glibc
 , dataDir ? "/var/lib/plex" # Plex's data directory must be baked into the package due to symlinks.
-, enablePlexPass ? false
+, enablePlexPass ? config.plex.enablePlexPass or false
 }:
 
 let
   plexPass = throw "Plex pass has been removed at upstream's request; please unset nixpkgs.config.plex.pass";
   plexpkg = if enablePlexPass then plexPass else {
-    version = "1.3.3.3148";
-    vsnHash = "b38628e";
-    sha256 = "1dx8z27l1dwigr3ipcdzn25hnj0206255ihxh9rnh2qchrcqmb5y";
+    version = "1.14.1.5488";
+    vsnHash = "cc260c476";
+    sha256 = "8ee806f35ccedcecd0cab028bbe1f7e2ac7de24292b715978d3165c4712f5c40";
   };
 
 in stdenv.mkDerivation rec {
@@ -36,7 +36,14 @@ in stdenv.mkDerivation rec {
 
     # Now we need to patch up the executables and libraries to work on Nix.
     # Side note: PLEASE don't put spaces in your binary names. This is stupid.
-    for bin in "Plex Media Server" "Plex DLNA Server" "Plex Media Scanner" "Plex Script Host" "Plex Transcoder" "Plex Relay"; do
+    for bin in "Plex Media Server"              \
+               "Plex Commercial Skipper"        \
+               "Plex DLNA Server"               \
+               "Plex Media Scanner"             \
+               "Plex Relay"                     \
+               "Plex Script Host"               \
+               "Plex Transcoder"                \
+               "Plex Tuner Service"             ; do
       patchelf --set-interpreter "${glibc.out}/lib/ld-linux-x86-64.so.2" "$out/usr/lib/plexmediaserver/$bin"
       patchelf --set-rpath "$out/usr/lib/plexmediaserver" "$out/usr/lib/plexmediaserver/$bin"
     done
@@ -59,7 +66,7 @@ in stdenv.mkDerivation rec {
     RSC=$out/usr/lib/plexmediaserver/Resources
     for db in "com.plexapp.plugins.library.db"; do
         mv $RSC/$db $RSC/base_$db
-        ln -s ${dataDir}/.skeleton/$db $RSC/$db
+        ln -s "${dataDir}/.skeleton/$db" $RSC/$db
     done
   '';
 
@@ -67,7 +74,7 @@ in stdenv.mkDerivation rec {
     homepage = http://plex.tv/;
     license = licenses.unfree;
     platforms = platforms.linux;
-    maintainers = with stdenv.lib.maintainers; [ colemickens forkk thoughtpolice ];
+    maintainers = with stdenv.lib.maintainers; [ colemickens forkk thoughtpolice pjones lnl7 ];
     description = "Media / DLNA server";
     longDescription = ''
       Plex is a media server which allows you to store your media and play it

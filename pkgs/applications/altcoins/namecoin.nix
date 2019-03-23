@@ -1,20 +1,48 @@
-{ stdenv, db4, boost, openssl, qt4, qmake4Hook, miniupnpc, unzip, namecoind }:
+{ stdenv, fetchFromGitHub, openssl, boost, libevent, autoreconfHook, db4, miniupnpc, eject, pkgconfig, qt4, protobuf, qrencode, hexdump
+, withGui }:
 
 with stdenv.lib;
 stdenv.mkDerivation rec {
+  version = "nc0.15.99-name-tab-beta2";
+  name = "namecoin" + toString (optional (!withGui) "d") + "-" + version;
 
-  name = "namecoin-${version}";
-  version = namecoind.version;
-  src = namecoind.src;
+  src = fetchFromGitHub {
+    owner = "namecoin";
+    repo = "namecoin-core";
+    rev = version;
+    sha256 = "1r0v0yvlazmidxp6xhapbdawqb8fhzrdp11d4an5vgxa208s6wdf";
+  };
 
-  buildInputs = [ db4 boost openssl unzip qt4 qmake4Hook miniupnpc ];
+  nativeBuildInputs = [
+    autoreconfHook
+    pkgconfig
+    hexdump
+  ];
 
-  qmakeFlags = [ "USE_UPNP=-" ];
+  buildInputs = [
+    openssl
+    boost
+    libevent
+    db4
+    miniupnpc
+    eject
+  ] ++ optionals withGui [
+    qt4
+    protobuf
+    qrencode
+  ];
 
-  installPhase = ''
-    mkdir -p $out/bin
-    cp namecoin-qt $out/bin
-  '';
+  enableParallelBuilding = true;
 
-  meta = namecoind.meta;
+  configureFlags = [
+    "--with-boost-libdir=${boost.out}/lib"
+  ];
+
+  meta = {
+    description = "Decentralized open source information registration and transfer system based on the Bitcoin cryptocurrency";
+    homepage = https://namecoin.org;
+    license = licenses.mit;
+    maintainers = with maintainers; [ doublec AndersonTorres infinisil ];
+    platforms = platforms.linux;
+  };
 }

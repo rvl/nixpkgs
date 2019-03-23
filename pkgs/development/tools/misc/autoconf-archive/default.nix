@@ -2,18 +2,18 @@
 
 stdenv.mkDerivation rec {
   name = "autoconf-archive-${version}";
-  version = "2016.09.16";
+  version = "2019.01.06";
 
   src = fetchurl {
     url = "mirror://gnu/autoconf-archive/autoconf-archive-${version}.tar.xz";
-    sha256 = "10mxz9hfnfz66m1l9s28sbyfb9a04akz92wkyv9blhpq6p9fzwp8";
+    sha256 = "0gqya7nf4j5k98dkky0c3bnr0paciya91vkqazg7knlq621mq68p";
   };
 
   buildInputs = [ xz ];
 
   meta = with stdenv.lib; {
     description = "Archive of autoconf m4 macros";
-    homepage = http://www.gnu.org/software/autoconf-archive/;
+    homepage = https://www.gnu.org/software/autoconf-archive/;
     license = licenses.gpl3;
     platforms = platforms.unix;
   };

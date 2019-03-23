@@ -13,7 +13,14 @@ stdenv.mkDerivation rec {
     sha256 = "121zh3q0li1k537fcvbd4ns4jgl9bbb9gm9ihy8cfxgirv38lcfa";
   };
 
-  propagatedBuildInputs = with python3Packages; [ pyxdg python-Levenshtein ];
+  propagatedBuildInputs = with python3Packages; [ pyxdg python-Levenshtein pygobject3 ];
+
+  nativeBuildInputs = [ python3Packages.wrapPython ];
+
+  postFixup = ''
+    buildPythonPath $out
+    patchPythonScript $out/share/ibus-uniemoji/uniemoji.py
+  '';
 
   makeFlags = [ "PREFIX=$(out)" "SYSCONFDIR=$(out)/etc"
                 "PYTHON=${python3Packages.python.interpreter}"

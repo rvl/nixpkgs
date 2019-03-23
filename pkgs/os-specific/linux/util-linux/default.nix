@@ -1,67 +1,62 @@
-{ lib, stdenv, fetchurl, pkgconfig, zlib, libseccomp, fetchpatch, autoreconfHook, ncurses ? null, perl ? null, pam, systemd, minimal ? false }:
+{ lib, stdenv, fetchurl, pkgconfig, zlib, shadow
+, ncurses ? null, perl ? null, pam, systemd ? null, minimal ? false }:
 
-stdenv.mkDerivation rec {
-  name = "util-linux-${version}";
+let
   version = lib.concatStringsSep "." ([ majorVersion ]
     ++ lib.optional (patchVersion != "") patchVersion);
-  majorVersion = "2.28";
+  majorVersion = "2.33";
   patchVersion = "1";
+
+in stdenv.mkDerivation rec {
+  name = "util-linux-${version}";
 
   src = fetchurl {
     url = "mirror://kernel/linux/utils/util-linux/v${majorVersion}/${name}.tar.xz";
-    sha256 = "03xnaw3c7pavxvvh1vnimcr44hlhhf25whawiyv8dxsflfj4xkiy";
+    sha256 = "08ggvgrb59m5jbq29950xxirsgv4xj3nwsc7vf82nyg1nvrxjjy1";
   };
 
   patches = [
     ./rtcwake-search-PATH-for-shutdown.patch
-    (fetchpatch {
-      name = "CVE-2016-2779.diff";
-      url = https://github.com/karelzak/util-linux/commit/8e4925016875c6a4f2ab4f833ba66f0fc57396a2.patch;
-      sha256 = "0kmigkq4s1b1ijrq8vcg2a5cw4qnm065m7cb1jn1q1f4x99ycy60";
-  })];
+  ];
 
   outputs = [ "bin" "dev" "out" "man" ];
 
-  #FIXME: make it also work on non-nixos?
   postPatch = ''
-    # Substituting store paths would create a circular dependency on systemd
-    substituteInPlace include/pathnames.h \
-      --replace "/bin/login" "/run/current-system/sw/bin/login" \
-      --replace "/sbin/shutdown" "/run/current-system/sw/bin/shutdown"
-  '';
+    patchShebangs tests/run.sh
 
-  crossAttrs = {
-    # Work around use of `AC_RUN_IFELSE'.
-    preConfigure = "export scanf_cv_type_modifier=ms";
-  };
+    substituteInPlace include/pathnames.h \
+      --replace "/bin/login" "${shadow}/bin/login"
+    substituteInPlace sys-utils/eject.c \
+      --replace "/bin/umount" "$out/bin/umount"
+  '';
 
   # !!! It would be better to obtain the path to the mount helpers
   # (/sbin/mount.*) through an environment variable, but that's
   # somewhat risky because we have to consider that mount can setuid
   # root...
-  configureFlags = ''
-    --enable-write
-    --enable-last
-    --enable-mesg
-    --disable-use-tty-group
-    --enable-fs-paths-default=/var/setuid-wrappers:/var/run/current-system/sw/bin:/sbin
-    ${if ncurses == null then "--without-ncurses" else ""}
-    ${if systemd == null then "" else ''
-      --with-systemd
-      --with-systemdsystemunitdir=$out/lib/systemd/system/
-    ''}
-  '';
+  configureFlags = [
+    "--enable-write"
+    "--enable-last"
+    "--enable-mesg"
+    "--disable-use-tty-group"
+    "--enable-fs-paths-default=/run/wrappers/bin:/var/run/current-system/sw/bin:/sbin"
+    "--disable-makeinstall-setuid" "--disable-makeinstall-chown"
+    (lib.withFeature (ncurses != null) "ncursesw")
+    (lib.withFeature (systemd != null) "systemd")
+    (lib.withFeatureAs (systemd != null)
+       "systemdsystemunitdir" "$(bin)/lib/systemd/system/")
+  ] ++ lib.optional (stdenv.hostPlatform != stdenv.buildPlatform)
+       "scanf_cv_type_modifier=ms"
+  ;
 
   makeFlags = "usrbin_execdir=$(bin)/bin usrsbin_execdir=$(bin)/sbin";
 
-  # autoreconfHook is required for CVE-2016-2779
-  nativeBuildInputs = [ pkgconfig autoreconfHook ];
-  # libseccomp is required for CVE-2016-2779
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs =
-    [ zlib pam libseccomp ]
-    ++ lib.optional (ncurses != null) ncurses
-    ++ lib.optional (systemd != null) systemd
-    ++ lib.optional (perl != null) perl;
+    [ zlib pam ]
+    ++ lib.filter (p: p != null) [ ncurses systemd perl ];
+
+  doCheck = false; # "For development purpose only. Don't execute on production system!"
 
   postInstall = ''
     rm "$bin/bin/su" # su should be supplied by the su package (shadow)

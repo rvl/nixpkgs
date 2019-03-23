@@ -1,30 +1,40 @@
-{ stdenv, fetchgit }:
+{ stdenv, fetchFromGitHub, autoconf, bison, flex, libtool, pkgconfig, which
+, libnl, protobuf, protobufc, shadow
+}:
 
 stdenv.mkDerivation rec {
-  name = "nsjail-git-2015-08-10";
+  name = "nsjail-${version}";
+  version = "2.8";
 
-  src = fetchgit {
-    url = https://github.com/google/nsjail;
-    rev = "8b951e6c2827386786cde4a124cd1846d25b9404";
-    sha256 = "02bmwd48l6ngp0nc65flw395mpj66brx3808d5xd19qn5524lnni";
+  src = fetchFromGitHub {
+    owner           = "google";
+    repo            = "nsjail";
+    rev             = version;
+    fetchSubmodules = true;
+    sha256          = "0cgycj0cz74plmz4asxryqprg6mkzpmnxzqbfsp1wwackinxq5fq";
   };
 
-  installPhase = ''
-    mkdir -p $out/bin
-    cp nsjail $out/bin
+  postPatch = ''
+    substituteInPlace user.cc \
+      --replace "/usr/bin/newgidmap" "${shadow}/bin/newgidmap" \
+      --replace "/usr/bin/newuidmap" "${shadow}/bin/newuidmap"
   '';
 
-  meta = {
-    description = ''
-      A light-weight process isolation tool, making use of Linux namespaces
-      and seccomp-bpf syscall filters
-      '';
-    homepage = http://google.github.io/nsjail;
+  nativeBuildInputs = [ autoconf bison flex libtool pkgconfig which ];
+  buildInputs = [ libnl protobuf protobufc ];
+  enableParallelBuilding = true;
 
-    license = stdenv.lib.licenses.apsl20;
+  installPhase = ''
+    mkdir -p $out/bin $out/share/man/man1
+    install nsjail $out/bin/
+    install nsjail.1 $out/share/man/man1/
+  '';
 
-    maintainers = [ stdenv.lib.maintainers.bosu ];
-
-    platforms = stdenv.lib.platforms.linux;
+  meta = with stdenv.lib; {
+    description = "A light-weight process isolation tool, making use of Linux namespaces and seccomp-bpf syscall filters";
+    homepage    = http://nsjail.com/;
+    license     = licenses.asl20;
+    maintainers = with maintainers; [ bosu c0bw3b ];
+    platforms   = platforms.linux;
   };
 }

@@ -1,19 +1,22 @@
-{ stdenv, fetchFromGitHub, python2, fixDarwinDylibNames }:
+{ stdenv, fetchFromGitHub, python, fixDarwinDylibNames }:
 
-let
-  python = python2;
-in stdenv.mkDerivation rec {
+stdenv.mkDerivation rec {
   name = "z3-${version}";
-  version = "4.5.0";
+  version = "4.8.4";
 
   src = fetchFromGitHub {
     owner  = "Z3Prover";
     repo   = "z3";
-    rev    = "z3-${version}";
-    sha256 = "0ssp190ksak93hiz61z90x6hy9hcw1ywp8b2dzmbhn6fbd4bnxzp";
+    rev    = name;
+    sha256 = "014igqm5vwswz0yhz0cdxsj3a6dh7i79hvhgc3jmmmz3z0xm1gyn";
   };
 
+  patches = [
+    ./0001-fix-2131.patch
+  ];
+
   buildInputs = [ python fixDarwinDylibNames ];
+  propagatedBuildInputs = [ python.pkgs.setuptools ];
   enableParallelBuilding = true;
 
   configurePhase = ''
@@ -21,11 +24,23 @@ in stdenv.mkDerivation rec {
     cd build
   '';
 
+  postInstall = ''
+    mkdir -p $dev $lib $python/lib
+
+    mv $out/lib/python*  $python/lib/
+    mv $out/lib          $lib/lib
+    mv $out/include      $dev/include
+
+    ln -sf $lib/lib/libz3${stdenv.hostPlatform.extensions.sharedLibrary} $python/${python.sitePackages}/z3/lib/libz3${stdenv.hostPlatform.extensions.sharedLibrary}
+  '';
+
+  outputs = [ "out" "lib" "dev" "python" ];
+
   meta = {
     description = "A high-performance theorem prover and SMT solver";
-    homepage    = "http://github.com/Z3Prover/z3";
+    homepage    = "https://github.com/Z3Prover/z3";
     license     = stdenv.lib.licenses.mit;
-    platforms   = stdenv.lib.platforms.unix;
+    platforms   = stdenv.lib.platforms.x86_64;
     maintainers = [ stdenv.lib.maintainers.thoughtpolice ];
   };
 }

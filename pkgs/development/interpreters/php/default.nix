@@ -1,17 +1,74 @@
-{ lib, stdenv, fetchurl, composableDerivation, autoconf, automake, flex, bison
+# pcre functionality is tested in nixos/tests/php-pcre.nix
+{ lib, stdenv, fetchurl, flex, bison, autoconf
 , mysql, libxml2, readline, zlib, curl, postgresql, gettext
-, openssl, pkgconfig, sqlite, config, libjpeg, libpng, freetype
-, libxslt, libmcrypt, bzip2, icu, openldap, cyrus_sasl, libmhash, freetds
-, uwimap, pam, gmp, apacheHttpd, libiconv, systemd }:
+, openssl, pcre, pcre2, pkgconfig, sqlite, config, libjpeg, libpng, freetype
+, libxslt, libmcrypt, bzip2, icu, openldap, cyrus_sasl, libmhash, unixODBC
+, uwimap, pam, gmp, apacheHttpd, libiconv, systemd, libsodium, html-tidy, libargon2
+, libzip, re2c, valgrind
+}:
+
+with lib;
 
 let
-
   generic =
-    { version, sha256 }:
+  { version
+  , sha256
+  , extraPatches ? []
+  , withSystemd ? config.php.systemd or stdenv.isLinux
+  , imapSupport ? config.php.imap or (!stdenv.isDarwin)
+  , ldapSupport ? config.php.ldap or true
+  , mhashSupport ? config.php.mhash or true
+  , mysqlndSupport ? config.php.mysqlnd or true
+  , mysqliSupport ? config.php.mysqli or true
+  , pdo_mysqlSupport ? config.php.pdo_mysql or true
+  , libxml2Support ? config.php.libxml2 or true
+  , apxs2Support ? config.php.apxs2 or (!stdenv.isDarwin)
+  , embedSupport ? config.php.embed or false
+  , bcmathSupport ? config.php.bcmath or true
+  , socketsSupport ? config.php.sockets or true
+  , curlSupport ? config.php.curl or true
+  , gettextSupport ? config.php.gettext or true
+  , pcntlSupport ? config.php.pcntl or true
+  , pdo_odbcSupport ? config.php.pdo_odbc or true
+  , postgresqlSupport ? config.php.postgresql or true
+  , pdo_pgsqlSupport ? config.php.pdo_pgsql or true
+  , readlineSupport ? config.php.readline or true
+  , sqliteSupport ? config.php.sqlite or true
+  , soapSupport ? (config.php.soap or true) && (libxml2Support)
+  , zlibSupport ? config.php.zlib or true
+  , opensslSupport ? config.php.openssl or true
+  , mbstringSupport ? config.php.mbstring or true
+  , gdSupport ? config.php.gd or true
+  , intlSupport ? config.php.intl or true
+  , exifSupport ? config.php.exif or true
+  , xslSupport ? config.php.xsl or false
+  , mcryptSupport ? (config.php.mcrypt or true) && (versionOlder version "7.2")
+  , bz2Support ? config.php.bz2 or false
+  , zipSupport ? config.php.zip or true
+  , ftpSupport ? config.php.ftp or true
+  , fpmSupport ? config.php.fpm or true
+  , gmpSupport ? config.php.gmp or true
+  , ztsSupport ? config.php.zts or false
+  , calendarSupport ? config.php.calendar or true
+  , sodiumSupport ? (config.php.sodium or true) && (versionAtLeast version "7.2")
+  , tidySupport ? (config.php.tidy or false)
+  , argon2Support ? (config.php.argon2 or true) && (versionAtLeast version "7.2")
+  , libzipSupport ? (config.php.libzip or true) && (versionAtLeast version "7.2")
+  , phpdbgSupport ? config.php.phpdbg or true
+  , cgiSupport ? config.php.cgi or true
+  , cliSupport ? config.php.cli or true
+  , pharSupport ? config.php.phar or true
+  , xmlrpcSupport ? (config.php.xmlrpc or false) && (libxml2Support)
+  , re2cSupport ? config.php.re2c or true
+  , cgotoSupport ? (config.php.cgoto or false) && (re2cSupport)
+  , valgrindSupport ? (config.php.valgrind or true) && (versionAtLeast version "7.2")
+  , valgrindPcreSupport ? (config.php.valgrindPcreSupport or false) && (valgrindSupport) && (versionAtLeast version "7.2")
+  }:
 
-    let php7 = lib.versionAtLeast version "7.0"; in
-
-    composableDerivation.composableDerivation {} (fixed: {
+    let
+      mysqlBuildInputs = optional (!mysqlndSupport) mysql.connector-c;
+      libmcrypt' = libmcrypt.override { disablePosixThreads = true; };
+    in stdenv.mkDerivation {
 
       inherit version;
 
@@ -19,251 +76,130 @@ let
 
       enableParallelBuilding = true;
 
-      buildInputs = [ flex bison pkgconfig ]
-        ++ lib.optional stdenv.isLinux systemd;
+      nativeBuildInputs = [ pkgconfig autoconf ];
+      buildInputs = [ flex bison ]
+        ++ optional (versionOlder version "7.3") pcre
+        ++ optional (versionAtLeast version "7.3") pcre2
+        ++ optional withSystemd systemd
+        ++ optionals imapSupport [ uwimap openssl pam ]
+        ++ optionals curlSupport [ curl openssl ]
+        ++ optionals ldapSupport [ openldap openssl ]
+        ++ optionals gdSupport [ libpng libjpeg freetype ]
+        ++ optionals opensslSupport [ openssl openssl.dev ]
+        ++ optional apxs2Support apacheHttpd
+        ++ optional (ldapSupport && stdenv.isLinux) cyrus_sasl
+        ++ optional mhashSupport libmhash
+        ++ optional zlibSupport zlib
+        ++ optional libxml2Support libxml2
+        ++ optional readlineSupport readline
+        ++ optional sqliteSupport sqlite
+        ++ optional postgresqlSupport postgresql
+        ++ optional pdo_odbcSupport unixODBC
+        ++ optional pdo_pgsqlSupport postgresql
+        ++ optional pdo_mysqlSupport mysqlBuildInputs
+        ++ optional mysqliSupport mysqlBuildInputs
+        ++ optional gmpSupport gmp
+        ++ optional gettextSupport gettext
+        ++ optional intlSupport icu
+        ++ optional xslSupport libxslt
+        ++ optional mcryptSupport libmcrypt'
+        ++ optional bz2Support bzip2
+        ++ optional sodiumSupport libsodium
+        ++ optional tidySupport html-tidy
+        ++ optional argon2Support libargon2
+        ++ optional libzipSupport libzip
+        ++ optional re2cSupport re2c
+        ++ optional valgrindSupport valgrind;
+
+      CXXFLAGS = optional stdenv.cc.isClang "-std=c++11";
 
       configureFlags = [
-        "EXTENSION_DIR=$(out)/lib/php/extensions"
-      ] ++ lib.optional stdenv.isDarwin "--with-iconv=${libiconv}"
-        ++ lib.optional stdenv.isLinux  "--with-fpm-systemd";
-
-      flags = {
-
-        # much left to do here...
-
-        # SAPI modules:
-
-        apxs2 = {
-          configureFlags = ["--with-apxs2=${apacheHttpd.dev}/bin/apxs"];
-          buildInputs = [apacheHttpd];
-        };
-
-        # Extensions
-        imap = {
-          configureFlags = [
-            "--with-imap=${uwimap}"
-            "--with-imap-ssl"
-            ];
-          buildInputs = [ uwimap openssl pam ];
-        };
-
-        ldap = {
-          configureFlags = [
-            "--with-ldap"
-            "LDAP_DIR=${openldap.dev}"
-            "LDAP_INCDIR=${openldap.dev}/include"
-            "LDAP_LIBDIR=${openldap.out}/lib"
-            (lib.optional stdenv.isLinux "--with-ldap-sasl=${cyrus_sasl.dev}")
-            ];
-          buildInputs = [openldap openssl] ++ lib.optional stdenv.isLinux cyrus_sasl;
-        };
-
-        mhash = {
-          configureFlags = ["--with-mhash"];
-          buildInputs = [libmhash];
-        };
-
-        curl = {
-          configureFlags = ["--with-curl=${curl.dev}"];
-          buildInputs = [curl openssl];
-        };
-
-        curlWrappers = {
-          configureFlags = ["--with-curlwrappers"];
-        };
-
-        zlib = {
-          configureFlags = ["--with-zlib=${zlib.dev}"];
-          buildInputs = [zlib];
-        };
-
-        libxml2 = {
-          configureFlags = [
-            "--with-libxml-dir=${libxml2.dev}"
-            ];
-          buildInputs = [ libxml2 ];
-        };
-
-        pcntl = {
-          configureFlags = [ "--enable-pcntl" ];
-        };
-
-        readline = {
-          configureFlags = ["--with-readline=${readline.dev}"];
-          buildInputs = [ readline ];
-        };
-
-        sqlite = {
-          configureFlags = ["--with-pdo-sqlite=${sqlite.dev}"];
-          buildInputs = [ sqlite ];
-        };
-
-        postgresql = {
-          configureFlags = ["--with-pgsql=${postgresql}"];
-          buildInputs = [ postgresql ];
-        };
-
-        pdo_pgsql = {
-          configureFlags = ["--with-pdo-pgsql=${postgresql}"];
-          buildInputs = [ postgresql ];
-        };
-
-        mysql = {
-          configureFlags = ["--with-mysql"];
-          buildInputs = [ mysql.lib.dev ];
-        };
-
-        mysqli = {
-          configureFlags = ["--with-mysqli=${mysql.lib.dev}/bin/mysql_config"];
-          buildInputs = [ mysql.lib.dev ];
-        };
-
-        mysqli_embedded = {
-          configureFlags = ["--enable-embedded-mysqli"];
-          depends = "mysqli";
-          assertion = fixed.mysqliSupport;
-        };
-
-        pdo_mysql = {
-          configureFlags = ["--with-pdo-mysql=${mysql.lib.dev}"];
-          buildInputs = [ mysql.lib.dev ];
-        };
-
-        bcmath = {
-          configureFlags = ["--enable-bcmath"];
-        };
-
-        gd = {
-          # FIXME: Our own gd package doesn't work, see https://bugs.php.net/bug.php?id=60108.
-          configureFlags = [
-            "--with-gd"
-            "--with-freetype-dir=${freetype.dev}"
-            "--with-png-dir=${libpng.dev}"
-            "--with-jpeg-dir=${libjpeg.dev}"
-          ];
-          buildInputs = [ libpng libjpeg freetype ];
-        };
-
-        gmp = {
-          configureFlags = ["--with-gmp=${gmp.dev}"];
-          buildInputs = [ gmp ];
-        };
-
-        soap = {
-          configureFlags = ["--enable-soap"];
-        };
-
-        sockets = {
-          configureFlags = ["--enable-sockets"];
-        };
-
-        openssl = {
-          configureFlags = ["--with-openssl"];
-          buildInputs = [openssl openssl.dev];
-        };
-
-        mbstring = {
-          configureFlags = ["--enable-mbstring"];
-        };
-
-        gettext = {
-          configureFlags = ["--with-gettext=${gettext}"];
-          buildInputs = [gettext];
-        };
-
-        intl = {
-          configureFlags = ["--enable-intl"];
-          buildInputs = [icu];
-        };
-
-        exif = {
-          configureFlags = ["--enable-exif"];
-        };
-
-        xsl = {
-          configureFlags = ["--with-xsl=${libxslt.dev}"];
-          buildInputs = [libxslt];
-        };
-
-        mcrypt = let libmcrypt' = libmcrypt.override { disablePosixThreads = true; }; in {
-          configureFlags = ["--with-mcrypt=${libmcrypt'}"];
-          buildInputs = [libmcrypt'];
-        };
-
-        bz2 = {
-          configureFlags = ["--with-bz2=${bzip2.dev}"];
-          buildInputs = [bzip2];
-        };
-
-        zip = {
-          configureFlags = ["--enable-zip"];
-        };
-
-        ftp = {
-          configureFlags = ["--enable-ftp"];
-        };
-
-        fpm = {
-          configureFlags = ["--enable-fpm"];
-        };
-
-        mssql = stdenv.lib.optionalAttrs (!stdenv.isDarwin) {
-          configureFlags = ["--with-mssql=${freetds}"];
-          buildInputs = [freetds];
-        };
-
-        zts = {
-          configureFlags = ["--enable-maintainer-zts"];
-        };
-
-        calendar = {
-          configureFlags = ["--enable-calendar"];
-        };
-      };
-
-      cfg = {
-        imapSupport = config.php.imap or (!stdenv.isDarwin);
-        ldapSupport = config.php.ldap or true;
-        mhashSupport = config.php.mhash or true;
-        mysqlSupport = (!php7) && (config.php.mysql or true);
-        mysqliSupport = config.php.mysqli or true;
-        pdo_mysqlSupport = config.php.pdo_mysql or true;
-        libxml2Support = config.php.libxml2 or true;
-        apxs2Support = config.php.apxs2 or (!stdenv.isDarwin);
-        bcmathSupport = config.php.bcmath or true;
-        socketsSupport = config.php.sockets or true;
-        curlSupport = config.php.curl or true;
-        curlWrappersSupport = (!php7) && (config.php.curlWrappers or true);
-        gettextSupport = config.php.gettext or true;
-        pcntlSupport = config.php.pcntl or true;
-        postgresqlSupport = config.php.postgresql or true;
-        pdo_pgsqlSupport = config.php.pdo_pgsql or true;
-        readlineSupport = config.php.readline or true;
-        sqliteSupport = config.php.sqlite or true;
-        soapSupport = config.php.soap or true;
-        zlibSupport = config.php.zlib or true;
-        opensslSupport = config.php.openssl or true;
-        mbstringSupport = config.php.mbstring or true;
-        gdSupport = config.php.gd or true;
-        intlSupport = config.php.intl or true;
-        exifSupport = config.php.exif or true;
-        xslSupport = config.php.xsl or false;
-        mcryptSupport = config.php.mcrypt or true;
-        bz2Support = config.php.bz2 or false;
-        zipSupport = config.php.zip or true;
-        ftpSupport = config.php.ftp or true;
-        fpmSupport = config.php.fpm or true;
-        gmpSupport = config.php.gmp or true;
-        mssqlSupport = (!php7) && (config.php.mssql or (!stdenv.isDarwin));
-        ztsSupport = config.php.zts or false;
-        calendarSupport = config.php.calendar or true;
-      };
+        "--with-config-file-scan-dir=/etc/php.d"
+      ]
+      ++ optional (versionOlder version "7.3") "--with-pcre-regex=${pcre.dev} PCRE_LIBDIR=${pcre}"
+      ++ optional (versionAtLeast version "7.3") "--with-pcre-regex=${pcre2.dev} PCRE_LIBDIR=${pcre2}"
+      ++ optional stdenv.isDarwin "--with-iconv=${libiconv}"
+      ++ optional withSystemd "--with-fpm-systemd"
+      ++ optionals imapSupport [
+        "--with-imap=${uwimap}"
+        "--with-imap-ssl"
+      ]
+      ++ optionals ldapSupport [
+        "--with-ldap=/invalid/path"
+        "LDAP_DIR=${openldap.dev}"
+        "LDAP_INCDIR=${openldap.dev}/include"
+        "LDAP_LIBDIR=${openldap.out}/lib"
+      ]
+      ++ optional (ldapSupport && stdenv.isLinux)   "--with-ldap-sasl=${cyrus_sasl.dev}"
+      ++ optional apxs2Support "--with-apxs2=${apacheHttpd.dev}/bin/apxs"
+      ++ optional embedSupport "--enable-embed"
+      ++ optional mhashSupport "--with-mhash"
+      ++ optional curlSupport "--with-curl=${curl.dev}"
+      ++ optional zlibSupport "--with-zlib=${zlib.dev}"
+      ++ optional libxml2Support "--with-libxml-dir=${libxml2.dev}"
+      ++ optional (!libxml2Support) [
+        "--disable-dom"
+        "--disable-libxml"
+        "--disable-simplexml"
+        "--disable-xml"
+        "--disable-xmlreader"
+        "--disable-xmlwriter"
+        "--without-pear"
+      ]
+      ++ optional pcntlSupport "--enable-pcntl"
+      ++ optional readlineSupport "--with-readline=${readline.dev}"
+      ++ optional sqliteSupport "--with-pdo-sqlite=${sqlite.dev}"
+      ++ optional postgresqlSupport "--with-pgsql=${postgresql}"
+      ++ optional pdo_odbcSupport "--with-pdo-odbc=unixODBC,${unixODBC}"
+      ++ optional pdo_pgsqlSupport "--with-pdo-pgsql=${postgresql}"
+      ++ optional pdo_mysqlSupport "--with-pdo-mysql=${if mysqlndSupport then "mysqlnd" else mysql.connector-c}"
+      ++ optionals mysqliSupport [
+        "--with-mysqli=${if mysqlndSupport then "mysqlnd" else "${mysql.connector-c}/bin/mysql_config"}"
+      ]
+      ++ optional ( pdo_mysqlSupport || mysqliSupport ) "--with-mysql-sock=/run/mysqld/mysqld.sock"
+      ++ optional bcmathSupport "--enable-bcmath"
+      # FIXME: Our own gd package doesn't work, see https://bugs.php.net/bug.php?id=60108.
+      ++ optionals gdSupport [
+        "--with-gd"
+        "--with-freetype-dir=${freetype.dev}"
+        "--with-png-dir=${libpng.dev}"
+        "--with-jpeg-dir=${libjpeg.dev}"
+      ]
+      ++ optional gmpSupport "--with-gmp=${gmp.dev}"
+      ++ optional soapSupport "--enable-soap"
+      ++ optional socketsSupport "--enable-sockets"
+      ++ optional opensslSupport "--with-openssl"
+      ++ optional mbstringSupport "--enable-mbstring"
+      ++ optional gettextSupport "--with-gettext=${gettext}"
+      ++ optional intlSupport "--enable-intl"
+      ++ optional exifSupport "--enable-exif"
+      ++ optional xslSupport "--with-xsl=${libxslt.dev}"
+      ++ optional mcryptSupport "--with-mcrypt=${libmcrypt'}"
+      ++ optional bz2Support "--with-bz2=${bzip2.dev}"
+      ++ optional zipSupport "--enable-zip"
+      ++ optional ftpSupport "--enable-ftp"
+      ++ optional fpmSupport "--enable-fpm"
+      ++ optional ztsSupport "--enable-maintainer-zts"
+      ++ optional calendarSupport "--enable-calendar"
+      ++ optional sodiumSupport "--with-sodium=${libsodium.dev}"
+      ++ optional tidySupport "--with-tidy=${html-tidy}"
+      ++ optional argon2Support "--with-password-argon2=${libargon2}"
+      ++ optional libzipSupport "--with-libzip=${libzip.dev}"
+      ++ optional phpdbgSupport "--enable-phpdbg"
+      ++ optional (!phpdbgSupport) "--disable-phpdbg"
+      ++ optional (!cgiSupport) "--disable-cgi"
+      ++ optional (!cliSupport) "--disable-cli"
+      ++ optional (!pharSupport) "--disable-phar"
+      ++ optional xmlrpcSupport "--with-xmlrpc"
+      ++ optional cgotoSupport "--enable-re2c-cgoto"
+      ++ optional valgrindSupport "--with-valgrind=${valgrind.dev}"
+      ++ optional valgrindPcreSupport "--with-pcre-valgrind";
 
       hardeningDisable = [ "bindnow" ];
 
-      configurePhase = ''
+      preConfigure = ''
         # Don't record the configure flags since this causes unnecessary
-        # runtime dependencies.
+        # runtime dependencies
         for i in main/build-defs.h.in scripts/php-config.in; do
           substituteInPlace $i \
             --replace '@CONFIGURE_COMMAND@' '(omitted)' \
@@ -271,12 +207,27 @@ let
             --replace '@PHP_LDFLAGS@' ""
         done
 
-        [[ -z "$libxml2" ]] || export PATH=$PATH:$libxml2/bin
-        ./configure --with-config-file-scan-dir=/etc/php.d --with-config-file-path=$out/etc --prefix=$out $configureFlags
+        #[[ -z "$libxml2" ]] || addToSearchPath PATH $libxml2/bin
+
+        export EXTENSION_DIR=$out/lib/php/extensions
+
+        configureFlags+=(--with-config-file-path=$out/etc \
+          --includedir=$dev/include)
+
+        ./buildconf --force
       '';
 
       postInstall = ''
+        test -d $out/etc || mkdir $out/etc
         cp php.ini-production $out/etc/php.ini
+      '';
+
+      postFixup = ''
+        mkdir -p $dev/bin $dev/share/man/man1
+        mv $out/bin/phpize $out/bin/php-config $dev/bin/
+        mv $out/share/man/man1/phpize.1.gz \
+          $out/share/man/man1/php-config.1.gz \
+          $dev/share/man/man1/
       '';
 
       src = fetchurl {
@@ -288,31 +239,45 @@ let
         description = "An HTML-embedded scripting language";
         homepage = http://www.php.net/;
         license = licenses.php301;
-        maintainers = with maintainers; [ globin ];
+        maintainers = with maintainers; [ globin etu ];
         platforms = platforms.all;
+        outputsToInstall = [ "out" "dev" ];
       };
 
-      patches = if !php7 then [ ./fix-paths.patch ] else [ ./fix-paths-php7.patch ];
+      patches = [ ./fix-paths-php7.patch ] ++ extraPatches;
 
-      postPatch = lib.optional stdenv.isDarwin ''
+      postPatch = optional stdenv.isDarwin ''
         substituteInPlace configure --replace "-lstdc++" "-lc++"
       '';
 
-    });
+      stripDebugList = "bin sbin lib modules";
+
+      outputs = [ "out" "dev" ];
+
+    };
 
 in {
-  php56 = generic {
-    version = "5.6.29";
-    sha256 = "1fr530x1hxpaf0gb1ayrs9a4xa9v14dfb4hn2560dgm7i96896s9";
-  };
-
-  php70 = generic {
-    version = "7.0.14";
-    sha256 = "0d0596vzpyw86a77smk799sxl4mh2wylzsvmrv8mzda21nd3di7v";
-  };
-
   php71 = generic {
-    version = "7.1.0";
-    sha256 = "0qcf4aahkiwypidw42pd5dz34n10296zgjfyh56lgcymxryzvg38";
+    version = "7.1.27";
+    sha256 = "0jzcyilvdy05w30vz5ln46lqm9hi36h5bibiwhl1b4a1179yrmys";
+
+    # https://bugs.php.net/bug.php?id=76826
+    extraPatches = optional stdenv.isDarwin ./php71-darwin-isfinite.patch;
+  };
+
+  php72 = generic {
+    version = "7.2.16";
+    sha256 = "0f3zkv803banqdrhj5ixfg973fnrsvn4hcij2k6r91nmac0d22ic";
+
+    # https://bugs.php.net/bug.php?id=76826
+    extraPatches = optional stdenv.isDarwin ./php72-darwin-isfinite.patch;
+  };
+
+  php73 = generic {
+    version = "7.3.3";
+    sha256 = "1riw0a1mzc5ymaj02rni57l5pyfkxl0ygf1l39q7ksnz7aa9x5k1";
+
+    # https://bugs.php.net/bug.php?id=76826
+    extraPatches = optional stdenv.isDarwin ./php73-darwin-isfinite.patch;
   };
 }

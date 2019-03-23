@@ -7,12 +7,13 @@
 #  $ nix-build '<nixpkgs>' -A dockerTools.examples.redis
 #  $ docker load < result
 
-{ pkgs, buildImage, pullImage, shadowSetup }:
+{ pkgs, buildImage, pullImage, shadowSetup, buildImageWithNixDb }:
 
 rec {
   # 1. basic example
   bash = buildImage {
     name = "bash";
+    tag = "latest";
     contents = pkgs.bashInteractive;
   };
 
@@ -65,6 +66,7 @@ rec {
   in
   buildImage {
     name = "nginx-container";
+    tag = "latest";
     contents = pkgs.nginx;
 
     runAsRoot = ''
@@ -83,16 +85,12 @@ rec {
   };
 
   # 4. example of pulling an image. could be used as a base for other images
-  #
-  # ***** Currently broken, getting 404s. Perhaps the docker API has changed?
-  #
-  #
-  # debian = pullImage {
-  #   imageName = "debian";
-  #   imageTag = "jessie";
-  #   # this hash will need change if the tag is updated at docker hub
-  #   sha256 = "18kd495lc2k35h03bpcbdjnix17nlqbwf6nmq3sb161blf0dk14q";
-  # };
+  nixFromDockerHub = pullImage {
+    imageName = "nixos/nix";
+    imageDigest = "sha256:85299d86263a3059cf19f419f9d286cc9f06d3c13146a8ebbb21b3437f598357";
+    sha256 = "0vnp3mhpk4ny3xa3cgngqsargnmvfgld54d5sn4b5av6yqzzp67z";
+    finalImageTag = "2.2.1";
+  };
 
   # 5. example of multiple contents, emacs and vi happily coexisting
   editors = buildImage {
@@ -104,5 +102,88 @@ rec {
       pkgs.vim
       pkgs.nano
     ];
+  };
+
+  # 6. nix example to play with the container nix store
+  # docker run -it --rm nix nix-store -qR $(nix-build '<nixpkgs>' -A nix)
+  nix = buildImageWithNixDb {
+    name = "nix";
+    tag = "latest";
+    contents = [
+      # nix-store uses cat program to display results as specified by
+      # the image env variable NIX_PAGER.
+      pkgs.coreutils
+      pkgs.nix
+    ];
+    config = {
+      Env = [ "NIX_PAGER=cat" ];
+    };
+  };
+
+  # 7. example of adding something on top of an image pull by our
+  # dockerTools chain.
+  onTopOfPulledImage = buildImage {
+    name = "onTopOfPulledImage";
+    tag = "latest";
+    fromImage = nixFromDockerHub;
+    contents = [ pkgs.hello ];
+  };
+
+  # 8. regression test for erroneous use of eval and string expansion.
+  # See issue #34779 and PR #40947 for details.
+  runAsRootExtraCommands = pkgs.dockerTools.buildImage {
+    name = "runAsRootExtraCommands";
+    tag = "latest";
+    contents = [ pkgs.coreutils ];
+    # The parens here are to create problematic bash to embed and eval. In case
+    # this is *embedded* into the script (with nix expansion) the initial quotes
+    # will close the string and the following parens are unexpected
+    runAsRoot = ''echo "(runAsRoot)" > runAsRoot'';
+    extraCommands = ''echo "(extraCommand)" > extraCommands'';
+  };
+
+  # 9. Ensure that setting created to now results in a date which
+  # isn't the epoch + 1
+  unstableDate = pkgs.dockerTools.buildImage {
+    name = "unstable-date";
+    tag = "latest";
+    contents = [ pkgs.coreutils ];
+    created = "now";
+  };
+
+  # 10. Create a layered image
+  layered-image = pkgs.dockerTools.buildLayeredImage {
+    name = "layered-image";
+    tag = "latest";
+    extraCommands = ''echo "(extraCommand)" > extraCommands'';
+    config.Cmd = [ "${pkgs.hello}/bin/hello" ];
+    contents = [ pkgs.hello pkgs.bash pkgs.coreutils ];
+  };
+
+  # 11. Create an image on top of a layered image
+  layered-on-top = pkgs.dockerTools.buildImage {
+    name = "layered-on-top";
+    tag = "latest";
+    fromImage = layered-image;
+    extraCommands = ''
+      mkdir ./example-output
+      chmod 777 ./example-output
+    '';
+    config = {
+      Env = [ "PATH=${pkgs.coreutils}/bin/" ];
+      WorkingDir = "/example-output";
+      Cmd = [
+        "${pkgs.bash}/bin/bash" "-c" "echo hello > foo; cat foo"
+      ];
+    };
+  };
+
+  # 12. example of running something as root on top of a parent image
+  # Regression test related to PR #52109
+  runAsRootParentImage = buildImage {
+    name = "runAsRootParentImage";
+    tag = "latest";
+    runAsRoot = "touch /example-file";
+    fromImage = bash;
   };
 }

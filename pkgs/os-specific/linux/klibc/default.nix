@@ -23,17 +23,12 @@ stdenv.mkDerivation rec {
   hardeningDisable = [ "format" "stackprotector" ];
 
   makeFlags = commonMakeFlags ++ [
-    "KLIBCARCH=${stdenv.platform.kernelArch}"
+    "KLIBCARCH=${stdenv.hostPlatform.platform.kernelArch}"
     "KLIBCKERNELSRC=${linuxHeaders}"
-  ] ++ stdenv.lib.optional (stdenv.platform.kernelArch == "arm") "CONFIG_AEABI=y";
-
-  crossAttrs = {
-    makeFlags = commonMakeFlags ++ [
-      "KLIBCARCH=${stdenv.cross.platform.kernelArch}"
-      "KLIBCKERNELSRC=${linuxHeaders.crossDrv}"
-      "CROSS_COMPILE=${stdenv.cross.config}-"
-    ] ++ stdenv.lib.optional (stdenv.cross.platform.kernelArch == "arm") "CONFIG_AEABI=y";
-  };
+  ] # TODO(@Ericson2314): We now can get the ABI from
+    # `stdenv.hostPlatform.parsed.abi`, is this still a good idea?
+    ++ stdenv.lib.optional (stdenv.hostPlatform.platform.kernelArch == "arm") "CONFIG_AEABI=y"
+    ++ stdenv.lib.optional (stdenv.hostPlatform != stdenv.buildPlatform) "CROSS_COMPILE=${stdenv.cc.targetPrefix}";
 
   # Install static binaries as well.
   postInstall = ''

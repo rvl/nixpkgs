@@ -12,8 +12,9 @@
 , gdk_pixbuf
 , glib
 , gnome2
-, gtk2
+, gtk3
 , libX11
+, libxcb
 , libXScrnSaver
 , libXcomposite
 , libXcursor
@@ -26,17 +27,19 @@
 , libXtst
 , libnotify
 , libpulseaudio
+, libuuid
 , nspr
 , nss
 , pango
 , stdenv
 , systemd
+, at-spi2-atk
 }:
 
 let
 
   mirror = https://get.geo.opera.com/pub/opera/desktop;
-  version = "41.0.2353.56";
+  version = "56.0.3051.99";
 
   rpath = stdenv.lib.makeLibraryPath [
 
@@ -45,7 +48,7 @@ let
     alsaLib.out
     atk.out
     cairo.out
-    cups.out
+    cups
     curl.out
     dbus.lib
     expat.out
@@ -53,8 +56,8 @@ let
     freetype.out
     gdk_pixbuf.out
     glib.out
-    gnome2.GConf.out
-    gtk2.out
+    gnome2.GConf
+    gtk3.out
     libX11.out
     libXScrnSaver.out
     libXcomposite.out
@@ -66,7 +69,9 @@ let
     libXrandr.out
     libXrender.out
     libXtst.out
+    libxcb.out
     libnotify.out
+    libuuid.out
     nspr.out
     nss.out
     pango.out
@@ -79,24 +84,18 @@ let
 
     # Works fine without this except there is no sound.
     libpulseaudio.out
+
+    at-spi2-atk
   ];
 
 in stdenv.mkDerivation {
 
   name = "opera-${version}";
 
-  src =
-    if stdenv.system == "i686-linux" then
-      fetchurl {
-        url = "${mirror}/${version}/linux/opera-stable_${version}_i386.deb";
-        sha256 = "0qjkhadlpn5c20wm66hm7rn12kdk4bh2plfgpfkzp85jmsjdxri5";
-      }
-    else if stdenv.system == "x86_64-linux" then
-      fetchurl {
-        url = "${mirror}/${version}/linux/opera-stable_${version}_amd64.deb";
-        sha256 = "1f3slbydxkk15banjbm7d8602l3vxy834ijsdqpyj0ckc5mw0g9y";
-      }
-    else throw "Opera is not supported on ${stdenv.system} (only i686-linux and x86_64 linux are supported)";
+  src = fetchurl {
+    url = "${mirror}/${version}/linux/opera-stable_${version}_amd64.deb";
+    sha256 = "1mf4lpb66w63kafjni5caq9k3lmsqd85161q29z5lr1s2cx9qqm8";
+  };
 
   unpackCmd = "${dpkg}/bin/dpkg-deb -x $curSrc .";
 
@@ -120,6 +119,7 @@ in stdenv.mkDerivation {
   meta = {
     homepage = http://www.opera.com;
     description = "Web browser";
+    platforms = [ "x86_64-linux" ];
     license = stdenv.lib.licenses.unfree;
   };
 }

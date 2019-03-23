@@ -1,25 +1,47 @@
-{ stdenv, fetchzip }:
+{ stdenv, fetchFromGitHub }:
 
-let optional = stdenv.lib.optional;
-in stdenv.mkDerivation rec {
+stdenv.mkDerivation rec {
   name = "lmdb-${version}";
-  version = "0.9.18";
+  version = "0.9.23";
 
-  src = fetchzip {
-    url = "https://github.com/LMDB/lmdb/archive/LMDB_${version}.tar.gz";
-    sha256 = "01j384kxg36kym060pybr5p6mjw0xv33bqbb8arncdkdq57xk8wg";
+  src = fetchFromGitHub {
+    owner = "LMDB";
+    repo = "lmdb";
+    rev = "LMDB_${version}";
+    sha256 = "0ag7l5180ajvm73y59m7sn3p52xm8m972d08cshxhpwgwa4v35k6";
   };
 
   postUnpack = "sourceRoot=\${sourceRoot}/libraries/liblmdb";
 
-  makeFlags = ["prefix=$(out)"]
-              ++ optional stdenv.cc.isClang "CC=clang";
+  patches = [ ./hardcoded-compiler.patch ];
+  patchFlags = "-p3";
+
+  outputs = [ "bin" "out" "dev" ];
+
+  makeFlags = [
+    "prefix=$(out)"
+    "CC=${stdenv.cc.targetPrefix}cc"
+    "AR=${stdenv.cc.targetPrefix}ar"
+  ]
+    ++ stdenv.lib.optional stdenv.isDarwin "LDFLAGS=-Wl,-install_name,$(out)/lib/liblmdb.so";
 
   doCheck = true;
   checkPhase = "make test";
 
-  preInstall = ''
-    mkdir -p $out/{man/man1,bin,lib,include}
+  postInstall = ''
+    moveToOutput bin "$bin"
+  ''
+    # add lmdb.pc (dynamic only)
+    + ''
+    mkdir -p "$dev/lib/pkgconfig"
+    cat > "$dev/lib/pkgconfig/lmdb.pc" <<EOF
+    Name: lmdb
+    Description: ${meta.description}
+    Version: ${version}
+
+    Cflags: -I$dev/include
+    Libs: -L$out/lib -llmdb
+    EOF
   '';
 
   meta = with stdenv.lib; {
@@ -32,7 +54,7 @@ in stdenv.mkDerivation rec {
       limited to the size of the virtual address space.
     '';
     homepage = http://symas.com/mdb/;
-    maintainers = with maintainers; [ jb55 ];
+    maintainers = with maintainers; [ jb55 vcunat ];
     license = licenses.openldap;
     platforms = platforms.all;
   };

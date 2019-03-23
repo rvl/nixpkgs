@@ -1,27 +1,28 @@
-{ stdenv, fetchFromGitHub, ncurses, boost, asciidoc, docbook_xsl, libxslt }:
+{ stdenv, fetchFromGitHub, ncurses, asciidoc, docbook_xsl, libxslt, pkgconfig }:
 
 with stdenv.lib;
 
 stdenv.mkDerivation rec {
-  name = "kakoune-nightly-${version}";
-  version = "2016-12-30";
+  name = "kakoune-${version}";
+  version = "2019.01.20";
   src = fetchFromGitHub {
     repo = "kakoune";
     owner = "mawww";
-    rev = "76c58aa022a896dc170c207ff821992ee354d934";
-    sha256 = "0hgpcp6444cyg4bm0a9ypywjwfh19qpqpfr5w0wcd2y3clnsvsdz";
+    rev = "v${version}";
+    sha256 = "04ak1jm7b1i03sx10z3fxw08rn692y2fj482jn5kpzfzj91b2ila";
   };
-  buildInputs = [ ncurses boost asciidoc docbook_xsl libxslt ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ ncurses asciidoc docbook_xsl libxslt ];
+  makeFlags = [ "debug=no" ];
 
-  buildPhase = ''
-    sed -ie 's#--no-xmllint#--no-xmllint --xsltproc-opts="--nonet"#g' src/Makefile
-    substituteInPlace src/Makefile --replace "boost_regex-mt" "boost_regex"
+  postPatch = ''
     export PREFIX=$out
-    (cd src && make )
+    cd src
+    sed -ie 's#--no-xmllint#--no-xmllint --xsltproc-opts="--nonet"#g' Makefile
   '';
 
-  installPhase = ''
-    (cd src && make install)
+  preConfigure = ''
+    export version="v${version}"
   '';
 
   meta = {

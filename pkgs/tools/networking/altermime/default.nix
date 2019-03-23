@@ -3,26 +3,29 @@
 stdenv.mkDerivation rec {
   baseName = "altermime";
   name = "${baseName}-${version}";
-  version = "0.3.10";
+  version = "0.3.11";
 
   src = fetchurl {
-    url = "http://www.pldaniels.com/${baseName}/${name}.tar.gz";
-    sha256 = "0vn3vmbcimv0n14khxr1782m76983zz9sf4j2kz5v86lammxld43";
+    url = "https://pldaniels.com/${baseName}/${name}.tar.gz";
+    sha256 = "15zxg6spcmd35r6xbidq2fgcg2nzyv1sbbqds08lzll70mqx4pj7";
   };
 
-  patches = map fetchurl (import ./debian-patches.nix);
+  NIX_CFLAGS_COMPILE = [ "-Wno-error=format"
+    "-Wno-error=format-truncation"
+    "-Wno-error=pointer-compare"
+    "-Wno-error=memset-elt-size"
+  ];
 
   postPatch = ''
     sed -i Makefile -e "s@/usr/local@$out@"
     mkdir -p "$out/bin"
   '';
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "MIME alteration tool";
-    maintainers = with stdenv.lib.maintainers; [
-      raskin
-    ];
-    platforms = with stdenv.lib.platforms; linux;
-    downloadPage = "http://www.pldaniels.com/altermime/";
+    maintainers = [ maintainers.raskin ];
+    platforms = platforms.linux;
+    license.fullName = "alterMIME LICENSE";
+    downloadPage = "https://pldaniels.com/altermime/";
   };
 }

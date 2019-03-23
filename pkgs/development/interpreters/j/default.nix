@@ -1,63 +1,92 @@
-{ stdenv, fetchurl, readline }:
+{ stdenv, fetchFromGitHub, readline, libedit, bc }:
 
 stdenv.mkDerivation rec {
   name = "j-${version}";
-  version = "701_b";
-  src = fetchurl {
-    url = "http://www.jsoftware.com/download/j${version}_source.tar.gz";
-    sha256 = "1gmjlpxcd647x690c4dxnf8h6ays8ndir6cib70h3zfnkrc34cys";
+  version = "807";
+  jtype = "release";
+  src = fetchFromGitHub {
+    owner = "jsoftware";
+    repo = "jsource";
+    rev = "j${version}-${jtype}";
+    sha256 = "1qciw2yg9x996zglvj2461qby038x89xcmfb3qyrh3myn8m1nq2n";
   };
-  buildInputs = [ readline ];
+
+  buildInputs = [ readline libedit bc ];
   bits = if stdenv.is64bit then "64" else "32";
+  platform =
+    if (stdenv.isAarch32 || stdenv.isAarch64) then "raspberry" else
+    if stdenv.isLinux then "linux" else
+    if stdenv.isDarwin then "darwin" else
+    "unknown";
 
   doCheck = true;
 
   buildPhase = ''
-    sed -i bin/jconfig -e '
-        s@bits=32@bits=${bits}@g;
-        s@readline=0@readline=1@;
-        s@LIBREADLINE=""@LIBREADLINE=" -lreadline "@;
-        s@-W1,soname,libj.so@-Wl,-soname,libj.so@
-        '
-    sed -i bin/build_libj -e 's@>& make.txt@ 2>\&1 | tee make.txt@'
+    export SOURCE_DIR=$(pwd)
+    export HOME=$TMPDIR
+    export JLIB=$SOURCE_DIR/jlibrary
 
-    sed -i f2.c -e 's/_isnan(\*wv)/_isnan(y)/'
+    export jbld=$HOME/bld
+    export jplatform=${platform}
+    export jmake=$SOURCE_DIR/make
+    export jgit=$SOURCE_DIR
+    export JBIN=$jbld/j${bits}/bin
+    mkdir -p $JBIN
 
-    touch *.c *.h
-    sh -o errexit bin/build_jconsole
-    [ -e j/bin/jconsole ]
-    sh -o errexit bin/build_libj
-    [ -e j/bin/libj.so ]
-    sh -o errexit bin/build_defs
-    [ -e defs/hostdefs.ijs ] && [ -e defs/netdefs.ijs ]
-    sh -o errexit bin/build_tsdll
-    [ -x libtsdll.so ]
+    echo $OUT_DIR
 
-    sed -i j/bin/profile.ijs -e "
-        s@userx=[.] *'.j'@userx=. '/.j'@;
-        s@bin,'/profilex.ijs'@user,'/profilex.ijs'@ ;
-        /install=./ainstall=. install,'/share/j'
-        "
+    cd make
+
+    patchShebangs .
+    sed -i jvars.sh -e "
+      s@~/git/jsource@$SOURCE_DIR@;
+      s@~/jbld@$HOME@;
+      "
+
+    sed -i $JLIB/bin/profile.ijs -e "s@'/usr/share/j/.*'@'$out/share/j'@;"
+
+    # For future versions, watch
+    # https://github.com/jsoftware/jsource/pull/4
+    cp ./jvars.sh $HOME
+
+    echo '
+      #define jversion   "${version}"
+      #define jplatform  "${platform}"
+      #define jtype      "${jtype}"         // release,beta,...
+      #define jlicense   "GPL3"
+      #define jbuilder   "nixpkgs"  // website or email
+      ' > ../jsrc/jversion.h
+
+    ./build_jconsole.sh j${bits}
+    ./build_libj.sh j${bits}
   '';
 
   checkPhase = ''
-    echo 'i. 5' | j/bin/jconsole | fgrep "0 1 2 3 4"
+    echo 'i. 5' | $JBIN/jconsole | fgrep "0 1 2 3 4"
+
+    # Now run the real tests
+    cd $SOURCE_DIR/test
+    for f in *.ijs
+    do
+      echo $f
+      $JBIN/jconsole < $f > /dev/null || echo FAIL && echo PASS
+    done
   '';
 
   installPhase = ''
     mkdir -p "$out"
-    cp -r j/bin "$out/bin"
-    rm "$out/bin/profilex_template.ijs"
+    cp -r $JBIN "$out/bin"
+    rm $out/bin/*.txt # Remove logs from the bin folder
 
     mkdir -p "$out/share/j"
-
-    cp -r docs j/addons j/system "$out/share/j"
+    cp -r $JLIB/{addons,system} "$out/share/j"
+    cp -r $JLIB/bin "$out"
   '';
 
   meta = with stdenv.lib; {
     description = "J programming language, an ASCII-based APL successor";
-    maintainers = with maintainers; [ raskin ];
-    platforms = platforms.linux;
+    maintainers = with maintainers; [ raskin synthetica ];
+    platforms = with platforms; linux ++ darwin;
     license = licenses.gpl3Plus;
     homepage = http://jsoftware.com/;
   };

@@ -1,30 +1,35 @@
-{ stdenv, fetchFromGitHub, linuxHeaders }:
+{ stdenv, fetchFromGitHub }:
 
 stdenv.mkDerivation rec {
   name = "trinity-${version}";
-  version = "1.6";
+  version = "1.8-git-2018-06-08";
 
   src = fetchFromGitHub {
     owner = "kernelslacker";
     repo = "trinity";
-    rev = "v${version}";
-    sha256 = "1jwgsjjbngn2dsnkflyigy3ajd0szksl30dlaiy02jc6mqi3nr0p";
+    rev = "1b2d43cb383cef86a05acb2df046ce5e9b17a7fe";
+    sha256 = "0dsq10vmd6ii1dnpaqhizk9p8mbd6mwgpmi13b11dxwxpcvbhlar";
   };
 
-  patchPhase = ''
-    patchShebangs ./configure.sh
+  # Fails on 32-bit otherwise
+  NIX_CFLAGS_COMPILE = [
+    "-Wno-error=int-to-pointer-cast"
+    "-Wno-error=pointer-to-int-cast"
+    "-Wno-error=incompatible-pointer-types"
+  ];
+
+  postPatch = ''
+    patchShebangs ./configure
     patchShebangs ./scripts/
-    substituteInPlace Makefile --replace '/usr/bin/wc' 'wc'
-    substituteInPlace configure.sh --replace '/usr/include/linux' '${linuxHeaders}/include/linux'
   '';
 
-  configurePhase = "./configure.sh";
+  enableParallelBuilding = true;
 
-  installPhase = "make DESTDIR=$out install";
+  makeFlags = [ "DESTDIR=$(out)" ];
 
   meta = with stdenv.lib; {
     description = "A Linux System call fuzz tester";
-    homepage = http://codemonkey.org.uk/projects/trinity/;
+    homepage = https://codemonkey.org.uk/projects/trinity/;
     license = licenses.gpl2;
     maintainers = [ maintainers.dezgeg ];
     platforms = platforms.linux;

@@ -3,10 +3,11 @@ import ./make-test.nix ({ pkgs, version ? 4, ... }:
 let
 
   client =
-    { config, pkgs, ... }:
+    { pkgs, ... }:
     { fileSystems = pkgs.lib.mkVMOverride
         [ { mountPoint = "/data";
-            device = "server:/data";
+            # nfs4 exports the export with fsid=0 as a virtual root directory
+            device = if (version == 4) then "server:/" else "server:/data";
             fsType = "nfs";
             options = [ "vers=${toString version}" ];
           }
@@ -19,7 +20,7 @@ in
 {
   name = "nfs";
   meta = with pkgs.stdenv.lib.maintainers; {
-    maintainers = [ eelco chaoflow wkennington ];
+    maintainers = [ eelco ];
   };
 
   nodes =
@@ -27,7 +28,7 @@ in
       client2 = client;
 
       server =
-        { config, pkgs, ... }:
+        { ... }:
         { services.nfs.server.enable = true;
           services.nfs.server.exports =
             ''
@@ -40,7 +41,7 @@ in
 
   testScript =
     ''
-      $server->waitForUnit("nfsd");
+      $server->waitForUnit("nfs-server");
       $server->succeed("systemctl start network-online.target");
       $server->waitForUnit("network-online.target");
 
@@ -54,8 +55,8 @@ in
       $client2->succeed("echo bla > /data/bar");
       $server->succeed("test -e /data/bar");
 
-      # Test whether restarting ‘nfsd’ works correctly.
-      $server->succeed("systemctl restart nfsd");
+      # Test whether restarting ‘nfs-server’ works correctly.
+      $server->succeed("systemctl restart nfs-server");
       $client2->succeed("echo bla >> /data/bar"); # will take 90 seconds due to the NFS grace period
 
       # Test whether we can get a lock.

@@ -1,59 +1,67 @@
-{ stdenv, fetchurl, config, makeWrapper
+{ lib, stdenv, fetchurl, config, wrapGAppsHook
 , alsaLib
 , atk
 , cairo
 , curl
 , cups
-, dbus_glib
-, dbus_libs
+, dbus-glib
+, dbus
 , fontconfig
 , freetype
 , gconf
 , gdk_pixbuf
 , glib
 , glibc
-, gst_plugins_base
-, gstreamer
 , gtk2
 , gtk3
+, kerberos
 , libX11
 , libXScrnSaver
 , libxcb
 , libXcomposite
+, libXcursor
 , libXdamage
 , libXext
 , libXfixes
+, libXi
 , libXinerama
 , libXrender
 , libXt
-, libcanberra_gtk2
+, libcanberra-gtk2
 , libgnome
 , libgnomeui
-, defaultIconTheme
-, mesa
+, libnotify
+, gnome3
+, libGLU_combined
 , nspr
 , nss
 , pango
 , libheimdal
 , libpulseaudio
 , systemd
-, generated ? import ./sources.nix
+, channel
+, generated
 , writeScript
+, writeText
 , xidel
 , coreutils
 , gnused
 , gnugrep
+, gnupg
+, ffmpeg
+, runtimeShell
 }:
-
-assert stdenv.isLinux;
 
 let
 
   inherit (generated) version sources;
 
-  arch = if stdenv.system == "i686-linux"
-    then "linux-i686"
-    else "linux-x86_64";
+  mozillaPlatforms = {
+    "i686-linux" = "linux-i686";
+    "x86_64-linux" = "linux-x86_64";
+  };
+
+  arch = mozillaPlatforms.${stdenv.hostPlatform.system};
 
   isPrefixOf = prefix: string:
     builtins.substring 0 (builtins.stringLength prefix) string == prefix;
@@ -63,11 +71,17 @@ let
 
   systemLocale = config.i18n.defaultLocale or "en-US";
 
+  policies = {
+    DisableAppUpdate = true;
+  };
+
+  policiesJson = writeText "no-update-firefox-policy.json" (builtins.toJSON { inherit policies; });
+
   defaultSource = stdenv.lib.findFirst (sourceMatches "en-US") {} sources;
 
   source = stdenv.lib.findFirst (sourceMatches systemLocale) defaultSource sources;
 
-  name = "firefox-bin-unwrapped-${version}";
+  name = "firefox-${channel}-bin-unwrapped-${version}";
 
 in
 
@@ -76,57 +90,69 @@ stdenv.mkDerivation {
 
   src = fetchurl { inherit (source) url sha512; };
 
-  phases = "unpackPhase installPhase";
+  phases = [ "unpackPhase" "patchPhase" "installPhase" "fixupPhase" ];
 
   libPath = stdenv.lib.makeLibraryPath
     [ stdenv.cc.cc
       alsaLib
+      (lib.getDev alsaLib)
       atk
       cairo
       curl
       cups
-      dbus_glib
-      dbus_libs
+      dbus-glib
+      dbus
       fontconfig
       freetype
       gconf
       gdk_pixbuf
       glib
       glibc
-      gst_plugins_base
-      gstreamer
       gtk2
       gtk3
+      kerberos
       libX11
       libXScrnSaver
       libXcomposite
+      libXcursor
       libxcb
       libXdamage
       libXext
       libXfixes
+      libXi
       libXinerama
       libXrender
       libXt
-      libcanberra_gtk2
+      libcanberra-gtk2
       libgnome
       libgnomeui
-      mesa
+      libnotify
+      libGLU_combined
       nspr
       nss
       pango
       libheimdal
       libpulseaudio
-      libpulseaudio.dev
+      (lib.getDev libpulseaudio)
       systemd
+      ffmpeg
     ] + ":" + stdenv.lib.makeSearchPathOutput "lib" "lib64" [
       stdenv.cc.cc
     ];
 
-  buildInputs = [ makeWrapper gtk3 defaultIconTheme ];
+  inherit gtk3;
+
+  buildInputs = [ wrapGAppsHook gtk3 gnome3.adwaita-icon-theme ];
 
   # "strip" after "patchelf" may break binaries.
   # See: https://github.com/NixOS/patchelf/issues/10
-  dontStrip = 1;
+  dontStrip = true;
+  dontPatchELF = true;
+
+  patchPhase = ''
+    # Don't download updates from Mozilla directly
+    echo 'pref("app.update.auto", "false");' >> defaults/pref/channel-prefs.js
+  '';
 
   installPhase =
     ''
@@ -153,27 +179,24 @@ stdenv.mkDerivation {
       # wrapFirefox expects "$out/lib" instead of "$out/usr/lib"
       ln -s "$out/usr/lib" "$out/lib"
 
-      # Create a desktop item.
-      mkdir -p $out/share/applications
-      cat > $out/share/applications/firefox.desktop <<EOF
-      [Desktop Entry]
-      Type=Application
-      Exec=$out/bin/firefox
-      Icon=$out/usr/lib/firefox-bin-${version}/browser/icons/mozicon128.png
-      Name=Firefox
-      GenericName=Web Browser
-      Categories=Application;Network;
-      EOF
+      gappsWrapperArgs+=(--argv0 "$out/bin/.firefox-wrapped")
 
-      wrapProgram "$out/bin/firefox" \
-        --argv0 "$out/bin/.firefox-wrapped" \
-        --prefix XDG_DATA_DIRS : "$GSETTINGS_SCHEMAS_PATH:" \
-        --suffix XDG_DATA_DIRS : "$XDG_ICON_DIRS"
+      # See: https://github.com/mozilla/policy-templates/blob/master/README.md
+      mkdir -p "$out/lib/firefox-bin-${version}/distribution";
+      ln -s ${policiesJson} "$out/lib/firefox-bin-${version}/distribution/policies.json";
     '';
 
+  passthru.execdir = "/bin";
   passthru.ffmpegSupport = true;
+  passthru.gssSupport = true;
+  # update with:
+  # $ nix-shell maintainers/scripts/update.nix --argstr package firefox-bin-unwrapped
   passthru.updateScript = import ./update.nix {
-    inherit name writeScript xidel coreutils gnused gnugrep curl;
+    inherit stdenv name channel writeScript xidel coreutils gnused gnugrep gnupg curl runtimeShell;
+    baseUrl =
+      if channel == "devedition"
+        then "http://archive.mozilla.org/pub/devedition/releases/"
+        else "http://archive.mozilla.org/pub/firefox/releases/";
   };
   meta = with stdenv.lib; {
     description = "Mozilla Firefox, free web browser (binary package)";
@@ -182,7 +205,7 @@ stdenv.mkDerivation {
       free = false;
       url = http://www.mozilla.org/en-US/foundation/trademarks/policy/;
     };
-    platforms = platforms.linux;
+    platforms = builtins.attrNames mozillaPlatforms;
     maintainers = with maintainers; [ garbas ];
   };
 }

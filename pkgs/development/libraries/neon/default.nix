@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, libxml2, pkgconfig
+{ stdenv, fetchurl, libxml2, pkgconfig, perl
 , compressionSupport ? true, zlib ? null
 , sslSupport ? true, openssl ? null
 , static ? false
@@ -14,32 +14,36 @@ let
 in
 
 stdenv.mkDerivation rec {
-  version = "0.30.1";
+  version = "0.30.2";
   name = "neon-${version}";
 
   src = fetchurl {
     url = "http://www.webdav.org/neon/${name}.tar.gz";
-    sha256 = "1pawhk02x728xn396a1kcivy9gqm94srmgad6ymr9l0qvk02dih0";
+    sha256 = "1jpvczcx658vimqm7c8my2q41fnmjaf1j03g7bsli6rjxk6xh2yv";
   };
 
   patches = optionals stdenv.isDarwin [ ./0.29.6-darwin-fix-configure.patch ];
 
-  buildInputs = [libxml2 pkgconfig openssl]
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [libxml2 openssl]
     ++ stdenv.lib.optional compressionSupport zlib;
 
-  configureFlags = ''
-    ${if shared then "--enable-shared" else "--disable-shared"}
-    ${if static then "--enable-static" else "--disable-static"}
-    ${if compressionSupport then "--with-zlib" else "--without-zlib"}
-    ${if sslSupport then "--with-ssl" else "--without-ssl"}
-    --enable-shared
-  '';
+  configureFlags = [
+    (stdenv.lib.enableFeature shared "shared")
+    (stdenv.lib.enableFeature static "static")
+    (stdenv.lib.withFeature compressionSupport "zlib")
+    (stdenv.lib.withFeature sslSupport "ssl")
+  ];
 
   passthru = {inherit compressionSupport sslSupport;};
 
-  meta = {
+  checkInputs = [ perl ];
+  doCheck = false; # fails, needs the net
+
+  meta = with stdenv.lib; {
     description = "An HTTP and WebDAV client library";
     homepage = http://www.webdav.org/neon/;
-    platforms = stdenv.lib.platforms.unix;
+    platforms = platforms.unix;
+    license = licenses.lgpl2;
   };
 }

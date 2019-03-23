@@ -1,40 +1,61 @@
 # Build an idris package
-#
-# args: Additional arguments to pass to mkDerivation. Generally should include at least
-#       name and src.
-{ stdenv, idris, gmp }: args: stdenv.mkDerivation ({
-  preHook = ''
-    mkdir idris-libs
-    export IDRIS_LIBRARY_PATH=$PWD/idris-libs
+{ stdenv, lib, idrisPackages, gmp }:
+  { idrisDeps ? []
+  , noPrelude ? false
+  , noBase ? false
+  , name
+  , version
+  , ipkgName ? name
+  , extraBuildInputs ? []
+  , ...
+  }@attrs:
+let
+  allIdrisDeps = idrisDeps
+    ++ lib.optional (!noPrelude) idrisPackages.prelude
+    ++ lib.optional (!noBase) idrisPackages.base;
+  idris-with-packages = idrisPackages.with-packages allIdrisDeps;
+  newAttrs = builtins.removeAttrs attrs [
+    "idrisDeps" "noPrelude" "noBase"
+    "name" "version" "ipkgName" "extraBuildInputs"
+  ] // {
+    meta = attrs.meta // {
+      platforms = attrs.meta.platforms or idrisPackages.idris.meta.platforms;
+    };
+  };
+in
+stdenv.mkDerivation ({
+  name = "idris-${name}-${version}";
 
-    addIdrisLibs () {
-      if [ -d $1/lib/${idris.name} ]; then
-        ln -sv $1/lib/${idris.name}/* $IDRIS_LIBRARY_PATH
-      fi
-    }
+  buildInputs = [ idris-with-packages gmp ] ++ extraBuildInputs;
+  propagatedBuildInputs = allIdrisDeps;
 
-    envHooks+=(addIdrisLibs)
-  '';
-
-  configurePhase = ''
-    export TARGET=$out/lib/${idris.name}
+  # Some packages use the style
+  # opts = -i ../../path/to/package
+  # rather than the declarative pkgs attribute so we have to rewrite the path.
+  postPatch = ''
+    runHook prePatch
+    sed -i ${ipkgName}.ipkg -e "/^opts/ s|-i \\.\\./|-i ${idris-with-packages}/libs/|g"
   '';
 
   buildPhase = ''
-    ${idris}/bin/idris --build *.ipkg
+    runHook preBuild
+    idris --build ${ipkgName}.ipkg
+    runHook postBuild
   '';
 
-  doCheck = true;
-
   checkPhase = ''
-    if grep -q test *.ipkg; then
-      ${idris}/bin/idris --testpkg *.ipkg
+    runHook preCheck
+    if grep -q tests ${ipkgName}.ipkg; then
+      idris --testpkg ${ipkgName}.ipkg
     fi
+    runHook postCheck
   '';
 
   installPhase = ''
-    ${idris}/bin/idris --install *.ipkg
+    runHook preInstall
+    idris --install ${ipkgName}.ipkg --ibcsubdir $out/libs
+    IDRIS_DOC_PATH=$out/doc idris --installdoc ${ipkgName}.ipkg || true
+    runHook postInstall
   '';
 
-  buildInputs = [ gmp ];
-} // args)
+} // newAttrs)

@@ -1,17 +1,30 @@
 { stdenv, fetchurl, pkgconfig, libevent, openssl, zlib, torsocks
-, libseccomp, systemd, libcap
+, libseccomp, systemd, libcap, lzma, zstd, scrypt
+
+# for update.nix
+, writeScript
+, common-updater-scripts
+, bash
+, coreutils
+, curl
+, gnugrep
+, gnupg
+, gnused
+, nix
 }:
 
 stdenv.mkDerivation rec {
-  name = "tor-0.2.8.12";
+  name = "tor-0.3.5.7";
 
   src = fetchurl {
-    url = "https://archive.torproject.org/tor-package-archive/${name}.tar.gz";
-    sha256 = "1bsagy4gcf6hgq04q949hv45ljb36j3ylxxn22cwxy4whgr4hmxk";
+    url = "https://dist.torproject.org/${name}.tar.gz";
+    sha256 = "17l31p58rsd30w4b6r4d8pbr84z3y7awahvjxbpmnlxc47y8f20v";
   };
 
+  outputs = [ "out" "geoip" ];
+
   nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ libevent openssl zlib ] ++
+  buildInputs = [ libevent openssl zlib lzma zstd scrypt ] ++
     stdenv.lib.optionals stdenv.isLinux [ libseccomp systemd libcap ];
 
   NIX_CFLAGS_LINK = stdenv.lib.optionalString stdenv.cc.isGNU "-lgcc_s";
@@ -22,9 +35,31 @@ stdenv.mkDerivation rec {
       --replace 'exec torsocks' 'exec ${torsocks}/bin/torsocks'
   '';
 
-  # Fails in a sandboxed environment; at some point we want to disable
-  # just the tests that require networking.
-  doCheck = false;
+  enableParallelBuilding = true;
+  enableParallelChecking = false; # 4 tests fail randomly
+
+  doCheck = true;
+
+  postInstall = ''
+    mkdir -p $geoip/share/tor
+    mv $out/share/tor/geoip{,6} $geoip/share/tor
+    rm -rf $out/share/tor
+  '';
+
+  passthru.updateScript = import ./update.nix {
+    inherit (stdenv) lib;
+    inherit
+      writeScript
+      common-updater-scripts
+      bash
+      coreutils
+      curl
+      gnupg
+      gnugrep
+      gnused
+      nix
+    ;
+  };
 
   meta = with stdenv.lib; {
     homepage = https://www.torproject.org/;

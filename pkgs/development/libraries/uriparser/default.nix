@@ -1,19 +1,30 @@
-{ stdenv, fetchurl, cpptest, pkgconfig, doxygen, graphviz }:
+{ lib, stdenv, fetchurl, gtest, pkgconfig, doxygen, graphviz }:
 
 stdenv.mkDerivation rec {
-  name = "uriparser-0.8.2";
+  name = "uriparser-${version}";
+  version = "0.9.1";
 
+  # Release tarball differs from source tarball
   src = fetchurl {
-    url = "mirror://sourceforge/project/uriparser/Sources/0.8.2/${name}.tar.bz2";
-    sha256 = "13sh7slys3y5gfscc40g2r3hkjjywjvxlcqr77ifjrazc6q6cvkd";
+    url = "https://github.com/uriparser/uriparser/releases/download/${name}/${name}.tar.bz2";
+    sha256 = "1gisi7h8hd6mswbiaaa3s25bnb77xf37pzrmjy63rcdpwcyqy93m";
   };
 
-  buildInputs = [ cpptest pkgconfig doxygen graphviz ];
+  nativeBuildInputs = [ pkgconfig doxygen graphviz ];
+  buildInputs = lib.optional doCheck gtest;
+  configureFlags = lib.optional (!doCheck) "--disable-tests";
+
+  doCheck = stdenv.targetPlatform.system == stdenv.hostPlatform.system;
 
   meta = with stdenv.lib; {
-    homepage = http://uriparser.sourceforge.net/;
+    homepage = https://uriparser.github.io/;
     description = "Strictly RFC 3986 compliant URI parsing library";
+    longDescription = ''
+      uriparser is a strictly RFC 3986 compliant URI parsing and handling library written in C.
+      API documentation is available on uriparser website.
+    '';
+    license = licenses.bsd3;
+    platforms = platforms.linux;
     maintainers = with maintainers; [ bosu ];
-    license = stdenv.lib.licenses.bsd3;
   };
 }

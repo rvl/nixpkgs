@@ -1,14 +1,14 @@
-{ stdenv, fetchurl, composableDerivation, unzip, libjpeg, libtiff, zlib
-, postgresql, mysql, libgeotiff, python, pythonPackages, proj, geos, openssl
+{ stdenv, fetchurl, unzip, libjpeg, libtiff, zlib
+, postgresql, mysql57, libgeotiff, python, pythonPackages, proj, geos, openssl
 , libpng }:
 
-composableDerivation.composableDerivation {} (fixed: rec {
-  version = "1.11.3";
+stdenv.mkDerivation rec {
   name = "gdal-${version}";
+  version = "1.11.5";
 
   src = fetchurl {
-    url = "http://download.osgeo.org/gdal/${version}/${name}.tar.gz";
-    sha256 = "561588bdfd9ca91919d4679a77a2b44214b158934ee8b425295ca5be33a1014d";
+    url = "https://download.osgeo.org/gdal/${version}/${name}.tar.xz";
+    sha256 = "0hphxzvy23v3vqxx1y22hhhg4cypihrb8555y12nb4mrhzlw7zfl";
   };
 
   buildInputs = [ unzip libjpeg libtiff libpng python pythonPackages.numpy proj openssl ];
@@ -19,7 +19,7 @@ composableDerivation.composableDerivation {} (fixed: rec {
     ./python.patch
   ];
 
-  hardeningDisable = [ "format" ];
+  hardeningDisable = [ "format" "fortify" ];
 
   # Don't use optimization for gcc >= 4.3. That's said to be causing segfaults.
   # Unset CC and CXX as they confuse libtool.
@@ -32,7 +32,7 @@ composableDerivation.composableDerivation {} (fixed: rec {
     "--with-libz=${zlib.dev}"       # optional
 
     "--with-pg=${postgresql}/bin/pg_config"
-    "--with-mysql=${mysql.lib.dev}/bin/mysql_config"
+    "--with-mysql=${mysql57.connector-c}/bin/mysql_config"
     "--with-geotiff=${libgeotiff}"
     "--with-python"               # optional
     "--with-static-proj4=${proj}" # optional
@@ -51,11 +51,13 @@ composableDerivation.composableDerivation {} (fixed: rec {
     export PYTHONPATH=''${PYTHONPATH:+''${PYTHONPATH}:}$pythonInstallDir
   '';
 
+  enableParallelBuilding = true;
+
   meta = {
     description = "Translator library for raster geospatial data formats";
     homepage = http://www.gdal.org/;
     license = stdenv.lib.licenses.mit;
     maintainers = [ stdenv.lib.maintainers.marcweber ];
-    platforms = stdenv.lib.platforms.linux;
+    platforms = with stdenv.lib.platforms; linux ++ darwin;
   };
-})
+}

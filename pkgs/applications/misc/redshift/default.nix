@@ -1,68 +1,93 @@
-{ fetchurl, stdenv, gettext, intltool, makeWrapper, pkgconfig
-, geoclue2
-, guiSupport ? true, hicolor_icon_theme, librsvg, gtk3, python, pygobject3, pyxdg
-, drmSupport ? true, libdrm
-, randrSupport ? true, libxcb
-, vidModeSupport ? true, libX11, libXxf86vm
+{ stdenv, fetchFromGitHub, autoconf, automake, gettext, intltool
+, libtool, pkgconfig, wrapGAppsHook, wrapPython, gobject-introspection
+, gtk3, python, pygobject3, hicolor-icon-theme, pyxdg
+
+, withQuartz ? stdenv.isDarwin, ApplicationServices
+, withRandr ? stdenv.isLinux, libxcb
+, withDrm ? stdenv.isLinux, libdrm
+
+, withGeolocation ? true
+, withCoreLocation ? withGeolocation && stdenv.isDarwin, CoreLocation, Foundation, Cocoa
+, withGeoclue ? withGeolocation && stdenv.isLinux, geoclue
 }:
 
-let
-  mkFlag = flag: name: if flag
-    then "--enable-${name}"
-    else "--disable-${name}";
-in
 stdenv.mkDerivation rec {
   name = "redshift-${version}";
-  version = "1.11";
+  version = "1.12";
 
-  src = fetchurl {
-    sha256 = "0ngkwj7rg8nfk806w0sg443w6wjr91xdc0zisqfm5h2i77wm1qqh";
-    url = "https://github.com/jonls/redshift/releases/download/v${version}/redshift-${version}.tar.xz";
+  src = fetchFromGitHub {
+    owner = "jonls";
+    repo = "redshift";
+    rev = "v${version}";
+    sha256 = "12cb4gaqkybp4bkkns8pam378izr2mwhr2iy04wkprs2v92j7bz6";
   };
 
-  buildInputs = [ geoclue2 ]
-    ++ stdenv.lib.optionals guiSupport [ hicolor_icon_theme librsvg gtk3
-      python pygobject3 pyxdg ]
-    ++ stdenv.lib.optionals drmSupport [ libdrm ]
-    ++ stdenv.lib.optionals randrSupport [ libxcb ]
-    ++ stdenv.lib.optionals vidModeSupport [ libX11 libXxf86vm ];
-  nativeBuildInputs = [ gettext intltool makeWrapper pkgconfig ];
+  patches = [
+    # https://github.com/jonls/redshift/pull/575
+    ./575.patch
+  ];
+
+  nativeBuildInputs = [
+    autoconf
+    automake
+    gettext
+    intltool
+    libtool
+    pkgconfig
+    wrapGAppsHook
+    wrapPython
+  ];
 
   configureFlags = [
-    (mkFlag guiSupport "gui")
-    (mkFlag drmSupport "drm")
-    (mkFlag randrSupport "randr")
-    (mkFlag vidModeSupport "vidmode")
+    "--enable-randr=${if withRandr then "yes" else "no"}"
+    "--enable-geoclue2=${if withGeoclue then "yes" else "no"}"
+    "--enable-drm=${if withDrm then "yes" else "no"}"
+    "--enable-quartz=${if withQuartz then "yes" else "no"}"
+    "--enable-corelocation=${if withCoreLocation then "yes" else "no"}"
   ];
+
+  buildInputs = [
+    gobject-introspection
+    gtk3
+    python
+    hicolor-icon-theme
+  ] ++ stdenv.lib.optional  withRandr        libxcb
+    ++ stdenv.lib.optional  withGeoclue      geoclue
+    ++ stdenv.lib.optional  withDrm          libdrm
+    ++ stdenv.lib.optional  withQuartz       ApplicationServices
+    ++ stdenv.lib.optionals withCoreLocation [ CoreLocation Foundation Cocoa ]
+    ;
+
+  pythonPath = [ pygobject3 pyxdg ];
+
+  preConfigure = "./bootstrap";
+
+  postFixup = "wrapPythonPrograms";
+
+  # the geoclue agent may inspect these paths and expect them to be
+  # valid without having the correct $PATH set
+  postInstall = ''
+    substituteInPlace $out/share/applications/redshift.desktop \
+      --replace 'Exec=redshift' "Exec=$out/bin/redshift"
+    substituteInPlace $out/share/applications/redshift.desktop \
+      --replace 'Exec=redshift-gtk' "Exec=$out/bin/redshift-gtk"
+  '';
 
   enableParallelBuilding = true;
 
-  preInstall = stdenv.lib.optionalString guiSupport ''
-    substituteInPlace src/redshift-gtk/redshift-gtk \
-      --replace "/usr/bin/env python3" "${python}/bin/${python.executable}"
-  '';
-  postInstall = stdenv.lib.optionalString guiSupport ''
-    wrapProgram "$out/bin/redshift-gtk" \
-      --set GDK_PIXBUF_MODULE_FILE "$GDK_PIXBUF_MODULE_FILE" \
-      --prefix PYTHONPATH : "$PYTHONPATH" \
-      --prefix GI_TYPELIB_PATH : "$GI_TYPELIB_PATH" \
-      --prefix XDG_DATA_DIRS : "$out/share:${hicolor_icon_theme}/share"
-
-    install -Dm644 {.,$out/share/doc/redshift}/redshift.conf.sample
-  '';
-
   meta = with stdenv.lib; {
-    description = "Gradually change screen color temperature";
+    description = "Screen color temperature manager";
     longDescription = ''
-      The color temperature is set according to the position of the
-      sun. A different color temperature is set during night and
-      daytime. During twilight and early morning, the color
-      temperature transitions smoothly from night to daytime
-      temperature to allow your eyes to slowly adapt.
+      Redshift adjusts the color temperature according to the position
+      of the sun. A different color temperature is set during night and
+      daytime. During twilight and early morning, the color temperature
+      transitions smoothly from night to daytime temperature to allow
+      your eyes to slowly adapt. At night the color temperature should
+      be set to match the lamps in your room.
     '';
     license = licenses.gpl3Plus;
     homepage = http://jonls.dk/redshift;
-    platforms = platforms.linux;
-    maintainers = with maintainers; [ mornfall nckx ];
-  }; 
+    platforms = platforms.unix;
+    maintainers = with maintainers; [ yegortimoshenko ];
+  };
 }

@@ -10,6 +10,10 @@ stdenv.mkDerivation rec {
 
   doCheck = true;
 
+  postPatch = ''
+    sed -e 's/set -o posix/set +o posix/' -i configure
+  '';
+
   meta = {
     description = "Command-line option parser generator";
 
@@ -19,7 +23,7 @@ stdenv.mkDerivation rec {
          fills a struct
       '';
 
-    homepage = http://www.gnu.org/software/gengetopt/;
+    homepage = https://www.gnu.org/software/gengetopt/;
 
     license = stdenv.lib.licenses.gpl3Plus;
 

@@ -1,15 +1,17 @@
-{ stdenv, fetchurl, libgcrypt, curl, gnutls, pkgconfig }:
+{ stdenv, fetchurl, libgcrypt, curl, gnutls, pkgconfig, libiconv, libintl }:
 
 stdenv.mkDerivation rec {
-  name = "libmicrohttpd-0.9.50";
+  name = "libmicrohttpd-${version}";
+  version = "0.9.62";
 
   src = fetchurl {
     url = "mirror://gnu/libmicrohttpd/${name}.tar.gz";
-    sha256 = "1mzbqr6sqisppz88mh73bbh5sw57g8l87qvhcjdx5pmbd183idni";
+    sha256 = "0jfvi1fb4im3a3m8qishbmzx3zch993c0mhvl2k92l1zf1yhjgmx";
   };
 
   outputs = [ "out" "dev" "devdoc" "info" ];
-  buildInputs = [ libgcrypt curl gnutls pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ libgcrypt curl gnutls libiconv libintl ];
 
   preCheck = ''
     # Since `localhost' can't be resolved in a chroot, work around it.
@@ -29,9 +31,9 @@ stdenv.mkDerivation rec {
 
     license = licenses.lgpl2Plus;
 
-    homepage = http://www.gnu.org/software/libmicrohttpd/;
+    homepage = https://www.gnu.org/software/libmicrohttpd/;
 
-    maintainers = [ maintainers.eelco maintainers.vrthra ];
-    platforms = platforms.linux;
+    maintainers = with maintainers; [ eelco vrthra fpletz ];
+    platforms = platforms.unix;
   };
 }

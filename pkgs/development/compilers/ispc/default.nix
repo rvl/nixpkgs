@@ -1,11 +1,9 @@
-{stdenv, fetchFromGitHub, bash, which, m4, python, bison, flex, llvmPackages, clangWrapSelf,
+{stdenv, fetchFromGitHub, fetchpatch, which, m4, python, bison, flex, llvmPackages,
 testedTargets ? ["sse2" "host"] # the default test target is sse4, but that is not supported by all Hydra agents
 }:
 
-# TODO: patch LLVM so Skylake-EX works better (patch included in ispc github) - needed for LLVM 3.9?
-
 stdenv.mkDerivation rec {
-  version = "1.9.1";
+  version = "1.10.0";
   rev = "v${version}";
 
   inherit testedTargets;
@@ -16,7 +14,7 @@ stdenv.mkDerivation rec {
     owner = "ispc";
     repo = "ispc";
     inherit rev;
-    sha256 = "1wwsyvn44hd5iyi5779l5378x096307slpyl29wrsmfp66796693";
+    sha256 = "1x07n2gaff3v32yvddrb659mx5gg12bnbsqbyfimp396wn04w60b";
   };
 
   # there are missing dependencies in the Makefile, causing sporadic build failures
@@ -34,7 +32,7 @@ stdenv.mkDerivation rec {
     llvmPackages.clang-unwrapped # we need to link against libclang, so we need the unwrapped
   ];
 
-  postPatch = "sed -i -e 's/\\/bin\\///g' -e 's/-lcurses/-lncurses/g' Makefile";
+  postPatch = "sed -i -e 's,/bin/,,g' -e 's/-lcurses/-lncurses/g' Makefile";
 
   # TODO: this correctly catches errors early, but also some things that are just weird and don't seem to be real
   # errors
@@ -60,8 +58,8 @@ stdenv.mkDerivation rec {
   '';
 
   makeFlags = [
-    "CXX=${llvmPackages.clang}/bin/clang++"
-    "CLANG=${llvmPackages.clang}/bin/clang"
+    "CXX=${stdenv.cc}/bin/clang++"
+    "CLANG=${stdenv.cc}/bin/clang"
     "CLANG_INCLUDE=${llvmPackages.clang-unwrapped}/include"
     ];
 

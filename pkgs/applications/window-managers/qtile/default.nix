@@ -1,19 +1,19 @@
-{ stdenv, fetchFromGitHub, python27Packages, glib, cairo, pango, pkgconfig, libxcb, xcbutilcursor }:
+{ stdenv, fetchFromGitHub, python37Packages, glib, cairo, pango, pkgconfig, libxcb, xcbutilcursor }:
 
-let cairocffi-xcffib = python27Packages.cairocffi.override {
-    pythonPath = [ python27Packages.xcffib ];
+let cairocffi-xcffib = python37Packages.cairocffi.override {
+    withXcffib = true;
   };
 in
 
-python27Packages.buildPythonApplication rec {
+python37Packages.buildPythonApplication rec {
   name = "qtile-${version}";
-  version = "0.10.4";
+  version = "0.13.0";
 
   src = fetchFromGitHub {
     owner = "qtile";
     repo = "qtile";
     rev = "v${version}";
-    sha256 = "0rwklzgkp3x242xql6qmfpfnhr788hd3jc1l80pc5ybxlwyfx59i";
+    sha256 = "1lyclnn8hs6wl4w9v5b4hh2q0pvmsn7cyibpskhbpw0cgv7bvi90";
   };
 
   patches = [
@@ -29,16 +29,19 @@ python27Packages.buildPythonApplication rec {
     substituteInPlace libqtile/xcursors.py --subst-var-by xcb-cursor ${xcbutilcursor.out}
   '';
 
-  buildInputs = [ pkgconfig glib libxcb cairo pango python27Packages.xcffib ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ glib libxcb cairo pango python37Packages.xcffib ];
 
-  pythonPath = with python27Packages; [ xcffib cairocffi-xcffib trollius ];
+  pythonPath = with python37Packages; [ xcffib cairocffi-xcffib ];
 
   postInstall = ''
     wrapProgram $out/bin/qtile \
-      --set QTILE_WRAPPER '$0' \
-      --set QTILE_SAVED_PYTHONPATH '$PYTHONPATH' \
-      --set QTILE_SAVED_PATH '$PATH'
+      --run 'export QTILE_WRAPPER=$0' \
+      --run 'export QTILE_SAVED_PYTHONPATH=$PYTHONPATH' \
+      --run 'export QTILE_SAVED_PATH=$PATH'
   '';
+
+  doCheck = false; # Requires X server.
 
   meta = with stdenv.lib; {
     homepage = http://www.qtile.org/;
@@ -48,4 +51,3 @@ python27Packages.buildPythonApplication rec {
     maintainers = with maintainers; [ kamilchm ];
   };
 }
-

@@ -1,11 +1,13 @@
 { fetchgit, pkgconfig, gettext, runCommand, makeWrapper
-, elfutils, kernel, gnumake }:
+, elfutils, kernel, gnumake, python2, python2Packages
+}:
+
 let
   ## fetchgit info
   url = git://sourceware.org/git/systemtap.git;
-  rev = "a10bdceb7c9a7dc52c759288dd2e555afcc5184a";
-  sha256 = "1kllzfnh4ksis0673rma5psglahl6rvy0xs5v05qkqn6kl7irmg1";
-  version = "2016-09-16";
+  rev = "release-${version}";
+  sha256 = "075p45ndr4pzrf5679hcsw1ws4x0xqvx3m037v04545762hki6la";
+  version = "4.0";
 
   inherit (kernel) stdenv;
   inherit (stdenv) lib;
@@ -14,7 +16,8 @@ let
   stapBuild = stdenv.mkDerivation {
     name = "systemtap-${version}";
     src = fetchgit { inherit url rev sha256; };
-    buildInputs = [ elfutils pkgconfig gettext ];
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ elfutils gettext python2 python2Packages.setuptools ];
     enableParallelBuilding = true;
   };
 
@@ -30,6 +33,8 @@ let
     done
   '';
 
+  pypkgs = with python2Packages; makePythonPath [ pyparsing ];
+
 in runCommand "systemtap-${kernel.version}-${version}" {
   inherit stapBuild kernelBuildDir;
   buildInputs = [ makeWrapper ];
@@ -42,11 +47,13 @@ in runCommand "systemtap-${kernel.version}-${version}" {
   };
 } ''
   mkdir -p $out/bin
-  for bin in $stapBuild/bin/*; do # hello emacs */
+  for bin in $stapBuild/bin/*; do
     ln -s $bin $out/bin
   done
-  rm $out/bin/stap
+  rm $out/bin/stap $out/bin/dtrace
   makeWrapper $stapBuild/bin/stap $out/bin/stap \
     --add-flags "-r $kernelBuildDir" \
-    --prefix PATH : ${lib.makeBinPath [ stdenv.cc.cc elfutils gnumake ]}
+    --prefix PATH : ${lib.makeBinPath [ stdenv.cc.cc stdenv.cc.bintools elfutils gnumake ]}
+  makeWrapper $stapBuild/bin/dtrace $out/bin/dtrace \
+    --prefix PYTHONPATH : ${pypkgs}
 ''

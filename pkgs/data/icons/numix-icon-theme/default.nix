@@ -1,31 +1,36 @@
-{ stdenv, fetchFromGitHub }:
+{ stdenv, fetchFromGitHub, gtk3, hicolor-icon-theme }:
 
 stdenv.mkDerivation rec {
-  version = "2016-11-13";
-
-  package-name = "numix-icon-theme";
-
-  name = "${package-name}-${version}";
+  name = "${pname}-${version}";
+  pname = "numix-icon-theme";
+  version = "18.07.17";
 
   src = fetchFromGitHub {
     owner = "numixproject";
-    repo = package-name;
-    rev = "45878a1195abd997341c91d51381625644f9a356";
-    sha256 = "0in7vx8mdwbfkgylh9p95kcsnn7dnv2vpmv788n0bbgldxmrldga";
+    repo = pname;
+    rev = version;
+    sha256 = "0clh55kmhc52d33dfm2c6h3lg6ddfh8a088ir9lv1camn9kj55bd";
   };
 
-  dontBuild = true;
+  nativeBuildInputs = [ gtk3 hicolor-icon-theme ];
 
   installPhase = ''
-    install -dm 755 $out/share/icons
-    cp -dr --no-preserve='ownership' Numix{,-Light} $out/share/icons/
+    mkdir -p $out/share/icons
+    mv Numix{,-Light} $out/share/icons
+  '';
+
+  postFixup = ''
+    for theme in $out/share/icons/*; do
+      gtk-update-icon-cache $theme
+    done
   '';
 
   meta = with stdenv.lib; {
     description = "Numix icon theme";
-    homepage = https://numixproject.org;
+    homepage = https://numixproject.github.io;
     license = licenses.gpl3;
-    platforms = platforms.all;
-    maintainers = with maintainers; [ romildo jgeerds ];
+    # darwin cannot deal with file names differing only in case
+    platforms = platforms.linux;
+    maintainers = with maintainers; [ romildo ];
   };
 }

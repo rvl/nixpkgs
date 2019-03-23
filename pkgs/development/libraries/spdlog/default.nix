@@ -1,36 +1,46 @@
 { stdenv, fetchFromGitHub, cmake }:
 
-stdenv.mkDerivation rec {
-  name = "spdlog-${version}";
-  version = stdenv.lib.strings.substring 0 7 rev;
-  rev = "292bdc5eb4929f183c78d2c67082b715306f81c9";
+let
+  generic = { version, sha256 }:
+    stdenv.mkDerivation {
+      name = "spdlog-${version}";
+      inherit version;
 
-  src = fetchFromGitHub {
-    owner = "gabime";
-    repo = "spdlog";
-    inherit rev;
-    sha256 = "1b6b0c81a8hisaibqlzj5mrk3snrfl8p5sqa056q2f02i62zksbn";
+      src = fetchFromGitHub {
+        owner  = "gabime";
+        repo   = "spdlog";
+        rev    = "v${version}";
+        inherit sha256;
+      };
+
+      nativeBuildInputs = [ cmake ];
+
+      cmakeFlags = [ "-DSPDLOG_BUILD_EXAMPLES=OFF" ];
+
+      outputs = [ "out" "doc" ];
+
+      postInstall = ''
+        mkdir -p $out/share/doc/spdlog
+        cp -rv ../example $out/share/doc/spdlog
+      '';
+
+      meta = with stdenv.lib; {
+        description    = "Very fast, header only, C++ logging library.";
+        homepage       = https://github.com/gabime/spdlog;
+        license        = licenses.mit;
+        maintainers    = with maintainers; [ obadz ];
+        platforms      = platforms.all;
+      };
+    };
+in
+{
+  spdlog_1 = generic {
+    version = "1.2.1";
+    sha256 = "0gdj8arfz4r9419zbcxk9y9nv47qr7kyjjzw9m3ijgmn2pmxk88n";
   };
 
-  buildInputs = [ cmake ];
-
-  # cmakeFlags = [ "-DSPDLOG_BUILD_EXAMPLES=ON" ];
-
-  outputs = [ "out" "doc" ];
-
-  postInstall = ''
-    mkdir -p $out/share/doc/spdlog
-    cp -rv ../example $out/share/doc/spdlog
-  '';
-
-  meta = with stdenv.lib; {
-    description    = "Very fast, header only, C++ logging library.";
-    homepage       = https://github.com/gabime/spdlog;
-    license        = licenses.mit;
-    maintainers    = with maintainers; [ obadz ];
-    platforms      = platforms.all;
-
-    # This is a header-only library, no point in hydra building it:
-    hydraPlatforms = [];
+  spdlog_0 = generic {
+    version = "0.17.0";
+    sha256 = "112kfh4fbpm5cvrmgbgz4d8s802db91mhyjpg7cwhlywffnzkwr9";
   };
 }

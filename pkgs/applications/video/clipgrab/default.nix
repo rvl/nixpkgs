@@ -1,17 +1,20 @@
-{ stdenv, fetchurl, makeDesktopItem, ffmpeg, qt4, qmake4Hook }:
+{ stdenv, fetchurl, makeDesktopItem, ffmpeg
+, qmake, qttools
+, qtbase, qtdeclarative, qtlocation, qtquickcontrols2, qtwebchannel, qtwebengine
+}:
 
 stdenv.mkDerivation rec {
   name = "clipgrab-${version}";
-  version = "3.6.1";
+  version = "3.8.2";
 
   src = fetchurl {
-    sha256 = "1pmsnb9yfyadp8kzxldw09wmv2r0wmg9yza9ariqc27jz1j3kpsc";
+    sha256 = "0dhiv1mldp5f555im6mkjxdh6iivn1hnx2xdaqa6wxzsrwrvv5dd";
     # The .tar.bz2 "Download" link is a binary blob, the source is the .tar.gz!
     url = "https://download.clipgrab.org/${name}.tar.gz";
   };
 
-  buildInputs = [ ffmpeg qt4 ];
-  nativeBuildInputs = [ qmake4Hook ];
+  buildInputs = [ ffmpeg qtbase qtdeclarative qtlocation qtquickcontrols2 qtwebchannel qtwebengine ];
+  nativeBuildInputs = [ qmake qttools ];
 
   postPatch = stdenv.lib.optionalString (ffmpeg != null) ''
   substituteInPlace converter_ffmpeg.cpp \
@@ -49,6 +52,5 @@ stdenv.mkDerivation rec {
     homepage = https://clipgrab.org/;
     license = licenses.gpl3Plus;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ nckx ];
   };
 }

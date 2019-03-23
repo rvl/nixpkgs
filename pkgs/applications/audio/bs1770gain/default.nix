@@ -2,21 +2,21 @@
 
 stdenv.mkDerivation rec {
   name = "bs1770gain-${version}";
-  version = "0.4.7";
+  version = "0.5.2";
 
   src = fetchurl {
     url = "mirror://sourceforge/bs1770gain/${name}.tar.gz";
-    sha256 = "0dnypm7k4axc693g0z73n2mvycbzgc4lnj2am64xjzyg37my4qzz";
+    sha256 = "1p6yz5q7czyf9ard65sp4kawdlkg40cfscr3b24znymmhs3p7rbk";
   };
 
   buildInputs = [ ffmpeg sox ];
 
   NIX_CFLAGS_COMPILE = "-Wno-error";
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "A audio/video loudness scanner implementing ITU-R BS.1770";
-    license = stdenv.lib.licenses.gpl2Plus;
-    homepage = "http://bs1770gain.sourceforge.net/";
-    platforms = stdenv.lib.platforms.all;
+    license = licenses.gpl2Plus;
+    homepage = http://bs1770gain.sourceforge.net/;
+    platforms = platforms.all;
   };
 }

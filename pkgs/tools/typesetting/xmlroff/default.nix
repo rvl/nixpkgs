@@ -10,8 +10,8 @@ stdenv.mkDerivation rec {
     sha256 = "1sczn6xjczsfdxlbjqv4xqlki2a95y2s8ih2nl9v1vhqfk17fiww";
   };
 
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs = [
-    pkgconfig
     autoconf
     automake
     libxml2
@@ -26,7 +26,10 @@ stdenv.mkDerivation rec {
 
   configureScript = "./autogen.sh";
 
-  configureFlags = "--disable-pangoxsl --disable-gp";
+  configureFlags = [
+    "--disable-pangoxsl"
+    "--disable-gp"
+  ];
 
   hardeningDisable = [ "format" ];
 
@@ -41,5 +44,6 @@ stdenv.mkDerivation rec {
 
   meta = {
     platforms = stdenv.lib.platforms.unix;
+    license = stdenv.lib.licenses.bsd3;
   };
 }

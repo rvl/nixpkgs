@@ -1,12 +1,13 @@
-{ stdenv, fetchFromGitHub, icmake, libmilter, libX11, openssl, readline
+{ stdenv, fetchFromGitHub, icmake
+, libmilter, libX11, openssl, readline
 , utillinux, yodl }:
 
 stdenv.mkDerivation rec {
   name = "bobcat-${version}";
-  version = "4.03.00";
+  version = "4.08.03";
 
   src = fetchFromGitHub {
-    sha256 = "0jkwq3f6g3vbim2jg5wfzhin89r4crnypqggp8cqimjmpkyfqnv0";
+    sha256 = "163mdl8hxids7123bjxmqhcaqyc1dv7hv8k33s713ac6lzawarq2";
     rev = version;
     repo = "bobcat";
     owner = "fbb-git";
@@ -15,7 +16,9 @@ stdenv.mkDerivation rec {
   buildInputs = [ libmilter libX11 openssl readline utillinux ];
   nativeBuildInputs = [ icmake yodl ];
 
-  sourceRoot = "bobcat-${version}-src/bobcat";
+  setSourceRoot = ''
+    sourceRoot=$(echo */bobcat)
+  '';
 
   postPatch = ''
     substituteInPlace INSTALL.im --replace /usr $out
@@ -36,6 +39,5 @@ stdenv.mkDerivation rec {
     homepage = https://fbb-git.github.io/bobcat/;
     license = licenses.gpl3;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ nckx ];
   };
 }

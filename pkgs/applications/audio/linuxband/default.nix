@@ -1,7 +1,7 @@
-{ stdenv, fetchurl, makeWrapper, pkgconfig, MMA, libjack2, libsmf, pythonPackages }:
+{ stdenv, fetchurl, makeWrapper, pkgconfig, MMA, libjack2, libsmf, python2Packages }:
 
 let
-  inherit (pythonPackages) pyGtkGlade pygtksourceview python;
+  inherit (python2Packages) pyGtkGlade pygtksourceview python;
 in stdenv.mkDerivation rec {
   version = "12.02.1";
   name = "linuxband-${version}";
@@ -11,7 +11,8 @@ in stdenv.mkDerivation rec {
     sha256 = "1r71h4yg775m4gax4irrvygmrsclgn503ykmc2qwjsxa42ri4n2n";
   };
 
-  buildInputs = [ makeWrapper pkgconfig MMA libjack2 libsmf python pyGtkGlade pygtksourceview ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ makeWrapper MMA libjack2 libsmf python pyGtkGlade pygtksourceview ];
 
   patchPhase = ''
     sed -i 's@/usr/@${MMA}/@g' src/main/config/linuxband.rc.in

@@ -1,4 +1,4 @@
-{ stdenv, fetchFromBitbucket, ocaml, zlib, db48, perl }:
+{ stdenv, fetchFromBitbucket, ocaml, zlib, db, perl, camlp4 }:
 
 stdenv.mkDerivation rec {
   name = "sks-${version}";
@@ -11,13 +11,18 @@ stdenv.mkDerivation rec {
     sha256 = "00q5ma5rvl10rkc6cdw8d69bddgrmvy0ckqj3hbisy65l4idj2zm";
   };
 
-  buildInputs = [ ocaml zlib db48 perl ];
+  # pkgs.db provides db_stat, not db$major.$minor_stat
+  patches = [ ./adapt-to-nixos.patch ];
+
+  outputs = [ "out" "webSamples" ];
+
+  buildInputs = [ ocaml zlib db perl camlp4 ];
 
   makeFlags = [ "PREFIX=$(out)" "MANDIR=$(out)/share/man" ];
   preConfigure = ''
     cp Makefile.local.unused Makefile.local
     sed -i \
-      -e "s:^LIBDB=.*$:LIBDB=-ldb-4.8:g" \
+      -e "s:^LIBDB=.*$:LIBDB=-ldb:g" \
       Makefile.local
   '';
 
@@ -26,9 +31,11 @@ stdenv.mkDerivation rec {
   doCheck = true;
   checkPhase = "./sks unit_test";
 
+  # Copy the web examples for the NixOS module
+  postInstall = "cp -R sampleWeb $webSamples";
+
   meta = with stdenv.lib; {
-    description = "An OpenPGP keyserver whose goal is to provide easy to
-      deploy, decentralized, and highly reliable synchronization";
+    description = "An easily deployable & decentralized OpenPGP keyserver";
     longDescription = ''
       SKS is an OpenPGP keyserver whose goal is to provide easy to deploy,
       decentralized, and highly reliable synchronization. That means that a key
@@ -39,7 +46,7 @@ stdenv.mkDerivation rec {
     inherit (src.meta) homepage;
     license = licenses.gpl2;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ primeos ];
+    maintainers = with maintainers; [ primeos fpletz ];
   };
 }
 

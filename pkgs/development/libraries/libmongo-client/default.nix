@@ -10,7 +10,8 @@ stdenv.mkDerivation rec {
     sha256 = "1cjx06i3gd9zkyvwm2ysjrf0hkhr7bjg3c27s7n0y31j10igfjp0";
   };
 
-  buildInputs = [ autoreconfHook pkgconfig ];
+  nativeBuildInputs = [ autoreconfHook pkgconfig ];
+  buildInputs = [ ];
   propagatedBuildInputs = [ glib ];
 
   postPatch = ''
@@ -23,6 +24,5 @@ stdenv.mkDerivation rec {
     description = "An alternative C driver for MongoDB";
     license = licenses.asl20;
     platforms = platforms.all;
-    maintainers = with maintainers; [ wkennington ];
   };
 }

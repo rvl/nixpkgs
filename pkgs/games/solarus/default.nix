@@ -1,21 +1,25 @@
-{ stdenv, fetchFromGitHub, cmake, luajit,
+{ stdenv, fetchFromGitLab, cmake, luajit,
   SDL2, SDL2_image, SDL2_ttf, physfs,
-  openal, libmodplug, libvorbis}:
+  openal, libmodplug, libvorbis,
+  qtbase, qttools }:
 
 stdenv.mkDerivation rec {
   name = "solarus-${version}";
-  version = "1.4.5";
-    
-  src = fetchFromGitHub {
-    owner = "christopho";
+  version = "1.6.0";
+
+  src = fetchFromGitLab {
+    owner = "solarus-games";
     repo = "solarus";
-    rev = "d9fdb9fdb4e1b9fc384730a9279d134ae9f2c70e";
-    sha256 = "0xjx789d6crm322wmkqyq9r288vddsha59yavhy78c4r01gs1p5v";
+    rev = "v1.6.0";
+    sha256 = "0mlpa1ijaxy84f7xjgs2kjnpm035b8q9ckva6lg14q49gzy10fr2";
   };
-  
+
   buildInputs = [ cmake luajit SDL2
     SDL2_image SDL2_ttf physfs
-    openal libmodplug libvorbis ];
+    openal libmodplug libvorbis
+    qtbase qttools ];
+
+  enableParallelBuilding = true;
 
   meta = with stdenv.lib; {
     description = "A Zelda-like ARPG game engine";
@@ -28,5 +32,5 @@ stdenv.mkDerivation rec {
     maintainers = [ maintainers.Nate-Devv ];
     platforms = platforms.linux;
   };
-  
+
 }

@@ -42,26 +42,29 @@ in
 
   config = mkIf cfg.enable {
 
-    security.setuidOwners = map (program: {
-      inherit program;
+    # Not wrapping "batch" because it's a shell script (kernel drops perms
+    # anyway) and it's patched to invoke the "at" setuid wrapper.
+    security.wrappers = builtins.listToAttrs (
+      map (program: { name = "${program}"; value = {
+      source = "${at}/bin/${program}";
       owner = "atd";
       group = "atd";
       setuid = true;
       setgid = true;
-    }) [ "at" "atq" "atrm" "batch" ];
+    };}) [ "at" "atq" "atrm" ]);
 
     environment.systemPackages = [ at ];
 
     security.pam.services.atd = {};
 
-    users.extraUsers = singleton
+    users.users = singleton
       { name = "atd";
         uid = config.ids.uids.atd;
         description = "atd user";
         home = "/var/empty";
       };
 
-    users.extraGroups = singleton
+    users.groups = singleton
       { name = "atd";
         gid = config.ids.gids.atd;
       };

@@ -1,21 +1,22 @@
 { stdenv, fetchurl, m4, perl, help2man }:
 
 stdenv.mkDerivation rec {
-  name = "bison-3.0.4";
+  pname = "bison";
+  version = "3.3.2";
 
   src = fetchurl {
-    url = "mirror://gnu/bison/${name}.tar.gz";
-    sha256 = "b67fd2daae7a64b5ba862c66c07c1addb9e6b1b05c5f2049392cfd8a2172952e";
+    url = "mirror://gnu/${pname}/${pname}-${version}.tar.gz";
+    sha256 = "1lfvns1f6xamz9905fakzkxh4zmk1wa9w33vxcq78fc5841ivnhg";
   };
 
   nativeBuildInputs = [ m4 perl ] ++ stdenv.lib.optional stdenv.isSunOS help2man;
   propagatedBuildInputs = [ m4 ];
 
-  # FIXME needs gcc 4.9 in bootstrap tools
-  hardeningDisable = [ "stackprotector" ];
+  doCheck = false; # fails
+  doInstallCheck = false; # fails
 
   meta = {
-    homepage = "http://www.gnu.org/software/bison/";
+    homepage = https://www.gnu.org/software/bison/;
     description = "Yacc-compatible parser generator";
     license = stdenv.lib.licenses.gpl3Plus;
 

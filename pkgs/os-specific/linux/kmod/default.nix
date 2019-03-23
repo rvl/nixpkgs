@@ -1,4 +1,5 @@
-{ stdenv, lib, fetchurl, autoreconfHook, xz, zlib, pkgconfig, libxslt }:
+{ stdenv, buildPackages, lib, fetchurl, autoreconfHook, pkgconfig
+, libxslt, xz, elf-header }:
 
 let
   systems = [ "/run/current-system/kernel-modules" "/run/booted-system/kernel-modules" "" ];
@@ -6,24 +7,24 @@ let
 
 in stdenv.mkDerivation rec {
   name = "kmod-${version}";
-  version = "23";
+  version = "25";
 
   src = fetchurl {
     url = "mirror://kernel/linux/utils/kernel/kmod/${name}.tar.xz";
-    sha256 = "0mc12sx06p8il1ym3hdmgxxb37apn9yv7xij26gddjdfkx8xa0yk";
+    sha256 = "1kgixs4m3jvwk7fb3d18n6j77qhgi9qfv4csj35rs5ancr4ycrbi";
   };
 
   nativeBuildInputs = [ autoreconfHook pkgconfig libxslt ];
-  buildInputs = [ xz /* zlib */ ];
+  buildInputs = [ xz ] ++ lib.optional stdenv.isDarwin elf-header;
 
   configureFlags = [
     "--sysconfdir=/etc"
     "--with-xz"
     "--with-modulesdirs=${modulesDirs}"
-    # "--with-zlib"
   ];
 
-  patches = [ ./module-dir.patch ];
+  patches = [ ./module-dir.patch ]
+    ++ lib.optional stdenv.isDarwin ./darwin.patch;
 
   postInstall = ''
     for prog in rmmod insmod lsmod modinfo modprobe depmod; do
@@ -34,9 +35,10 @@ in stdenv.mkDerivation rec {
     ln -s bin $out/sbin
   '';
 
-  meta = {
-    homepage = http://www.kernel.org/pub/linux/utils/kernel/kmod/;
+  meta = with stdenv.lib; {
+    homepage = https://www.kernel.org/pub/linux/utils/kernel/kmod/;
     description = "Tools for loading and managing Linux kernel modules";
-    platforms = stdenv.lib.platforms.linux;
+    license = licenses.lgpl21;
+    platforms = platforms.unix;
   };
 }

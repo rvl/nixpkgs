@@ -7,35 +7,24 @@ let
 
   cfgFile = pkgs.writeText "kibana.json" (builtins.toJSON (
     (filterAttrsRecursive (n: v: v != null) ({
-      host = cfg.listenAddress;
-      port = cfg.port;
-      ssl_cert_file = cfg.cert;
-      ssl_key_file = cfg.key;
+      server.host = cfg.listenAddress;
+      server.port = cfg.port;
+      server.ssl.certificate = cfg.cert;
+      server.ssl.key = cfg.key;
 
-      kibana_index = cfg.index;
-      default_app_id = cfg.defaultAppId;
+      kibana.index = cfg.index;
+      kibana.defaultAppId = cfg.defaultAppId;
 
-      elasticsearch_url = cfg.elasticsearch.url;
-      kibana_elasticsearch_username = cfg.elasticsearch.username;
-      kibana_elasticsearch_password = cfg.elasticsearch.password;
-      kibana_elasticsearch_cert = cfg.elasticsearch.cert;
-      kibana_elasticsearch_key = cfg.elasticsearch.key;
-      ca = cfg.elasticsearch.ca;
+      elasticsearch.url = cfg.elasticsearch.url;
+      elasticsearch.username = cfg.elasticsearch.username;
+      elasticsearch.password = cfg.elasticsearch.password;
 
-      bundled_plugin_ids = [
-        "plugins/dashboard/index"
-        "plugins/discover/index"
-        "plugins/doc/index"
-        "plugins/kibana/index"
-        "plugins/markdown_vis/index"
-        "plugins/metric_vis/index"
-        "plugins/settings/index"
-        "plugins/table_vis/index"
-        "plugins/vis_types/index"
-        "plugins/visualize/index"
-      ];
+      elasticsearch.ssl.certificate = cfg.elasticsearch.cert;
+      elasticsearch.ssl.key = cfg.elasticsearch.key;
+      elasticsearch.ssl.certificateAuthorities = cfg.elasticsearch.certificateAuthorities;
     } // cfg.extraConf)
   )));
+
 in {
   options.services.kibana = {
     enable = mkEnableOption "enable kibana service";
@@ -96,9 +85,27 @@ in {
       };
 
       ca = mkOption {
-        description = "CA file to auth against elasticsearch.";
+        description = ''
+          CA file to auth against elasticsearch.
+
+          It's recommended to use the <option>certificateAuthorities</option> option
+          when using kibana-5.4 or newer.
+        '';
         default = null;
         type = types.nullOr types.path;
+      };
+
+      certificateAuthorities = mkOption {
+        description = ''
+          CA files to auth against elasticsearch.
+
+          Please use the <option>ca</option> option when using kibana &lt; 5.4
+          because those old versions don't support setting multiple CA's.
+
+          This defaults to the singleton list [ca] when the <option>ca</option> option is defined.
+        '';
+        default = if isNull cfg.elasticsearch.ca then [] else [ca];
+        type = types.listOf types.path;
       };
 
       cert = mkOption {
@@ -118,6 +125,7 @@ in {
       description = "Kibana package to use";
       default = pkgs.kibana;
       defaultText = "pkgs.kibana";
+      example = "pkgs.kibana5";
       type = types.package;
     };
 
@@ -141,7 +149,10 @@ in {
       after = [ "network.target" "elasticsearch.service" ];
       environment = { BABEL_CACHE_PATH = "${cfg.dataDir}/.babelcache.json"; };
       serviceConfig = {
-        ExecStart = "${cfg.package}/bin/kibana --config ${cfgFile}";
+        ExecStart =
+          "${cfg.package}/bin/kibana" +
+          " --config ${cfgFile}" +
+          " --path.data ${cfg.dataDir}";
         User = "kibana";
         WorkingDirectory = cfg.dataDir;
       };
@@ -149,7 +160,7 @@ in {
 
     environment.systemPackages = [ cfg.package ];
 
-    users.extraUsers = singleton {
+    users.users = singleton {
       name = "kibana";
       uid = config.ids.uids.kibana;
       description = "Kibana service user";

@@ -1,29 +1,27 @@
 { stdenv, fetchurl, autoreconfHook, gettext, makeWrapper
-, alsaLib, libjack2, tk
+, alsaLib, libjack2, tk, fftw
 }:
 
 stdenv.mkDerivation  rec {
   name = "puredata-${version}";
-  version = "0.47-1";
+  version = "0.49-0";
 
   src = fetchurl {
     url = "http://msp.ucsd.edu/Software/pd-${version}.src.tar.gz";
-    sha256 = "0k5s949kqd7yw97h3m8z81bjz32bis9m4ih8df1z0ymipnafca67";
+    sha256 = "18rzqbpgnnvyslap7k0ly87aw1bbxkb0rk5agpr423ibs9slxq6j";
   };
-
-  patchPhase = ''
-    rm portaudio/configure.in
-  '';
 
   nativeBuildInputs = [ autoreconfHook gettext makeWrapper ];
 
-  buildInputs = [ alsaLib libjack2 ];
+  buildInputs = [ alsaLib libjack2 fftw ];
 
-  configureFlags = ''
-    --enable-alsa
-    --enable-jack
-    --disable-portaudio
-  '';
+  configureFlags = [
+    "--enable-alsa"
+    "--enable-jack"
+    "--enable-fftw"
+    "--disable-portaudio"
+    "--disable-oss"
+  ];
 
   postInstall = ''
     wrapProgram $out/bin/pd --prefix PATH : ${tk}/bin

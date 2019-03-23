@@ -1,17 +1,17 @@
 { stdenv, fetchurl, which, coq, ssreflect }:
 
 stdenv.mkDerivation {
-  name = "coq${coq.coq-version}-coquelicot-2.1.1";
+  name = "coq${coq.coq-version}-coquelicot-3.0.2";
   src = fetchurl {
-    url = https://gforge.inria.fr/frs/download.php/file/35429/coquelicot-2.1.1.tar.gz;
-    sha256 = "1wxds73h26q03r2xiw8shplh97rsbim2i2s0r7af0fa490bp44km";
+    url = "https://gforge.inria.fr/frs/download.php/file/37523/coquelicot-3.0.2.tar.gz";
+    sha256 = "1biia7nfqf7vaqq5gmykl4rwjyvrcwss6r2jdf0in5pvp2rnrj2w";
   };
 
   nativeBuildInputs = [ which ];
   buildInputs = [ coq ];
   propagatedBuildInputs = [ ssreflect ];
 
-  configureFlags = "--libdir=$out/lib/coq/${coq.coq-version}/user-contrib/Coquelicot";
+  configureFlags = [ "--libdir=$out/lib/coq/${coq.coq-version}/user-contrib/Coquelicot" ];
   buildPhase = "./remake";
   installPhase = "./remake install";
 
@@ -22,4 +22,9 @@ stdenv.mkDerivation {
     maintainers = [ stdenv.lib.maintainers.vbgl ];
     inherit (coq.meta) platforms;
   };
+
+  passthru = {
+    compatibleCoqVersions = v: builtins.elem v [ "8.5" "8.6" "8.7" "8.8" "8.9" ];
+  };
+
 }

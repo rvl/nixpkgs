@@ -1,8 +1,9 @@
 { lib
-, system, platform, crossSystem, config
+, localSystem, crossSystem, config, overlays
 }:
 
-assert crossSystem == null;
+assert crossSystem == localSystem;
+let inherit (localSystem) system; in
 
 
 [
@@ -28,13 +29,17 @@ assert crossSystem == null;
     inherit bootstrapTools;
 
     fetchurl = import ../../build-support/fetchurl {
-      inherit stdenv;
+      inherit lib;
+      stdenvNoCC = stdenv;
       curl = bootstrapTools;
     };
 
     stdenv = import ../generic {
       name = "stdenv-freebsd-boot-1";
-      inherit system config;
+      buildPlatform = localSystem;
+      hostPlatform = localSystem;
+      targetPlatform = localSystem;
+      inherit config;
       initialPath = [ "/" "/usr" ];
       shell = "${bootstrapTools}/bin/bash";
       fetchurlBoot = null;
@@ -49,28 +54,31 @@ assert crossSystem == null;
 
     stdenv = import ../generic {
       name = "stdenv-freebsd-boot-0";
-      inherit system config;
+      inherit config;
       initialPath = [ prevStage.bootstrapTools ];
-      inherit (prevStage.stdenv) shell;
+      inherit (prevStage.stdenv)
+        buildPlatform hostPlatform targetPlatform
+        shell;
       fetchurlBoot = prevStage.fetchurl;
       cc = null;
     };
   })
 
   (prevStage: {
-    inherit system crossSystem platform config;
+    inherit config overlays;
     stdenv = import ../generic {
       name = "stdenv-freebsd-boot-3";
-      inherit system config;
+      inherit config;
 
       inherit (prevStage.stdenv)
+        buildPlatform hostPlatform targetPlatform
         initialPath shell fetchurlBoot;
 
       cc = import ../../build-support/cc-wrapper {
         nativeTools  = true;
         nativePrefix = "/usr";
         nativeLibc   = true;
-        inherit (prevStage) stdenv;
+        stdenvNoCC = prevStage.stdenv;
         cc           = {
           name    = "clang-9.9.9";
           cc      = "/usr";

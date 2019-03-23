@@ -36,16 +36,15 @@ lib.makeOverridable (
     rubyName = builtins.parseDrvName ruby.name;
   in "${rubyName.name}${rubyName.version}-")
 , buildInputs ? []
-, doCheck ? false
 , meta ? {}
 , patches ? []
 , gemPath ? []
 , dontStrip ? true
-, remotes ? ["https://rubygems.org"]
 # Assume we don't have to build unless strictly necessary (e.g. the source is a
 # git checkout).
 # If you need to apply patches, make sure to set `dontBuild = false`;
 , dontBuild ? true
+, dontInstallManpages ? false
 , propagatedBuildInputs ? []
 , propagatedUserEnvPkgs ? []
 , buildFlags ? []
@@ -56,14 +55,18 @@ let
   src = attrs.src or (
     if type == "gem" then
       fetchurl {
-        urls = map (remote: "${remote}/gems/${gemName}-${version}.gem") remotes;
-        inherit (attrs) sha256;
+        urls = map (
+          remote: "${remote}/gems/${gemName}-${version}.gem"
+        ) (attrs.source.remotes or [ "https://rubygems.org" ]);
+        inherit (attrs.source) sha256;
       }
     else if type == "git" then
       fetchgit {
-        inherit (attrs) url rev sha256 fetchSubmodules;
+        inherit (attrs.source) url rev sha256 fetchSubmodules;
         leaveDotGit = true;
       }
+    else if type == "url" then
+      fetchurl attrs.source
     else
       throw "buildRubyGem: don't know how to build a gem of type \"${type}\""
   );
@@ -74,24 +77,23 @@ let
 
 in
 
-stdenv.mkDerivation (attrs // {
+stdenv.mkDerivation ((builtins.removeAttrs attrs ["source"]) // {
   inherit ruby;
-  inherit doCheck;
   inherit dontBuild;
   inherit dontStrip;
   inherit type;
 
   buildInputs = [
     ruby makeWrapper
-  ] ++ lib.optionals (type == "git") [ git bundler ]
+  ] ++ lib.optionals (type == "git") [ git ]
+    ++ lib.optionals (type != "gem") [ bundler ]
     ++ lib.optional stdenv.isDarwin darwin.libobjc
     ++ buildInputs;
 
+  #name = builtins.trace (attrs.name or "no attr.name" ) "${namePrefix}${gemName}-${version}";
   name = attrs.name or "${namePrefix}${gemName}-${version}";
 
   inherit src;
-
-  phases = attrs.phases or [ "unpackPhase" "patchPhase" "buildPhase" "installPhase" "fixupPhase" ];
 
   unpackPhase = attrs.unpackPhase or ''
     runHook preUnpack
@@ -157,14 +159,22 @@ stdenv.mkDerivation (attrs // {
 
     echo "buildFlags: $buildFlags"
 
+    ${lib.optionalString (type ==  "url") ''
+    ruby ${./nix-bundle-install.rb} \
+      "path" \
+      '${gemName}' \
+      '${version}' \
+      '${lib.escapeShellArgs buildFlags}'
+    ''}
     ${lib.optionalString (type == "git") ''
     ruby ${./nix-bundle-install.rb} \
-      ${gemName} \
-      ${attrs.url} \
-      ${src} \
-      ${attrs.rev} \
-      ${version} \
-      ${lib.escapeShellArgs buildFlags}
+      "git" \
+      '${gemName}' \
+      '${version}' \
+      '${lib.escapeShellArgs buildFlags}' \
+      '${attrs.source.url}' \
+      '${src}' \
+      '${attrs.source.rev}'
     ''}
 
     ${lib.optionalString (type == "gem") ''
@@ -195,6 +205,14 @@ stdenv.mkDerivation (attrs // {
     # write out metadata and binstubs
     spec=$(echo $out/${ruby.gemPath}/specifications/*.gemspec)
     ruby ${./gem-post-build.rb} "$spec"
+    ''}
+
+    ${lib.optionalString (!dontInstallManpages) ''
+    for section in {1..9}; do
+      mandir="$out/share/man/man$section"
+      find $out/lib \( -wholename "*/man/*.$section" -o -wholename "*/man/man$section/*.$section" \) \
+        -execdir mkdir -p $mandir \; -execdir cp '{}' $mandir \;
+    done
     ''}
 
     runHook postInstall

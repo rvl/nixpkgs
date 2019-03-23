@@ -1,88 +1,135 @@
-{ stdenv, lib, callPackage, fetchurl, unzip, atomEnv, makeDesktopItem,
-  makeWrapper, libXScrnSaver }:
+{ stdenv, lib, fetchurl, makeDesktopItem
+, unzip, libsecret, libXScrnSaver, wrapGAppsHook
+, gtk2, atomEnv, at-spi2-atk, autoPatchelfHook
+, systemd, fontconfig
+, isInsiders ? false }:
 
 let
-  version = "1.8.0";
-  rev = "38746938a4ab94f2f57d9e1309c51fd6fb37553d";
+  executableName = "code" + lib.optionalString isInsiders "-insiders";
+  longName = "Visual Studio Code" + lib.optionalString isInsiders " - Insiders";
+  shortName = "Code" + lib.optionalString isInsiders " - Insiders";
 
-  sha256 = if stdenv.system == "i686-linux"    then "0p7r1i71v2ab4dzlwh43hqih958a31cqskf64ds4vgc35x2mfjcq"
-      else if stdenv.system == "x86_64-linux"  then "1k15701jskk7w5kwzlzfri96vvw7fcinyfqqafls8nms8h5csv76"
-      else if stdenv.system == "x86_64-darwin" then "12fqz62gs2wcg2wwx1k6gv2gqil9c54yq254vk3rqdf82q9zyapk"
-      else throw "Unsupported system: ${stdenv.system}";
+  inherit (stdenv.hostPlatform) system;
 
-  urlBase = "https://az764295.vo.msecnd.net/stable/${rev}/";
+  plat = {
+    "i686-linux" = "linux-ia32";
+    "x86_64-linux" = "linux-x64";
+    "x86_64-darwin" = "darwin";
+  }.${system};
 
-  urlStr = if stdenv.system == "i686-linux" then
-        urlBase + "code-stable-code_${version}-1481650382_i386.tar.gz"
-      else if stdenv.system == "x86_64-linux" then
-        urlBase + "code-stable-code_${version}-1481651903_amd64.tar.gz"
-      else if stdenv.system == "x86_64-darwin" then
-        urlBase + "VSCode-darwin-stable.zip"
-      else throw "Unsupported system: ${stdenv.system}";
+  sha256 = {
+    "i686-linux" = "1qll0hyqyn3vb0v35h9y8rk4l3r6zzc5bkra6pb23bnr4bna4y80";
+    "x86_64-linux" = "1sfvv4g7kmvabqxasil41gasr7hsmgf8wwc4dl1940pb7x19fllq";
+    "x86_64-darwin" = "0gjdppr59pyb2wawvf7yyk7357a5naxga74zf9gc7d9s1fz78hls";
+  }.${system};
+
+  archive_fmt = if system == "x86_64-darwin" then "zip" else "tar.gz";
 in
   stdenv.mkDerivation rec {
     name = "vscode-${version}";
-    inherit version;
+    version = "1.32.3";
 
     src = fetchurl {
-      url = urlStr;
+      name = "VSCode_${version}_${plat}.${archive_fmt}";
+      url = "https://vscode-update.azurewebsites.net/${version}/${plat}/stable";
       inherit sha256;
     };
 
-    desktopItem = makeDesktopItem {
-      name = "code";
-      exec = "code";
-      icon = "code";
-      comment = ''
-        Code editor redefined and optimized for building and debugging modern
-        web and cloud applications
-      '';
-      desktopName = "Visual Studio Code";
-      genericName = "Text Editor";
-      categories = "GNOME;GTK;Utility;TextEditor;Development;";
+    passthru = {
+      inherit executableName;
     };
 
-    buildInputs = if stdenv.system == "x86_64-darwin"
-      then [ unzip makeWrapper libXScrnSaver ]
-      else [ makeWrapper libXScrnSaver ];
+    desktopItem = makeDesktopItem {
+      name = executableName;
+      desktopName = longName;
+      comment = "Code Editing. Redefined.";
+      genericName = "Text Editor";
+      exec = executableName;
+      icon = "@out@/share/pixmaps/code.png";
+      startupNotify = "true";
+      categories = "Utility;TextEditor;Development;IDE;";
+      mimeType = "text/plain;inode/directory;";
+      extraEntries = ''
+        StartupWMClass=${shortName}
+        Actions=new-empty-window;
+        Keywords=vscode;
 
-    installPhase = ''
-      mkdir -p $out/lib/vscode $out/bin
-      cp -r ./* $out/lib/vscode
-      ln -s $out/lib/vscode/code $out/bin
+        [Desktop Action new-empty-window]
+        Name=New Empty Window
+        Exec=${executableName} --new-window %F
+        Icon=@out@/share/pixmaps/code.png
+      '';
+    };
 
-      mkdir -p $out/share/applications
-      cp $desktopItem/share/applications/* $out/share/applications
+    urlHandlerDesktopItem = makeDesktopItem {
+      name = executableName + "-url-handler";
+      desktopName = longName + " - URL Handler";
+      comment = "Code Editing. Redefined.";
+      genericName = "Text Editor";
+      exec = executableName + " --open-url %U";
+      icon = "@out@/share/pixmaps/code.png";
+      startupNotify = "true";
+      categories = "Utility;TextEditor;Development;IDE;";
+      mimeType = "x-scheme-handler/vscode;";
+      extraEntries = ''
+        NoDisplay=true
+        Keywords=vscode;
+      '';
+    };
 
-      mkdir -p $out/share/pixmaps
-      cp $out/lib/vscode/resources/app/resources/linux/code.png $out/share/pixmaps/code.png
-    '';
+    buildInputs = (if stdenv.isDarwin
+      then [ unzip ]
+      else [ gtk2 at-spi2-atk wrapGAppsHook ] ++ atomEnv.packages)
+        ++ [ libsecret libXScrnSaver ];
 
-    postFixup = lib.optionalString (stdenv.system == "i686-linux" || stdenv.system == "x86_64-linux") ''
-      patchelf \
-        --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" \
-        --set-rpath "${atomEnv.libPath}:$out/lib/vscode" \
-        $out/lib/vscode/code
+    nativeBuildInputs = lib.optional (!stdenv.isDarwin) autoPatchelfHook;
 
-      wrapProgram $out/bin/code \
-        --prefix LD_PRELOAD : ${stdenv.lib.makeLibraryPath [ libXScrnSaver ]}/libXss.so.1
+    dontBuild = true;
+    dontConfigure = true;
+
+    installPhase =
+      if system == "x86_64-darwin" then ''
+        mkdir -p $out/lib/vscode $out/bin
+        cp -r ./* $out/lib/vscode
+        ln -s $out/lib/vscode/Contents/Resources/app/bin/${executableName} $out/bin
+      '' else ''
+        mkdir -p $out/lib/vscode $out/bin
+        cp -r ./* $out/lib/vscode
+
+        substituteInPlace $out/lib/vscode/bin/${executableName} --replace '"$CLI" "$@"' '"$CLI" "--skip-getting-started" "$@"'
+
+        ln -s $out/lib/vscode/bin/${executableName} $out/bin
+
+        mkdir -p $out/share/applications
+        substitute $desktopItem/share/applications/${executableName}.desktop $out/share/applications/${executableName}.desktop \
+          --subst-var out
+        substitute $urlHandlerDesktopItem/share/applications/${executableName}-url-handler.desktop $out/share/applications/${executableName}-url-handler.desktop \
+          --subst-var out
+
+        mkdir -p $out/share/pixmaps
+        cp $out/lib/vscode/resources/app/resources/linux/code.png $out/share/pixmaps/code.png
+      '';
+
+    preFixup = lib.optionalString (system == "i686-linux" || system == "x86_64-linux") ''
+      gappsWrapperArgs+=(--prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ systemd fontconfig ]})
     '';
 
     meta = with stdenv.lib; {
       description = ''
         Open source source code editor developed by Microsoft for Windows,
-        Linux and OS X
+        Linux and macOS
       '';
       longDescription = ''
         Open source source code editor developed by Microsoft for Windows,
-        Linux and OS X. It includes support for debugging, embedded Git
+        Linux and macOS. It includes support for debugging, embedded Git
         control, syntax highlighting, intelligent code completion, snippets,
         and code refactoring. It is also customizable, so users can change the
         editor's theme, keyboard shortcuts, and preferences
       '';
-      homepage = http://code.visualstudio.com/;
+      homepage = https://code.visualstudio.com/;
       downloadPage = https://code.visualstudio.com/Updates;
       license = licenses.unfree;
+      maintainers = with maintainers; [ eadwu ];
       platforms = [ "i686-linux" "x86_64-linux" "x86_64-darwin" ];
     };
   }

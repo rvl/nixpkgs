@@ -1,105 +1,103 @@
-# Build procedure lifted from https://aur.archlinux.org/packages/k2/k2pdfopt/PKGBUILD
-{ stdenv, fetchzip, fetchurl, writeScript, libX11, libXext, autoconf, automake, libtool
-      , leptonica, libpng, libtiff, zlib, openjpeg, freetype, jbig2dec, djvulibre
-      , openssl }:
+{ stdenv, fetchzip, fetchurl, fetchpatch, cmake, pkgconfig
+, zlib, libpng, openjpeg
+, enableGSL ? true, gsl
+, enableGhostScript ? true, ghostscript
+, enableMuPDF ? true, mupdf
+, enableJPEG2K ? true, jasper
+, enableDJVU ? true, djvulibre
+, enableGOCR ? false, gocr # Disabled by default due to crashes
+, enableTesseract ? true, leptonica, tesseract4
+}:
 
-let
-  mupdf_src = fetchurl {
-    url = http://www.mupdf.com/downloads/archive/mupdf-1.6-source.tar.gz;
-    sha256 = "0qx51rj6alzcagcixm59rvdpm54w6syrwr4184v439jh14ryw4wq";
-  };
+with stdenv.lib;
 
-  tess_src = fetchurl {
-    url = http://tesseract-ocr.googlecode.com/files/tesseract-ocr-3.02.02.tar.gz;
-    sha256 = "0g81m9y4iydp7kgr56mlkvjdwpp3mb01q385yhdnyvra7z5kkk96";
-  };
-
-  gocr_src = fetchurl {
-    url = http://www-e.uni-magdeburg.de/jschulen/ocr/gocr-0.49.tar.gz;
-    sha256 = "06hpzp7rkkwfr1fvmc8kcfz9v490i9yir7f7imh13gmka0fr6afc";
-  };
-
-in stdenv.mkDerivation rec {
+stdenv.mkDerivation rec {
   name = "k2pdfopt-${version}";
-  version = "2.32";
-  src = fetchzip {
-    url = "http://www.willus.com/k2pdfopt/src/k2pdfopt_v${version}_src.zip";
-    sha256 = "1v3cj5bwpjvy7s66sfqcmkxs91f7nxaykjpdjm2wn87vn6q7n19m";
-  };
+  version = "2.51a";
 
-  buildInputs = [ libX11 libXext autoconf automake libtool leptonica libpng libtiff zlib
-                    openjpeg freetype jbig2dec djvulibre openssl ];
-  NIX_LDFLAGS = "-lX11 -lXext";
+  src = (fetchzip {
+    url = "http://www.willus.com/k2pdfopt/src/k2pdfopt_v2.51_src.zip";
+    sha256 = "133l7xkvi67s6sfk8cfh7rmavbsf7ib5fyksk1ci6b6sch3z2sw9";
+  });
 
-  hardeningDisable = [ "format" ];
+  # Note: the v2.51a zip contains only files to be replaced in the v2.50 zip.
+  v251a_src = (fetchzip {
+    url = "http://www.willus.com/k2pdfopt/src/k2pdfopt_v2.51a_src.zip";
+    sha256 = "0vvwblii7kgdwfxw8dzk6jbmz4dv94d7rkv18i60y8wkayj6yhl6";
+  });
 
-  k2_pa = ./k2pdfopt.patch;
-  tess_pa = ./tesseract.patch;
+  postUnpack = ''
+    cp -r ${v251a_src}/* $sourceRoot
+  '';
 
-  builder = writeScript "builder.sh" ''
-    . ${stdenv}/setup
-    set -e
+  patches = [ ./k2pdfopt.patch ];
 
-    plibs=`pwd`/patched_libraries
+  nativeBuildInputs = [ cmake pkgconfig ];
 
-    tar zxf ${mupdf_src}
-    cp $src/mupdf_mod/font.c $src/mupdf_mod/string.c mupdf-1.6-source/source/fitz/
-    cp $src/mupdf_mod/pdf-* mupdf-1.6-source/source/pdf
+  buildInputs =
+  let
+    mupdf_modded = mupdf.overrideAttrs (attrs: {
+      # Excluded the pdf-*.c files, since they mostly just broke the #includes
+      prePatch = ''
+        cp ${src}/mupdf_mod/{font,stext-device,string}.c source/fitz/
+        cp ${src}/mupdf_mod/font-win32.c source/pdf/
+      '';
+    });
 
-    tar zxf ${tess_src}
-    cp $src/tesseract_mod/dawg.cpp tesseract-ocr/dict
-    cp $src/tesseract_mod/tessdatamanager.cpp tesseract-ocr/ccutil
-    cp $src/tesseract_mod/tessedit.cpp tesseract-ocr/ccmain
-    cp $src/tesseract_mod/tesscapi.cpp tesseract-ocr/api
-    cp $src/include_mod/tesseract.h $src/include_mod/leptonica.h tesseract-ocr/api
+    leptonica_modded = leptonica.overrideAttrs (attrs: {
+      name = "leptonica-1.74.4";
+      # Modified source files apply to this particular version of leptonica
+      version = "1.74.4";
 
-    cp -a $src k2pdfopt_v2.21
-    chmod -R +w k2pdfopt_v2.21
+      src = fetchurl {
+        url = "http://www.leptonica.org/source/leptonica-1.74.4.tar.gz";
+        sha256 = "0fw39amgyv8v6nc7x8a4c7i37dm04i6c5zn62d24bgqnlhk59hr9";
+      };
 
-    patch -p0 -i $tess_pa
-    patch -p0 -i $k2_pa
+      prePatch = ''
+        cp ${src}/leptonica_mod/{allheaders.h,dewarp2.c,leptwin.c} src/
+      '';
+      patches = [];
+    });
+    tesseract_modded = tesseract4.override {
+      tesseractBase = tesseract4.tesseractBase.overrideAttrs (_: {
+        prePatch = ''
+          cp ${src}/tesseract_mod/baseapi.{h,cpp} src/api/
+          cp ${src}/tesseract_mod/ccutil.{h,cpp} src/ccutil/
+          cp ${src}/tesseract_mod/genericvector.h src/ccutil/
+          cp ${src}/tesseract_mod/input.cpp src/lstm/
+          cp ${src}/tesseract_mod/lstmrecognizer.cpp src/lstm/
+          cp ${src}/tesseract_mod/mainblk.cpp src/ccutil/
+          cp ${src}/tesseract_mod/params.cpp src/ccutil/
+          cp ${src}/tesseract_mod/serialis.{h,cpp} src/ccutil/
+          cp ${src}/tesseract_mod/tesscapi.cpp src/api/
+          cp ${src}/tesseract_mod/tessdatamanager.cpp src/ccstruct/
+          cp ${src}/tesseract_mod/tessedit.cpp src/ccmain/
+          cp ${src}/include_mod/{tesseract.h,leptonica.h} src/api/
+        '';
+        patches = [ ./tesseract.patch ];
+      });
+    };
+  in
+    [ zlib libpng ] ++
+    optional enableGSL gsl ++
+    optional enableGhostScript ghostscript ++
+    optional enableMuPDF mupdf_modded ++
+    optional enableJPEG2K jasper ++
+    optional enableDJVU djvulibre ++
+    optional enableGOCR gocr ++
+    optionals enableTesseract [ leptonica_modded tesseract_modded ];
 
-    cd tesseract-ocr
-    ./autogen.sh
-    substituteInPlace "configure" \
-            --replace 'LIBLEPT_HEADERSDIR="/usr/local/include /usr/include"' \
-            'LIBLEPT_HEADERSDIR=${leptonica}/include'
-    ./configure --prefix=$plibs --disable-shared
-    make install
+  dontUseCmakeBuildDir = true;
 
-    cd ..
-    tar zxf ${gocr_src}
-    cd gocr-0.49
-    ./configure
-    cp src/{gocr.h,pnm.h,unicode.h,list.h} $plibs/include
-    cp include/config.h $plibs/include
-    make libs
-    cp src/libPgm2asc.a $plibs/lib
+  cmakeFlags = [ "-DCMAKE_C_FLAGS=-I${src}/include_mod" ];
 
-    cd ../mupdf-1.6-source
-    make prefix=$plibs install
-    install -Dm644 build/debug/libmujs.a $plibs/lib
+  NIX_LDFLAGS = [
+    "-lpthread"
+  ];
 
-    cd ../k2pdfopt_v2.21/k2pdfoptlib
-    gcc -Ofast -Wall -c *.c -I ../include_mod/ -I $plibs/include \
-        -I . -I ../willuslib
-    ar rcs libk2pdfopt.a *.o
-
-    cd ../willuslib
-    gcc -Ofast -Wall -c *.c -I ../include_mod/ -I $plibs/include
-    ar rcs libwillus.a *.o
-
-    cd ..
-    gcc -Wall -Ofast -o k2pdfopt.o -c k2pdfopt.c -I k2pdfoptlib/ -I willuslib/ \
-            -I include_mod/ -I $plibs/include
-    g++ -Ofast k2pdfopt.o -o k2pdfopt -I willuslib/ -I k2pdfoptlib/ -I include_mod/ \
-            -I $plibs/include -L $plibs/lib/ \
-            -L willuslib/ -L k2pdfoptlib/ -lk2pdfopt -lwillus -ldjvulibre -lz -lmupdf  \
-            -ljbig2dec -ljpeg -lopenjp2 -lpng -lfreetype -lpthread -lmujs \
-            -lPgm2asc -llept -ltesseract -lcrypto
-
-    mkdir -p $out/bin
-    cp k2pdfopt $out/bin
+  installPhase = ''
+    install -D -m 755 k2pdfopt $out/bin/k2pdfopt
   '';
 
   meta = with stdenv.lib; {
@@ -107,7 +105,7 @@ in stdenv.mkDerivation rec {
     homepage = http://www.willus.com/k2pdfopt;
     license = licenses.gpl3;
     platforms = platforms.linux;
-    maintainers = [ maintainers.bosu ];
+    maintainers = with maintainers; [ bosu danielfullmer ];
   };
 }
 

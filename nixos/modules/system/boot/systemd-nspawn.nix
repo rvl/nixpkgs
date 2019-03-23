@@ -6,25 +6,27 @@ with import ./systemd-lib.nix { inherit config lib pkgs; };
 
 let
   cfg = config.systemd.nspawn;
-  assertions = [
-    # boot = true -> processtwo != true
-  ];
 
   checkExec = checkUnitConfig "Exec" [
     (assertOnlyFields [
       "Boot" "ProcessTwo" "Parameters" "Environment" "User" "WorkingDirectory"
-      "Capability" "DropCapability" "KillSignal" "Personality" "MachineId"
-      "PrivateUsers"
+      "PivotRoot" "Capability" "DropCapability" "NoNewPrivileges" "KillSignal"
+      "Personality" "MachineId" "PrivateUsers" "NotifyReady" "SystemCallFilter"
+      "LimitCPU" "LimitFSIZE" "LimitDATA" "LimitSTACK" "LimitCORE" "LimitRSS"
+      "LimitNOFILE" "LimitAS" "LimitNPROC" "LimitMEMLOCK" "LimitLOCKS"
+      "LimitSIGPENDING" "LimitMSGQUEUE" "LimitNICE" "LimitRTPRIO" "LimitRTTIME"
+      "OOMScoreAdjust" "CPUAffinity" "Hostname" "ResolvConf" "Timezone"
+      "LinkJournal"
     ])
     (assertValueOneOf "Boot" boolValues)
     (assertValueOneOf "ProcessTwo" boolValues)
-    (assertValueOneOf "PrivateUsers" (boolValues ++ [ "pick" ]))
+    (assertValueOneOf "NotifyReady" boolValues)
   ];
 
   checkFiles = checkUnitConfig "Files" [
     (assertOnlyFields [
-      "ReadOnly" "Volatile" "Bind" "BindReadOnly" "TemporaryFileSystems"
-      "PrivateUsersChown"
+      "ReadOnly" "Volatile" "Bind" "BindReadOnly" "TemporaryFileSystem"
+      "Overlay" "OverlayReadOnly" "PrivateUsersChown"
     ])
     (assertValueOneOf "ReadOnly" boolValues)
     (assertValueOneOf "Volatile" (boolValues ++ [ "state" ]))
@@ -41,8 +43,7 @@ let
   ];
 
   instanceOptions = {
-    options = {
-
+    options = sharedOptions // {
       execConfig = mkOption {
         default = {};
         example = { Parameters = "/bin/sh"; };
@@ -82,18 +83,20 @@ let
 
   };
 
-  instanceToUnit = name: def: 
-    { text = ''
-      [Exec]
-      ${attrsToSection def.execConfig}
+  instanceToUnit = name: def:
+    let base = {
+      text = ''
+        [Exec]
+        ${attrsToSection def.execConfig}
 
-      [Files]
-      ${attrsToSection def.filesConfig}
+        [Files]
+        ${attrsToSection def.filesConfig}
 
-      [Network]
-      ${attrsToSection def.networkConfig}
-    '';
-    };
+        [Network]
+        ${attrsToSection def.networkConfig}
+      '';
+    } // def;
+    in base // { unit = makeUnit name base; };
 
 in {
 
@@ -109,14 +112,12 @@ in {
 
   config =
     let
-      units = mapAttrs' (n: v: nameValuePair "${n}.nspawn" (instanceToUnit n v)) cfg.instances;
+      units = mapAttrs' (n: v: let nspawnFile = "${n}.nspawn"; in nameValuePair nspawnFile (instanceToUnit nspawnFile v)) cfg;
     in mkIf (cfg != {}) {
 
       environment.etc."systemd/nspawn".source = generateUnits "nspawn" units [] [];
 
-      systemd.services."systemd-nspawn@" = {
-        wantedBy = [ "machine.target" ];
-      };
+      systemd.targets."multi-user".wants = [ "machines.target" ];
   };
 
 }

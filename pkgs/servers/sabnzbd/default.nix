@@ -1,15 +1,18 @@
-{stdenv, fetchurl, python2, par2cmdline, unzip, unrar, p7zip, makeWrapper}:
+{stdenv, fetchFromGitHub, python2, par2cmdline, unzip, unrar, p7zip, makeWrapper}:
 
 let
-  pythonEnv = python2.withPackages(ps: with ps; [ pyopenssl cheetah yenc ]);
+  pythonEnv = python2.withPackages(ps: with ps; [ cryptography cheetah yenc sabyenc ]);
   path = stdenv.lib.makeBinPath [ par2cmdline unrar unzip p7zip ];
 in stdenv.mkDerivation rec {
-  version = "1.1.0";
-  name = "sabnzbd-${version}";
+  version = "2.3.7";
+  pname = "sabnzbd";
+  name = "${pname}-${version}";
 
-  src = fetchurl {
-    url = "https://github.com/sabnzbd/sabnzbd/archive/${version}.tar.gz";
-    sha256 = "16srhknmjx5x2zsg1m0w9bipcv9b3b96bvb27fkf4dc2aswwcsc7";
+  src = fetchFromGitHub {
+    owner = pname;
+    repo = pname;
+    rev = version;
+    sha256 = "08bk2ignm50ki2bqwwl0q9pia7v91cixr5b1yibz6qxsyfprk0mj";
   };
 
   buildInputs = [ pythonEnv makeWrapper ];
@@ -25,7 +28,7 @@ in stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "Usenet NZB downloader, par2 repairer and auto extracting server";
-    homepage = http://sabnzbd.org;
+    homepage = https://sabnzbd.org;
     license = licenses.gpl2Plus;
     platforms = platforms.linux;
     maintainers = with stdenv.lib.maintainers; [ fridh ];

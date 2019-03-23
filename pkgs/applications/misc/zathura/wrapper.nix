@@ -1,22 +1,23 @@
-{ symlinkJoin, lib, makeWrapper, zathura_core, plugins ? [] }:
+{ symlinkJoin, lib, makeWrapper, zathura_core, file, plugins ? [] }:
 
 let
-  pluginsPath = lib.makeLibraryPath plugins;
+  pluginsPath = lib.makeSearchPath "lib/zathura" plugins;
 
 in symlinkJoin {
   name = "zathura-with-plugins-${zathura_core.version}";
 
-  paths = [ zathura_core ];
+  paths = with zathura_core; [ man dev out ];
 
   buildInputs = [ makeWrapper ];
 
   postBuild = ''
-    wrapProgram $out/bin/zathura \
+    makeWrapper ${zathura_core.bin}/bin/zathura $out/bin/zathura \
+      --prefix PATH ":" "${lib.makeBinPath [ file ]}" \
       --add-flags --plugins-dir=${pluginsPath}
   '';
 
   meta = with lib; {
-    homepage = http://pwmt.org/projects/zathura/;
+    homepage = https://pwmt.org/projects/zathura/;
     description = "A highly customizable and functional PDF viewer";
     longDescription = ''
       Zathura is a highly customizable and functional PDF viewer based on the
@@ -25,7 +26,7 @@ in symlinkJoin {
       as well as an easy usage that mainly focuses on keyboard interaction.
     '';
     license = licenses.zlib;
-    platforms = platforms.linux;
+    platforms = platforms.unix;
     maintainers = with maintainers;[ garbas smironov ];
   };
 }

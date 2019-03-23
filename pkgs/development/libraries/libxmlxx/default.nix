@@ -10,17 +10,17 @@ stdenv.mkDerivation rec {
     sha256 = "1sb3akryklvh2v6m6dihdnbpf1lkx441v972q9hlz1sq6bfspm2a";
   };
 
+  outputs = [ "out" "devdoc" ];
+
   nativeBuildInputs = [ pkgconfig perl ];
 
-  buildInputs = [ glibmm ];
-
-  propagatedBuildInputs = [ libxml2 ];
+  propagatedBuildInputs = [ libxml2 glibmm ];
 
   meta = with stdenv.lib; {
     homepage = http://libxmlplusplus.sourceforge.net/;
     description = "C++ wrapper for the libxml2 XML parser library";
     license = licenses.lgpl2Plus;
     platforms = platforms.unix;
-    maintainers = with maintainers; [ phreedom wkennington ];
+    maintainers = with maintainers; [ phreedom ];
   };
 }

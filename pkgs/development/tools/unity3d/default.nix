@@ -1,57 +1,64 @@
-{ stdenv, lib, fetchurl, makeWrapper, fakeroot, file, getopt
-, gtk2, gdk_pixbuf, glib, mesa_glu, postgresql, nss, nspr
+{ stdenv, lib, fetchurl, makeWrapper, file, getopt
+, gtk2, gdk_pixbuf, glib, libGL, libGLU, nss, nspr, udev, tbb
 , alsaLib, GConf, cups, libcap, fontconfig, freetype, pango
 , cairo, dbus, expat, zlib, libpng12, nodejs, gnutar, gcc, gcc_32bit
 , libX11, libXcursor, libXdamage, libXfixes, libXrender, libXi
-, libXcomposite, libXext, libXrandr, libXtst, libSM, libICE, libxcb
-, mono, libgnomeui, gnome_vfs, gnome-sharp, gtk-sharp-2_0, chromium
+, libXcomposite, libXext, libXrandr, libXtst, libSM, libICE, libxcb, chromium
 }:
 
 let
   libPath64 = lib.makeLibraryPath [
-    gcc.cc gtk2 gdk_pixbuf glib mesa_glu postgresql nss nspr
+    gcc.cc gtk2 gdk_pixbuf glib libGL libGLU nss nspr
     alsaLib GConf cups libcap fontconfig freetype pango
-    cairo dbus expat zlib libpng12
+    cairo dbus expat zlib libpng12 udev tbb
     libX11 libXcursor libXdamage libXfixes libXrender libXi
     libXcomposite libXext libXrandr libXtst libSM libICE libxcb
   ];
   libPath32 = lib.makeLibraryPath [ gcc_32bit.cc ];
   binPath = lib.makeBinPath [ nodejs gnutar ];
-  developBinPath = lib.makeBinPath [ mono ];
-  developLibPath = lib.makeLibraryPath [
-    glib libgnomeui gnome_vfs gnome-sharp gtk-sharp-2_0 gtk-sharp-2_0.gtk
-  ];
-  developDotnetPath = lib.concatStringsSep ":" [
-    gnome-sharp gtk-sharp-2_0
-  ];
 
-  ver = "5.3.5";
+  ver = "2017.4.10";
   build = "f1";
-  date = "20160525";
-  pkgVer = "${ver}${build}";
-  fullVer = "${pkgVer}+${date}";
 
 in stdenv.mkDerivation rec {
   name = "unity-editor-${version}";
-  version = pkgVer;
+  version = "${ver}x${build}";
 
   src = fetchurl {
-    url = "http://download.unity3d.com/download_unity/linux/unity-editor-installer-${fullVer}.sh";
-    sha256 = "0lmc65175fdvbyn3565pjlg6cc4l5i58fj7bxzi5cqykkbzv5wdm";
+    url = "https://beta.unity3d.com/download/14396d76537e/LinuxEditorInstaller/Unity.tar.xz";
+    sha256 = "e1b4fe41c0ff793f7a9146c49a8eca8c71d30abdfa3e81922bd69699810b3f67";
   };
 
   nosuidLib = ./unity-nosuid.c;
 
-  nativeBuildInputs = [ makeWrapper fakeroot file getopt ];
+  nativeBuildInputs = [ makeWrapper file getopt ];
 
-  outputs = [ "out" "monodevelop" ];
+  outputs = [ "out" ];
 
-  unpackPhase = ''
-    echo -e 'q\ny' | fakeroot sh $src
-    sourceRoot="unity-editor-${pkgVer}"
-  '';
+  sourceRoot = ".";
 
   buildPhase = ''
+    cd Editor
+
+    $CC -fPIC -shared -o libunity-nosuid.so $nosuidLib -ldl
+    strip libunity-nosuid.so
+
+    cd ..
+  '';
+
+  installPhase = ''
+    unitydir="$out/opt/Unity/Editor"
+    mkdir -p $unitydir
+    mv Editor/* $unitydir
+    ln -sf /run/wrappers/bin/${chromium.sandboxExecutableName} $unitydir/chrome-sandbox
+
+    mkdir -p $out/bin
+    makeWrapper $unitydir/Unity $out/bin/unity-editor \
+      --prefix LD_PRELOAD : "$unitydir/libunity-nosuid.so" \
+      --prefix PATH : "${binPath}"
+  '';
+
+  preFixup = ''
     patchFile() {
       ftype="$(file -b "$1")"
       if [[ "$ftype" =~ LSB\ .*dynamically\ linked ]]; then
@@ -63,68 +70,58 @@ in stdenv.mkDerivation rec {
           intp="$(cat $NIX_CC/nix-support/dynamic-linker)"
         fi
 
-        rpath="$(patchelf --print-rpath "$1"):$rpath"
-        if [[ "$ftype" =~ LSB\ shared ]]; then
-          patchelf \
-            --set-rpath "$rpath" \
-            "$1"
-        elif [[ "$ftype" =~ LSB\ executable ]]; then
-          patchelf \
-            --set-rpath "$rpath" \
-            --interpreter "$intp" \
-            "$1"
-        fi
+        # Save origin-relative parts of rpath.
+        originRpath="$(patchelf --print-rpath "$1" | sed "s/:/\n/g" | grep "^\$ORIGIN" | paste -sd ":" - || echo "")"
+        rpath="$originRpath:$rpath"
+
+        patchelf --set-rpath "$rpath" "$1"
+        patchelf --set-interpreter "$intp" "$1" 2> /dev/null || true
       fi
     }
 
-    cd Editor
+    upm_linux=$unitydir/Data/Resources/Upm/upm-linux
 
-    $CC -fPIC -shared -o libunity-nosuid.so $nosuidLib -ldl
-    strip libunity-nosuid.so
+    orig_size=$(stat --printf=%s $upm_linux)
 
     # Exclude PlaybackEngines to build something that can be run on FHS-compliant Linuxes
-    find . -name PlaybackEngines -prune -o -executable -type f -print | while read path; do
+    find $unitydir -name PlaybackEngines -prune -o -type f -print | while read path; do
       patchFile "$path"
     done
 
-    cd ..
-  '';
+    new_size=$(stat --printf=%s $upm_linux)
 
-  installPhase = ''
-    unitydir="$out/opt/Unity/Editor"
-    mkdir -p $unitydir
-    mv Editor/* $unitydir
-    ln -sf /var/setuid-wrappers/${chromium.sandboxExecutableName} $unitydir/chrome-sandbox
+    ###### zeit-pkg fixing starts here.
+    # we're replacing plaintext js code that looks like
+    # PAYLOAD_POSITION = '1234                  ' | 0
+    # [...]
+    # PRELUDE_POSITION = '1234                  ' | 0
+    # ^-----20-chars-----^^------22-chars------^
+    # ^-- grep points here
+    #
+    # var_* are as described above
+    # shift_by seems to be safe so long as all patchelf adjustments occur 
+    # before any locations pointed to by hardcoded offsets
 
-    mkdir -p $out/share/applications
-    sed "/^Exec=/c\Exec=$out/bin/unity-editor" \
-      < unity-editor.desktop \
-      > $out/share/applications/unity-editor.desktop
+    var_skip=20
+    var_select=22
+    shift_by=$(expr $new_size - $orig_size)
 
-    install -D unity-editor-icon.png $out/share/icons/hicolor/256x256/apps/unity-editor-icon.png
+    function fix_offset {
+      # $1 = name of variable to adjust
+      location=$(grep -obUam1 "$1" $upm_linux | cut -d: -f1)
+      location=$(expr $location + $var_skip)
+      value=$(dd if=$upm_linux iflag=count_bytes,skip_bytes skip=$location \
+                 bs=1 count=$var_select status=none)
+      value=$(expr $shift_by + $value)
+      echo -n $value | dd of=$upm_linux bs=1 seek=$location conv=notrunc
+    }
 
-    mkdir -p $out/bin
-    makeWrapper $unitydir/Unity $out/bin/unity-editor \
-      --prefix LD_PRELOAD : "$unitydir/libunity-nosuid.so" \
-      --prefix PATH : "${binPath}"
-
-    developdir="$monodevelop/opt/Unity/MonoDevelop"
-    mkdir -p $developdir
-    mv MonoDevelop/* $developdir
-
-    mkdir -p $monodevelop/share/applications
-    sed "/^Exec=/c\Exec=$monodevelop/bin/unity-monodevelop" \
-      < unity-monodevelop.desktop \
-      > $monodevelop/share/applications/unity-monodevelop.desktop
-
-    mkdir -p $monodevelop/bin
-    makeWrapper $developdir/bin/monodevelop $monodevelop/bin/unity-monodevelop \
-      --prefix PATH : "${developBinPath}" \
-      --prefix LD_LIBRARY_PATH : "${developLibPath}" \
-      --prefix MONO_GAC_PREFIX : "${developDotnetPath}"
+    fix_offset PAYLOAD_POSITION
+    fix_offset PRELUDE_POSITION
   '';
 
   dontStrip = true;
+  dontPatchELF = true;
 
   meta = with stdenv.lib; {
     homepage = https://unity3d.com/;

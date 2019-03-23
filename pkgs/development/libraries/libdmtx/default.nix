@@ -14,6 +14,7 @@ stdenv.mkDerivation rec {
     description = "An open source software for reading and writing Data Matrix barcodes";
     homepage = http://libdmtx.org;
     platforms = stdenv.lib.platforms.all;
-    maintainers = [ stdenv.lib.maintainers.urkud ];
+    maintainers = [ ];
+    license = stdenv.lib.licenses.bsd2;
   };
 }

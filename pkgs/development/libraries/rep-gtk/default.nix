@@ -8,11 +8,12 @@ stdenv.mkDerivation rec {
   sourceName = "rep-gtk_${version}";
 
   src = fetchurl {
-    url = "http://download.tuxfamily.org/librep/rep-gtk/${sourceName}.tar.xz";
+    url = "https://download.tuxfamily.org/librep/rep-gtk/${sourceName}.tar.xz";
     sha256 = "0hgkkywm8zczir3lqr727bn7ybgg71x9cwj1av8fykkr8pdpard9";
   };
 
-  buildInputs = [ pkgconfig autoreconfHook ];
+  nativeBuildInputs = [ autoreconfHook pkgconfig ];
+  buildInputs = [ ];
   propagatedBuildInputs = [ librep gtk2 ];
 
   patchPhase = ''

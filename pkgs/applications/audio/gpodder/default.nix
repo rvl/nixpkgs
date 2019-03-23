@@ -1,51 +1,77 @@
-{ stdenv, fetchurl, pythonPackages, mygpoclient, intltool
-, ipodSupport ? true, libgpod
-, gnome3
+{ stdenv, fetchFromGitHub, python3, python3Packages, intltool
+, glibcLocales, gnome3, gtk3, wrapGAppsHook
+, ipodSupport ? false, libgpod, gobject-introspection
 }:
 
-pythonPackages.buildPythonApplication rec {
-  name = "gpodder-${version}";
+python3Packages.buildPythonApplication rec {
+  pname = "gpodder";
+  version = "3.10.7";
+  format = "other";
 
-  version = "3.9.1";
-
-  src = fetchurl {
-    url = "http://gpodder.org/src/${name}.tar.gz";
-    sha256 = "036p9vnkr3if0k548xhhjmcwdaimy3yd24s3xd8vzlp0wdzkzrhn";
+  src = fetchFromGitHub {
+    owner = pname;
+    repo = pname;
+    rev = version;
+    sha256 = "0sx9rj6dpvd2xz7lak2yi0zlgr3lp2ng1fw23s39la9ly4g1835j";
   };
 
   postPatch = with stdenv.lib; ''
     sed -i -re 's,^( *gpodder_dir *= *).*,\1"'"$out"'",' bin/gpodder
-
-    makeWrapperArgs="--suffix XDG_DATA_DIRS : '${concatStringsSep ":" [
-      "${gnome3.gnome_themes_standard}/share"
-      "$XDG_ICON_DIRS"
-      "$GSETTINGS_SCHEMAS_PATH"
-    ]}'"
   '';
 
-  buildInputs = [
-    intltool pythonPackages.coverage pythonPackages.minimock
-    gnome3.gnome_themes_standard gnome3.defaultIconTheme
-    gnome3.gsettings_desktop_schemas
+  nativeBuildInputs = [
+    intltool
+    wrapGAppsHook
+    glibcLocales
   ];
 
-  propagatedBuildInputs = with pythonPackages; [
-    feedparser dbus-python mygpoclient pygtk eyeD3
+  buildInputs = [
+    python3
+    gobject-introspection
+    gnome3.adwaita-icon-theme
+  ];
+
+  checkInputs = with python3Packages; [
+    coverage minimock
+  ];
+
+  doCheck = true;
+
+  propagatedBuildInputs = with python3Packages; [
+    feedparser
+    dbus-python
+    mygpoclient
+    pygobject3
+    eyeD3
+    podcastparser
+    html5lib
+    gtk3
   ] ++ stdenv.lib.optional ipodSupport libgpod;
 
-  checkPhase = ''
-    LC_ALL=C python -m gpodder.unittests
+  makeFlags = [
+    "PREFIX=$(out)"
+    "share/applications/gpodder-url-handler.desktop"
+    "share/applications/gpodder.desktop"
+    "share/dbus-1/services/org.gpodder.service"
+  ];
+
+  preBuild = ''
+    export LC_ALL="en_US.UTF-8"
   '';
 
-  meta = {
+  installCheckPhase = ''
+    LC_ALL=C PYTHONPATH=./src:$PYTHONPATH python3 -m gpodder.unittests
+  '';
+
+  meta = with stdenv.lib; {
     description = "A podcatcher written in python";
     longDescription = ''
       gPodder downloads and manages free audio and video content (podcasts)
       for you. Listen directly on your computer or on your mobile devices.
     '';
-    homepage = "http://gpodder.org/";
-    license = stdenv.lib.licenses.gpl3;
-    platforms = stdenv.lib.platforms.linux ++ stdenv.lib.platforms.darwin;
-    maintainers = [ stdenv.lib.maintainers.skeidel ];
+    homepage = http://gpodder.org/;
+    license = licenses.gpl3;
+    platforms = platforms.linux ++ platforms.darwin;
+    maintainers = with maintainers; [ skeidel mic92 ];
   };
 }

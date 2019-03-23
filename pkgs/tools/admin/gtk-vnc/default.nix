@@ -1,47 +1,43 @@
-{ stdenv, fetchurl, gobjectIntrospection
-, gnutls, cairo, libtool, glib, pkgconfig, libtasn1
-, libffi, cyrus_sasl, intltool, perl, perlPackages, libpulseaudio
-, kbproto, libX11, libXext, xextproto, libgcrypt, gtk3, vala_0_32
-, libogg, libgpgerror, pythonPackages }:
+{ stdenv, fetchurl, gobject-introspection
+, gnutls, cairo, libtool, glib, pkgconfig
+, cyrus_sasl, intltool, libpulseaudio
+, libgcrypt, gtk3, vala, gnome3
+, python3 }:
 
-let
-  inherit (pythonPackages) pygobject3 python;
-in stdenv.mkDerivation rec {
+stdenv.mkDerivation rec {
   name = "gtk-vnc-${version}";
-  version = "0.6.0";
+  version = "0.9.0";
+
+  outputs = [ "out" "bin" "man" "dev" ];
 
   src = fetchurl {
-    url = "mirror://gnome/sources/gtk-vnc/0.6/${name}.tar.xz";
-    sha256 = "9559348805e64d130dae569fee466930175dbe150d2649bb868b5c095f130433";
+    url = "mirror://gnome/sources/gtk-vnc/${stdenv.lib.versions.majorMinor version}/${name}.tar.xz";
+    sha256 = "1dya1wc9vis8h0fv625pii1n70cckf1xjg1m2hndz989d118i6is";
   };
 
+  nativeBuildInputs = [
+    python3 pkgconfig intltool libtool gobject-introspection vala
+  ];
   buildInputs = [
-    python gnutls cairo libtool pkgconfig glib libffi libgcrypt
-    intltool cyrus_sasl libpulseaudio perl perlPackages.TextCSV
-    gobjectIntrospection libogg libgpgerror
-    gtk3 vala_0_32 pygobject3 ];
+    gnutls cairo glib libgcrypt cyrus_sasl libpulseaudio gtk3
+  ];
 
-  NIX_CFLAGS_COMPILE = "-fstack-protector-all";
   configureFlags = [
-    "--with-python"
     "--with-examples"
   ];
 
-  # Fix broken .la files
-  preFixup = ''
-    sed 's,-lgpg-error,-L${libgpgerror.out}/lib -lgpg-error,' -i $out/lib/*.la
-  '';
+  passthru = {
+    updateScript = gnome3.updateScript {
+      packageName = "gtk-vnc";
+      versionPolicy = "none";
+    };
+  };
 
   meta = with stdenv.lib; {
     description = "A GTK VNC widget";
+    homepage = https://wiki.gnome.org/Projects/gtk-vnc;
+    license = licenses.lgpl21;
     maintainers = with maintainers; [ raskin offline ];
     platforms = platforms.linux;
-    license = licenses.lgpl21;
-  };
-
-  passthru = {
-    updateInfo = {
-      downloadPage = "http://ftp.gnome.org/pub/GNOME/sources/gtk-vnc";
-    };
   };
 }

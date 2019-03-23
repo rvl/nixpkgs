@@ -1,6 +1,6 @@
 # The releases of this project are apparently precompiled to .jar files.
 
-{ stdenv, fetchurl, jre }:
+{ stdenv, fetchurl, jre, runtimeShell }:
 
 let
 
@@ -18,13 +18,13 @@ in stdenv.mkDerivation {
     mkdir -p "$out/bin";
     mkdir -p "$out/share";
     install -D -m444 -t "$out/share" *.jar
-    echo "#!/bin/sh" > "$out/bin/briss"
+    echo "#!${runtimeShell}" > "$out/bin/briss"
     echo "${jre}/bin/java -Xms128m -Xmx1024m -cp \"$out/share/\" -jar \"$out/share/briss-${version}.jar\"" >> "$out/bin/briss"
     chmod +x "$out/bin/briss"
   '';
 
   meta = {
-    homepage = http://sourceforge.net/projects/briss/;
+    homepage = https://sourceforge.net/projects/briss/;
     description = "Java application for cropping PDF files";
     license = stdenv.lib.licenses.gpl3;
     platforms = stdenv.lib.platforms.unix;

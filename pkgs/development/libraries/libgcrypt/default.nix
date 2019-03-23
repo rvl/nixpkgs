@@ -1,22 +1,33 @@
-{ lib, stdenv, fetchurl, libgpgerror, enableCapabilities ? false, libcap }:
+{ stdenv, fetchurl, gettext, libgpgerror, enableCapabilities ? false, libcap
+, buildPackages
+}:
 
 assert enableCapabilities -> stdenv.isLinux;
 
 stdenv.mkDerivation rec {
   name = "libgcrypt-${version}";
-  version = "1.7.5";
+  version = "1.8.4";
 
   src = fetchurl {
     url = "mirror://gnupg/libgcrypt/${name}.tar.bz2";
-    sha256 = "0078pbzm6nlgvnwlylshsg707ifcmfpnpbvhlhqbpwpfic9a9zni";
+    sha256 = "09r27ywj9zplq6n9qw3mn7zmvf6y2jdmwx5d1kg8yqkj0qx18f7n";
   };
 
   outputs = [ "out" "dev" "info" ];
   outputBin = "dev";
 
-  buildInputs =
-    [ libgpgerror ]
-    ++ lib.optional enableCapabilities libcap;
+  # The CPU Jitter random number generator must not be compiled with
+  # optimizations and the optimize -O0 pragma only works for gcc.
+  # The build enables -O2 by default for everything else.
+  hardeningDisable = stdenv.lib.optional stdenv.cc.isClang "fortify";
+
+  depsBuildBuild = [ buildPackages.stdenv.cc ];
+
+  buildInputs = [ libgpgerror ]
+    ++ stdenv.lib.optional stdenv.isDarwin gettext
+    ++ stdenv.lib.optional enableCapabilities libcap;
+
+  configureFlags = [ "--with-libgpg-error-prefix=${libgpgerror.dev}" ];
 
   # Make sure libraries are correct for .pc and .la files
   # Also make sure includes are fixed for callers who don't use libgpgcrypt-config
@@ -37,10 +48,10 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     homepage = https://www.gnu.org/software/libgcrypt/;
-    description = "General-pupose cryptographic library";
+    description = "General-purpose cryptographic library";
     license = licenses.lgpl2Plus;
     platforms = platforms.all;
-    maintainers = [ maintainers.wkennington maintainers.vrthra ];
+    maintainers = with maintainers; [ vrthra ];
     repositories.git = git://git.gnupg.org/libgcrypt.git;
   };
 }

@@ -1,4 +1,8 @@
-{ stdenv, buildOcaml, fetchurl }:
+{ stdenv, buildOcaml, ocaml, fetchurl }:
+
+if stdenv.lib.versionAtLeast ocaml.version "4.06"
+then throw "estring is not available for OCaml ${ocaml.version}"
+else
 
 buildOcaml rec {
   name = "estring";
@@ -10,7 +14,7 @@ buildOcaml rec {
   };
 
   meta = with stdenv.lib; {
-    homepage = "http://estring.forge.ocamlcore.org/";
+    homepage = http://estring.forge.ocamlcore.org/;
     description = "Extension for string literals";
     license = licenses.bsd3;
   };

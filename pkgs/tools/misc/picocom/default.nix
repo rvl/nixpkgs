@@ -1,17 +1,22 @@
-{ stdenv, fetchFromGitHub, makeWrapper, lrzsz }:
+{ stdenv, fetchFromGitHub, makeWrapper, lrzsz, IOKit }:
+
+assert stdenv.isDarwin -> IOKit != null;
+
+with stdenv.lib;
 
 stdenv.mkDerivation rec {
   name = "picocom-${version}";
-  version = "2.1";
+  version = "3.1";
 
   src = fetchFromGitHub {
     owner = "npat-efault";
     repo = "picocom";
     rev = version;
-    sha256 = "1ac3xdfiw5bd24lw4l9hxc75rcagw0y182x7svhkqp2gwsvzkbjv";
+    sha256 = "1vvjydqf0ax47nvdyyl67jafw5b3sfsav00xid6qpgia1gs2r72n";
   };
 
-  buildInputs = [ makeWrapper ];
+  buildInputs = [ makeWrapper ]
+    ++ optionals stdenv.isDarwin [ IOKit ];
 
   installPhase = ''
     mkdir -p $out/bin $out/share/man/man1
@@ -26,6 +31,6 @@ stdenv.mkDerivation rec {
     description = "Minimal dumb-terminal emulation program";
     homepage = https://github.com/npat-efault/picocom/;
     license = stdenv.lib.licenses.gpl2Plus;
-    platforms = stdenv.lib.platforms.gnu;  # arbitrary choice
+    platforms = platforms.unix;
   };
 }

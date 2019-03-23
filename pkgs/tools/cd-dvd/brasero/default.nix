@@ -1,12 +1,10 @@
 { stdenv, lib, fetchurl, pkgconfig, gtk3, itstool, gst_all_1, libxml2, libnotify
-, libcanberra_gtk3, intltool, makeWrapper, dvdauthor, libburn, libisofs
-, vcdimager, wrapGAppsHook, hicolor_icon_theme }:
-
-# libdvdcss is "too old" (in fast "too new"), see https://bugs.launchpad.net/ubuntu/+source/brasero/+bug/611590
+, libcanberra-gtk3, intltool, dvdauthor, libburn, libisofs
+, vcdimager, wrapGAppsHook, hicolor-icon-theme }:
 
 let
   major = "3.12";
-  minor = "1";
+  minor = "2";
   binpath = lib.makeBinPath [ dvdauthor vcdimager ];
 
 in stdenv.mkDerivation rec {
@@ -15,13 +13,13 @@ in stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "http://download.gnome.org/sources/brasero/${major}/${name}.tar.xz";
-    sha256 = "09vi2hyhl0bz7imv3ky6h7x5m3d546n968wcghydwrkvwm9ylpls";
+    sha256 = "0h90y674j26rvjahb8cc0w79zx477rb6zaqcj26wzvq8kmpic8k8";
   };
 
   nativeBuildInputs = [ pkgconfig itstool intltool wrapGAppsHook ];
 
-  buildInputs = [ gtk3 libxml2 libnotify libcanberra_gtk3 libburn libisofs
-                  hicolor_icon_theme
+  buildInputs = [ gtk3 libxml2 libnotify libcanberra-gtk3 libburn libisofs
+                  hicolor-icon-theme
                   gst_all_1.gstreamer gst_all_1.gst-plugins-base
                   gst_all_1.gst-plugins-good gst_all_1.gst-plugins-bad
                   gst_all_1.gst-plugins-ugly gst_all_1.gst-libav ];
@@ -45,7 +43,7 @@ in stdenv.mkDerivation rec {
     description = "A Gnome CD/DVD Burner";
     homepage = https://wiki.gnome.org/Apps/Brasero;
     maintainers = [ maintainers.bdimcheff ];
-    license = licenses.gpl2;
+    license = licenses.gpl2Plus;
     platforms = platforms.linux;
   };
 }

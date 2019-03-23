@@ -1,4 +1,5 @@
-{ stdenv, cmake, fetchFromGitHub, zlib, libxml2, libpng, CoreServices, CoreGraphics, ImageIO, ninja }:
+{ stdenv, cmake, fetchFromGitHub, zlib, libxml2, libpng
+, CoreServices, CoreGraphics, ImageIO, ninja }:
 
 let
   googletest = fetchFromGitHub {
@@ -15,20 +16,30 @@ let
     sha256 = "0wasql7ph5g473zxhc2z47z3pjp42q0dsn4gpijwzbxawid71b4w";
   };
 in stdenv.mkDerivation rec {
-  name    = "xcbuild-${stdenv.lib.substring 0 8 version}";
-  version = "0ab861abcc11185a17d59608f96a015752a6fadc";
+  name    = "xcbuild-${version}";
+
+  # Once a version is released that includes
+  # https://github.com/facebook/xcbuild/commit/183c087a6484ceaae860c6f7300caf50aea0d710,
+  # we can stop doing this -pre thing.
+  version = "0.1.2-pre";
 
   src = fetchFromGitHub {
     owner  = "facebook";
     repo   = "xcbuild";
-    rev    = version;
-    sha256 = "12h0rn8v0js2vph2pwp5wvcrfkj12nz365i5qxw9miyfn4msnz26";
+    rev    = "32b9fbeb69bfa2682bd0351ec2f14548aaedd554";
+    sha256 = "1xxwg2849jizxv0g1hy0b1m3i7iivp9bmc4f5pi76swsn423d41m";
   };
 
   prePatch = ''
     rmdir ThirdParty/*
     cp -r --no-preserve=all ${googletest} ThirdParty/googletest
     cp -r --no-preserve=all ${linenoise} ThirdParty/linenoise
+  '';
+
+  # Avoid a glibc >= 2.25 deprecation warning that gets fatal via -Werror.
+  postPatch = stdenv.lib.optionalString (!stdenv.isDarwin) ''
+    sed 1i'#include <sys/sysmacros.h>' \
+      -i Libraries/xcassets/Headers/xcassets/Slot/SystemVersion.h
   '';
 
   enableParallelBuilding = true;
@@ -39,6 +50,10 @@ in stdenv.mkDerivation rec {
     rmdir $out/usr
   '';
 
+  NIX_CFLAGS_COMPILE = "-Wno-error";
+
+  cmakeFlags = [ "-GNinja" ];
+
   buildInputs = [ cmake zlib libxml2 libpng ninja ]
     ++ stdenv.lib.optionals stdenv.isDarwin [ CoreServices CoreGraphics ImageIO ];
 
@@ -47,5 +62,6 @@ in stdenv.mkDerivation rec {
     homepage = https://github.com/facebook/xcbuild;
     platforms = platforms.unix;
     maintainers = with maintainers; [ copumpkin matthewbauer ];
+    license = with licenses; [ bsd2 bsd3 ];
   };
 }

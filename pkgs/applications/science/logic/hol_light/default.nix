@@ -1,26 +1,37 @@
-{ stdenv, fetchFromGitHub, writeScript, ocaml, camlp5 }:
+{ stdenv, runtimeShell, fetchFromGitHub, ocaml, num, camlp5 }:
 
 let
-  start_script = ''
-    #!/bin/sh
-    cd "$out/lib/hol_light"
-    exec ${ocaml}/bin/ocaml -I \`${camlp5}/bin/camlp5 -where\` -init make.ml
-  '';
+  load_num =
+    if num == null then "" else
+      ''
+        -I ${num}/lib/ocaml/${ocaml.version}/site-lib/num \
+        -I ${num}/lib/ocaml/${ocaml.version}/site-lib/top-num \
+        -I ${num}/lib/ocaml/${ocaml.version}/site-lib/stublibs \
+      '';
+
+  start_script =
+    ''
+      #!${runtimeShell}
+      cd $out/lib/hol_light
+      exec ${ocaml}/bin/ocaml \
+        -I \`${camlp5}/bin/camlp5 -where\` \
+        ${load_num} \
+        -init make.ml
+    '';
 in
 
 stdenv.mkDerivation {
-  name     = "hol_light-2016-07-23";
+  name     = "hol_light-2018-09-30";
 
   src = fetchFromGitHub {
     owner  = "jrh13";
     repo   = "hol-light";
-    rev    = "67cff936dda719f0e0ee57ab9d07c779ff664660";
-    sha256 = "0r85ifdvsvk2cdv7s4a0kf9ha6jdznqmz7swvp577f8r182klr28";
+    rev    = "27e09dd27834de46e917057710e9d8ded51a4c9f";
+    sha256 = "1p0rm08wnc2lsrh3xzhlq3zdhzqcv1lbqnkwx3aybrqhbg1ixc1d";
   };
 
   buildInputs = [ ocaml camlp5 ];
-
-  patches = [ ./Makefile.patch ];
+  propagatedBuildInputs = [ num ];
 
   installPhase = ''
     mkdir -p "$out/lib/hol_light" "$out/bin"

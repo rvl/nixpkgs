@@ -2,20 +2,18 @@
 
 stdenv.mkDerivation rec {
   name = "sslscan-${version}";
-  version = "1.11.7";
+  version = "1.11.12";
 
   src = fetchFromGitHub {
     owner = "rbsec";
     repo = "sslscan";
     rev = "${version}-rbsec";
-    sha256 = "007lf3rxcn9nz6jrki3mavgd9sd2hmm9nzp2g13h0ri51yc3bkp0";
+    sha256 = "0wa0z6my6aqjp8si6x522ivk0yy55izbs3ch298gxjw5r15f4jb1";
   };
 
   buildInputs = [ openssl ];
 
-  installFlags = [
-    "PREFIX=$(out)"
-  ];
+  makeFlags = [ "PREFIX=$(out)" "CC=cc" ];
 
   meta = with stdenv.lib; {
     description = "Tests SSL/TLS services and discover supported cipher suites";

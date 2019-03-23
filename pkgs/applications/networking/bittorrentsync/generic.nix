@@ -1,11 +1,12 @@
-{ stdenv, fetchurl, version, sha256s, ... } @ args:
+{ stdenv, fetchurl, version, sha256s, ... }:
 
 let
   arch = {
     "x86_64-linux" = "x64";
     "i686-linux" = "i386";
-  }.${stdenv.system};
+  }.${stdenv.hostPlatform.system} or throwSystem;
   libPath = stdenv.lib.makeLibraryPath [ stdenv.cc.libc ];
+  throwSystem = throw "Unsupported system: ${stdenv.hostPlatform.system}";
 in
 
 stdenv.mkDerivation rec {
@@ -19,7 +20,7 @@ stdenv.mkDerivation rec {
       "https://download-cdn.getsync.com/${version}/linux-${arch}/BitTorrent-Sync_${arch}.tar.gz"
       "http://syncapp.bittorrent.com/${version}/btsync_${arch}-${version}.tar.gz"
     ];
-    sha256 = sha256s.${stdenv.system};
+    sha256 = sha256s.${stdenv.hostPlatform.system} or throwSystem;
   };
 
   dontStrip = true; # Don't strip, otherwise patching the rpaths breaks

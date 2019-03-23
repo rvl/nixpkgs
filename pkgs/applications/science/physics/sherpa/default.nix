@@ -2,11 +2,11 @@
 
 stdenv.mkDerivation rec {
   name = "sherpa-${version}";
-  version = "2.2.1";
+  version = "2.2.6";
 
   src = fetchurl {
-    url = "http://www.hepforge.org/archive/sherpa/SHERPA-MC-${version}.tar.gz";
-    sha256 = "13vkz6w8kqyv8sgy3mxnlps5ykml5rnlj50vjj0pp9rgbl5y8ali";
+    url = "https://www.hepforge.org/archive/sherpa/SHERPA-MC-${version}.tar.gz";
+    sha256 = "1cagkkz1pjl0pdf85w1qkwhx0afi3kxm1vnmfavq1zqhss7fc57i";
   };
 
   buildInputs = [ gfortran sqlite lhapdf rivet ];
@@ -26,7 +26,7 @@ stdenv.mkDerivation rec {
   meta = {
     description = "Simulation of High-Energy Reactions of PArticles in lepton-lepton, lepton-photon, photon-photon, lepton-hadron and hadron-hadron collisions";
     license     = stdenv.lib.licenses.gpl2;
-    homepage    = https://sherpa.hepforge.org;
+    homepage    = https://gitlab.com/sherpa-team/sherpa;
     platforms   = stdenv.lib.platforms.unix;
     maintainers = with stdenv.lib.maintainers; [ veprbl ];
   };

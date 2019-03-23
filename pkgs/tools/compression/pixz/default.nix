@@ -1,6 +1,6 @@
-{ 
+{
   stdenv, fetchFromGitHub, autoconf, automake, libtool, pkgconfig
-  , asciidoc, libxslt, libxml2, docbook_xml_dtd_45, docbook_xml_xslt
+  , asciidoc, libxslt, libxml2, docbook_xml_dtd_45, docbook_xsl
   , libarchive, lzma
 }:
 stdenv.mkDerivation rec {
@@ -8,9 +8,10 @@ stdenv.mkDerivation rec {
   version = "1.0.6";
   name = "${baseName}-${version}";
 
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs = [
-    autoconf automake libtool pkgconfig asciidoc libxslt libxml2
-    docbook_xml_dtd_45 docbook_xml_xslt
+    autoconf automake libtool asciidoc libxslt libxml2
+    docbook_xml_dtd_45 docbook_xsl
     libarchive lzma
   ];
   preBuild = ''

@@ -1,28 +1,26 @@
 { stdenv
 , cairo
 , cmake
-, fetchsvn
+, fetchFromGitHub
 , ffmpeg
 , gettext
-, libpng
-, libpthreadstubs
-, libXdmcp
-, libxshmfence
-, mesa
+, libGLU_combined
 , openal
 , pkgconfig
-, SDL
-, wxGTK
+, SDL2
+, sfml
 , zip
 , zlib
 }:
 
-stdenv.mkDerivation {
-  name = "VBAM-1507";
-  src = fetchsvn {
-    url = "svn://svn.code.sf.net/p/vbam/code/trunk";
-    rev = 1507;
-    sha256 = "0fqvgi5s0sacqr9yi7kv1klqlvfzr13sjq5ikipirz0jv50kjxa7";
+stdenv.mkDerivation rec {
+  name = "visualboyadvance-m-${version}";
+  version = "2.1.0";
+  src = fetchFromGitHub {
+    owner = "visualboyadvance-m";
+    repo = "visualboyadvance-m";
+    rev = "v${version}";
+    sha256 = "1dppfvy24rgg3h84gv33l1y7zznkv3zxn2hf98w85pca6k1y2afz";
   };
 
   buildInputs = [
@@ -30,15 +28,11 @@ stdenv.mkDerivation {
     cmake
     ffmpeg
     gettext
-    libpng
-    libpthreadstubs
-    libXdmcp
-    libxshmfence
-    mesa
+    libGLU_combined
     openal
     pkgconfig
-    SDL
-    wxGTK
+    SDL2
+    sfml
     zip
     zlib
   ];
@@ -46,8 +40,10 @@ stdenv.mkDerivation {
   cmakeFlags = [
     "-DCMAKE_BUILD_TYPE='Release'"
     "-DENABLE_FFMPEG='true'"
-    #"-DENABLE_LINK='true'" currently broken :/
-    "-DSYSCONFDIR='$out/etc'"
+    "-DENABLE_LINK='true'"
+    "-DSYSCONFDIR=etc"
+    "-DENABLE_WX='false'"
+    "-DENABLE_SDL='true'"
   ];
 
   meta = {

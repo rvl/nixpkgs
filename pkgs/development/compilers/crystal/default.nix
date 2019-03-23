@@ -1,102 +1,167 @@
-{ stdenv, fetchurl, boehmgc, libatomic_ops, pcre, libevent, libiconv, llvm_39, makeWrapper }:
+{ stdenv, lib, fetchFromGitHub, fetchurl, makeWrapper
+, gmp, openssl, readline, tzdata, libxml2, libyaml
+, boehmgc, libatomic_ops, pcre, libevent, libiconv, llvm, clang, which, zlib }:
 
-stdenv.mkDerivation rec {
-  version = "0.20.4";
-  name = "crystal-${version}-1";
-  arch =
-    {
-      "x86_64-linux" = "linux-x86_64";
-      "i686-linux" = "linux-i686";
-      "x86_64-darwin" = "darwin-x86_64";
-    }."${stdenv.system}" or (throw "system ${stdenv.system} not supported");
+# We need multiple binaries as a given binary isn't always able to build
+# (even slightly) older or newer version.
+# - 0.26.1 can build 0.25.x and 0.26.x but not 0.27.x
+# - 0.27.2 can build 0.27.x but not 0.25.x and 0.26.x
+#
+# We need to keep around at least the latest version released with a stable
+# NixOS
 
-  prebuiltBinary = fetchurl {
-    url = "https://github.com/crystal-lang/crystal/releases/download/${version}/crystal-${version}-1-${arch}.tar.gz";
-    sha256 =
-      {
-        "x86_64-linux" = "cdc11c30235f8bd3b89e1fc13b56838f99d585715fb66563d6599026f5393e37";
-        "i686-linux" = "93e7df2bea3220728987a49a2f93d1c615e2ccae63843e0259a5d891c53a0b80";
-        "x86_64-darwin" = "3fd291a4a5c9eccdea933a9df25446c90d80660a17e89f83503fcb5b6deba03e";
-      }."${stdenv.system}" or (throw "system ${stdenv.system} not supported");
+let
+  archs = {
+    "x86_64-linux"  = "linux-x86_64";
+    "i686-linux"    = "linux-i686";
+    "x86_64-darwin" = "darwin-x86_64";
   };
 
-  src = fetchurl {
-    url = "https://github.com/crystal-lang/crystal/archive/${version}.tar.gz";
-    sha256 = "fd099f278b71bbb5cad1927c93933d1feba554fbf8f6f4ab9165f535765f5e31";
+  arch = archs."${stdenv.system}" or (throw "system ${stdenv.system} not supported");
+
+  checkInputs = [ gmp openssl readline libxml2 libyaml tzdata ];
+
+  genericBinary = { version, sha256s, rel ? 1 }:
+  stdenv.mkDerivation rec {
+    name = "crystal-binary-${version}";
+
+    src = fetchurl {
+      url = "https://github.com/crystal-lang/crystal/releases/download/${version}/crystal-${version}-${toString rel}-${arch}.tar.gz";
+      sha256 = sha256s."${stdenv.system}";
+    };
+
+    buildCommand = ''
+      mkdir -p $out
+      tar --strip-components=1 -C $out -xf ${src}
+    '';
   };
 
-  # crystal on Darwin needs libiconv to build
-  buildInputs = [
-    boehmgc libatomic_ops pcre libevent llvm_39 makeWrapper
-  ] ++ stdenv.lib.optionals stdenv.isDarwin [
-    libiconv
-  ];
+  generic = { version, sha256, binary, doCheck ? true }:
+  stdenv.mkDerivation rec {
+    inherit doCheck;
+    name = "crystal-${version}";
 
-  libPath = stdenv.lib.makeLibraryPath ([
-    boehmgc libatomic_ops pcre libevent
-  ] ++ stdenv.lib.optionals stdenv.isDarwin [
-    libiconv
-  ]);
+    src = fetchFromGitHub {
+      owner  = "crystal-lang";
+      repo   = "crystal";
+      rev    = version;
+      inherit sha256;
+    };
 
-  unpackPhase = ''
-    tar zxf ${src}
-    tar zxf ${prebuiltBinary}
-  '';
+    postPatch = ''
+      ln -s spec/compiler spec/std
+      substituteInPlace spec/std/process_spec.cr \
+        --replace /bin/ /run/current-system/sw/bin/
+    '';
 
-  sourceRoot = ".";
+    buildInputs = [
+      boehmgc libatomic_ops pcre libevent
+      llvm zlib openssl
+    ] ++ stdenv.lib.optionals stdenv.isDarwin [
+      libiconv
+    ];
 
-  fixPrebuiltBinary = if stdenv.isDarwin then ''
-    wrapProgram $(pwd)/crystal-${version}-1/embedded/bin/crystal \
-        --suffix DYLD_LIBRARY_PATH : $libPath
-  ''
-  else ''
-    patchelf --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) \
-      crystal-${version}-1/embedded/bin/crystal
-    patchelf --set-rpath ${ stdenv.lib.makeLibraryPath [ stdenv.cc.cc ] } \
-      crystal-${version}-1/embedded/bin/crystal
-  '';
+    nativeBuildInputs = [ binary makeWrapper which ];
 
-  buildPhase = ''
-    # patch the script which launches the prebuilt compiler
-    substituteInPlace $(pwd)/crystal-${version}-1/bin/crystal --replace \
-      "/usr/bin/env bash" "${stdenv.shell}"
-    substituteInPlace $(pwd)/crystal-${version}/bin/crystal --replace \
-      "/usr/bin/env bash" "${stdenv.shell}"
+    makeFlags = [
+      "CRYSTAL_CONFIG_VERSION=${version}"
+    ];
 
-    ${fixPrebuiltBinary}
+    buildFlags = [
+      "all" "docs"
+    ];
 
-    cd crystal-${version}
-    make release=1 PATH="../crystal-${version}-1/bin:$PATH"
-    make doc
-  '';
+    FLAGS = [
+      "--release"
+      "--no-debug"
+      "--single-module" # needed for deterministic builds
+    ];
 
-  installPhase = ''
-    install -Dm755 .build/crystal $out/bin/crystal
-    wrapProgram $out/bin/crystal \
-        --suffix CRYSTAL_PATH : $out/lib/crystal \
-        --suffix LIBRARY_PATH : $libPath
+    # We *have* to add `which` to the PATH or crystal is unable to build stuff
+    # later if which is not available.
+    installPhase = ''
+      runHook preInstall
 
-    install -dm755 $out/lib/crystal
-    cp -r src/* $out/lib/crystal/
+      install -Dm755 .build/crystal $out/bin/crystal
+      wrapProgram $out/bin/crystal \
+          --suffix PATH : ${lib.makeBinPath [ clang which ]} \
+          --suffix CRYSTAL_PATH : lib:$out/lib/crystal \
+          --suffix LIBRARY_PATH : ${lib.makeLibraryPath buildInputs}
+      install -dm755 $out/lib/crystal
+      cp -r src/* $out/lib/crystal/
 
-    install -dm755 $out/share/doc/crystal/api
-    cp -r doc/* $out/share/doc/crystal/api/
-    cp -r samples $out/share/doc/crystal/
+      install -dm755 $out/share/doc/crystal/api
+      cp -r docs/* $out/share/doc/crystal/api/
+      cp -r samples $out/share/doc/crystal/
 
-    install -Dm644 etc/completion.bash $out/share/bash-completion/completions/crystal
-    install -Dm644 etc/completion.zsh $out/share/zsh/site-functions/_crystal
+      install -Dm644 etc/completion.bash $out/share/bash-completion/completions/crystal
+      install -Dm644 etc/completion.zsh $out/share/zsh/site-functions/_crystal
 
-    install -Dm644 LICENSE $out/share/licenses/crystal/LICENSE
-  '';
+      install -Dm644 man/crystal.1 $out/share/man/man1/crystal.1
 
-  dontStrip = true;
+      install -Dm644 -t $out/share/licenses/crystal LICENSE README.md
 
-  meta = {
-    description = "A compiled language with Ruby like syntax and type inference";
-    homepage = "https://crystal-lang.org/";
-    license = stdenv.lib.licenses.asl20;
-    maintainers = with stdenv.lib.maintainers; [ mingchuan ];
-    platforms = [ "x86_64-linux" "i686-linux" "x86_64-darwin" ];
+      runHook postInstall
+    '';
+
+    enableParallelBuilding = true;
+
+    dontStrip = true;
+
+    checkTarget = "spec";
+
+    preCheck = ''
+      export LIBRARY_PATH=${lib.makeLibraryPath checkInputs}:$LIBRARY_PATH
+    '';
+
+    meta = with lib; {
+      description = "A compiled language with Ruby like syntax and type inference";
+      homepage = https://crystal-lang.org/;
+      license = licenses.asl20;
+      maintainers = with maintainers; [ manveru david50407 peterhoeg ];
+      platforms = builtins.attrNames archs;
+    };
   };
+
+in rec {
+  binaryCrystal_0_26 = genericBinary {
+    version = "0.26.1";
+    sha256s = {
+      "x86_64-linux"  = "1xban102yiiwmlklxvn3xp3q546bp8hlxxpakayajkhhnpl6yv45";
+      "i686-linux"    = "1igspf1lrv7wpmz0pfrkbx8m1ykvnv4zhic53cav4nicppm2v0ic";
+      "x86_64-darwin" = "0hzc65ccajr0yhmvi5vbdgbzbp1gbjy56da24ds3zwwkam1ddk0k";
+    };
+  };
+
+  binaryCrystal_0_27 = genericBinary {
+    version = "0.27.2";
+    sha256s = {
+      "x86_64-linux"  = "05l5x7kx2acgnv42fj3rr17z73ix06zvi05h7d7vf3kw0izxrasm";
+      "i686-linux"    = "1iwizkvn6pglc0azkyfhlmk9ap793krdgcnbihd1kvrvs4cz0mm9";
+      "x86_64-darwin" = "14c69ac2dmfwmb5q56ps3xyxxb0mrbc91ahk9h07c8fiqfii3k9g";
+    };
+  };
+
+  crystal_0_25 = generic {
+    version = "0.25.1";
+    sha256  = "15xmbkalsdk9qpc6wfpkly3sifgw6a4ai5jzlv78dh3jp7glmgyl";
+    doCheck = false;
+    binary = binaryCrystal_0_26;
+  };
+
+  crystal_0_26 = generic {
+    version = "0.26.1";
+    sha256  = "0jwxrqm99zcjj82gyl6bzvnfj79nwzqf8sa1q3f66q9p50v44f84";
+    doCheck = false; # about 20 tests out of more than 14000 are failing
+    binary = binaryCrystal_0_26;
+  };
+
+  crystal_0_27 = generic {
+    version = "0.27.2";
+    sha256  = "0vxqnpqi85yh0167nrkbksxsni476iwbh6y3znbvbjbbfhsi3nsj";
+    doCheck = false; # about 20 tests out of more than 15000 are failing
+    binary = binaryCrystal_0_27;
+  };
+
+  crystal = crystal_0_27;
 }
-

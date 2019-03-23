@@ -1,19 +1,28 @@
-{ stdenv, fetchFromGitHub, rustPlatform, makeWrapper }:
+{ stdenv, fetchFromGitHub, rustPlatform, darwin }:
 
-with rustPlatform;
-
-buildRustPackage rec {
+rustPlatform.buildRustPackage rec {
   name = "rustfmt-${version}";
-  version = "0.6.3";
+  version = "1.0.1";
 
   src = fetchFromGitHub {
-    owner = "rust-lang-nursery";
+    owner = "rust-lang";
     repo = "rustfmt";
-    rev = "61ab06a92eae355ed6447d85d3c416fb65e96bdb";
-    sha256 = "0fa16ycbvhyxs1b278q8jizrx9z0gis0ysjwk8fjws0282xsyvbk";
+    rev = "${version}";
+    sha256 = "1l18ycbq3125sq8v3wgma630wd6kclarlf8f51cmi9blk322jg9p";
   };
 
-  depsSha256 = "1qg04nzba30fqswjf97wf0slai6lhrsy0bfv648sqnrf50virx5h";
+  cargoSha256 = "1557783icdzlwn02c5zl4362yl85r5zj4nkjv80p6896yli9hk9h";
+
+  buildInputs = stdenv.lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.Security;
+
+  # As of 1.0.0 and rustc 1.30 rustfmt requires a nightly compiler
+  RUSTC_BOOTSTRAP = 1;
+
+  # we run tests in debug mode so tests look for a debug build of
+  # rustfmt. Anyway this adds nearly no compilation time.
+  preCheck = ''
+    cargo build
+  '';
 
   meta = with stdenv.lib; {
     description = "A tool for formatting Rust code according to style guidelines";

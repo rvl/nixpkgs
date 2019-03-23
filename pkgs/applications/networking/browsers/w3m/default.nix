@@ -1,10 +1,10 @@
 { stdenv, fetchFromGitHub, fetchpatch
 , ncurses, boehmgc, gettext, zlib
 , sslSupport ? true, openssl ? null
-, graphicsSupport ? true, imlib2 ? null
+, graphicsSupport ? !stdenv.isDarwin, imlib2 ? null
 , x11Support ? graphicsSupport, libX11 ? null
 , mouseSupport ? !stdenv.isDarwin, gpm-ncurses ? null
-, perl, man, pkgconfig
+, perl, man, pkgconfig, buildPackages, w3m
 }:
 
 assert sslSupport -> openssl != null;
@@ -14,14 +14,24 @@ assert mouseSupport -> gpm-ncurses != null;
 
 with stdenv.lib;
 
-stdenv.mkDerivation rec {
-  name = "w3m-v0.5.3+git20161120";
+let
+  mktable = buildPackages.stdenv.mkDerivation rec {
+    name = "w3m-mktable";
+    inherit (w3m) src;
+    nativeBuildInputs = [ pkgconfig boehmgc ];
+    makeFlags = [ "mktable" ];
+    installPhase = ''
+      install -D mktable $out/bin/mktable
+    '';
+  };
+in stdenv.mkDerivation rec {
+  name = "w3m-0.5.3+git20180125";
 
   src = fetchFromGitHub {
     owner = "tats";
     repo = "w3m";
-    rev = "v0.5.3+git20161120";
-    sha256 = "06n5a9jdyihkd4xdjmyci32dpqp1k2l5awia5g9ng0bn256bacdc";
+    rev = "v0.5.3+git20180125";
+    sha256 = "0dafdfx1yhrvhbqzslkcapj09dvf64m2jadz3wl2icni0k4msq90";
   };
 
   NIX_LDFLAGS = optionalString stdenv.isSunOS "-lsocket -lnsl";
@@ -31,6 +41,8 @@ stdenv.mkDerivation rec {
   PERL = "${perl}/bin/perl";
   MAN = "${man}/bin/man";
 
+  makeFlags = [ "AR=${stdenv.cc.bintools.targetPrefix}ar" ];
+
   patches = [
     ./RAND_egd.libressl.patch
     (fetchpatch {
@@ -38,10 +50,16 @@ stdenv.mkDerivation rec {
       url = "https://aur.archlinux.org/cgit/aur.git/plain/https.patch?h=w3m-mouse&id=5b5f0fbb59f674575e87dd368fed834641c35f03";
       sha256 = "08skvaha1hjyapsh8zw5dgfy433mw2hk7qy9yy9avn8rjqj7kjxk";
     })
-  ] ++ optional (graphicsSupport && !x11Support) [ ./no-x11.patch ]
-    ++ optional stdenv.isCygwin ./cygwin.patch;
+  ] ++ optional (graphicsSupport && !x11Support) [ ./no-x11.patch ];
 
-  buildInputs = [ pkgconfig ncurses boehmgc gettext zlib ]
+  postPatch = optionalString (stdenv.hostPlatform != stdenv.buildPlatform) ''
+    ln -s ${mktable}/bin/mktable mktable
+    # stop make from recompiling mktable
+    sed -ie 's!mktable.*:.*!mktable:!' Makefile.in
+  '';
+
+  nativeBuildInputs = [ pkgconfig gettext ];
+  buildInputs = [ ncurses boehmgc zlib ]
     ++ optional sslSupport openssl
     ++ optional mouseSupport gpm-ncurses
     ++ optional graphicsSupport imlib2
@@ -53,8 +71,12 @@ stdenv.mkDerivation rec {
 
   hardeningDisable = [ "format" ];
 
-  configureFlags = "--with-ssl=${openssl.dev} --with-gc=${boehmgc.dev}"
-    + optionalString graphicsSupport " --enable-image=${optionalString x11Support "x11,"}fb";
+  configureFlags =
+    [ "--with-ssl=${openssl.dev}" "--with-gc=${boehmgc.dev}" ]
+    ++ optionals (stdenv.buildPlatform != stdenv.hostPlatform) [
+      "ac_cv_func_setpgrp_void=yes"
+    ]
+    ++ optional graphicsSupport "--enable-image=${optionalString x11Support "x11,"}fb";
 
   preConfigure = ''
     substituteInPlace ./configure --replace "/lib /usr/lib /usr/local/lib /usr/ucblib /usr/ccslib /usr/ccs/lib /lib64 /usr/lib64" /no-such-path
@@ -70,7 +92,8 @@ stdenv.mkDerivation rec {
   meta = {
     homepage = http://w3m.sourceforge.net/;
     description = "A text-mode web browser";
-    maintainers = [ maintainers.mornfall maintainers.cstrahan ];
+    maintainers = [ maintainers.cstrahan ];
     platforms = stdenv.lib.platforms.unix;
+    license = stdenv.lib.licenses.mit;
   };
 }

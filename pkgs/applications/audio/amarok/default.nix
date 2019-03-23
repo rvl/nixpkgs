@@ -1,48 +1,42 @@
-{ stdenv, fetchurl, lib, automoc4, cmake, perl, pkgconfig
-, qtscriptgenerator, gettext, curl , libxml2, mysql, taglib
-, taglib_extras, loudmouth , kdelibs , qca2, libmtp, liblastfm, libgpod
-, phonon , strigi, soprano, qjson, ffmpeg, libofa, nepomuk_core ? null
-, lz4, lzo, snappy, libaio, pcre
+{ mkDerivation, fetchgit, lib
+, extra-cmake-modules, kdoctools
+, qca-qt5, qjson, qtquickcontrols2, qtscript, qtwebengine
+, karchive, kcmutils, kconfig, kdnssd, kguiaddons, kinit, kirigami2, knewstuff, knotifyconfig, ktexteditor, kwindowsystem
+, fftw, phonon, plasma-framework, threadweaver
+, curl, ffmpeg, gdk_pixbuf, libaio, libmtp, loudmouth, lzo, lz4, mysql57, pcre, snappy, taglib, taglib_extras
 }:
 
-stdenv.mkDerivation rec {
+let
+  pname = "amarok";
+  version = "2.9.0-20180618";
+
+in mkDerivation {
   name = "${pname}-${version}";
 
-  pname = "amarok";
-  version = "2.8.0";
-
-  src = fetchurl {
-    url = "mirror://kde/stable/${pname}/${version}/src/${name}.tar.bz2";
-    sha256 = "1ilf9wdp3wna5pmvxill8x08rb9gw86qkc2zwm3xk9hpy8l9pf7l";
+  src = fetchgit {
+    # master has the Qt5 version as of April 2018 but a formal release has not
+    # yet been made so change this back to the proper upstream when such a
+    # release is out
+    url    = git://anongit.kde.org/amarok.git;
+    # url = "mirror://kde/stable/${pname}/${version}/src/${name}.tar.xz";
+    rev    = "5d43efa454b6a6c9c833a6f3d7f8ff3cae738c96";
+    sha256 = "0fyrbgldg4wbb2darm4aav5fpzbacxzfjrdqwkhv9xr13j7zsvm3";
   };
 
-  QT_PLUGIN_PATH="${qtscriptgenerator}/lib/qt4/plugins";
+  nativeBuildInputs = [ extra-cmake-modules kdoctools ];
 
-  nativeBuildInputs = [ automoc4 cmake perl pkgconfig ];
-
-  buildInputs = [
-    qtscriptgenerator stdenv.cc.libc gettext curl libxml2 mysql.server/*libmysqld*/
-    taglib taglib_extras loudmouth kdelibs phonon strigi soprano qca2
-    libmtp liblastfm libgpod qjson ffmpeg libofa nepomuk_core
-    lz4 lzo snappy libaio pcre
+  propagatedBuildInputs = [
+    qca-qt5 qjson qtquickcontrols2 qtscript qtwebengine
+    karchive kcmutils kconfig kdnssd kguiaddons kinit kirigami2 knewstuff knotifyconfig ktexteditor kwindowsystem
+    phonon plasma-framework threadweaver
+    curl fftw ffmpeg gdk_pixbuf libaio libmtp loudmouth lz4 lzo mysql57.server mysql57.server.static
+    pcre snappy taglib taglib_extras
   ];
-
-  # This is already fixed upstream, will be release in 2.9
-  preConfigure = ''
-    sed -i -e 's/STRLESS/VERSION_LESS/g' cmake/modules/FindTaglib.cmake
-  '';
-
-  cmakeFlags = "-DKDE4_BUILD_TESTS=OFF";
 
   enableParallelBuilding = true;
 
-  propagatedUserEnvPkgs = [ qtscriptgenerator ];
-
-  meta = {
-    repositories.git = git://anongit.kde.org/amarok.git;
-    description = "Popular music player for KDE";
-    license = "GPL";
-    homepage = http://amarok.kde.org;
-    inherit (kdelibs.meta) platforms maintainers;
+  meta = with lib; {
+    license = licenses.gpl2;
+    maintainers = with maintainers; [ peterhoeg ];
   };
 }

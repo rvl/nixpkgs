@@ -8,7 +8,8 @@ stdenv.mkDerivation rec {
     sha256 = "1if3yh5z6nkv5wnkk0qyy9pkk03vn5rqbfk23q87kj39pqscgr37";
   };
 
-  buildInputs = [ pkgconfig gtk2 ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ gtk2 ];
 
   preConfigure = ''
     sed '/DEPRECATED_FLAGS/d' -i configure
@@ -18,7 +19,7 @@ stdenv.mkDerivation rec {
   doCheck = true;
 
   meta = {
-    homepage = http://trac.bjourne.webfactional.com/;
+    homepage = "https://wiki.gnome.org/Projects/GTK%2B/GtkImageView";
 
     description = "Image viewer widget for GTK+";
 

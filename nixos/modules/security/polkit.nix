@@ -64,7 +64,7 @@ in
     systemd.packages = [ pkgs.polkit.out ];
 
     systemd.services.polkit.restartTriggers = [ config.system.path ];
-    systemd.services.polkit.unitConfig.X-StopIfChanged = false;
+    systemd.services.polkit.stopIfChanged = false;
 
     # The polkit daemon reads action/rule files
     environment.pathsToLink = [ "/share/polkit-1" ];
@@ -83,24 +83,18 @@ in
 
     security.pam.services.polkit-1 = {};
 
-    security.setuidPrograms = [ "pkexec" ];
+    security.wrappers = {
+      pkexec.source = "${pkgs.polkit.bin}/bin/pkexec";
+      "polkit-agent-helper-1".source = "${pkgs.polkit.out}/lib/polkit-1/polkit-agent-helper-1";
+    };
 
-    security.setuidOwners = [
-      { program = "polkit-agent-helper-1";
-        owner = "root";
-        group = "root";
-        setuid = true;
-        source = "${pkgs.polkit.out}/lib/polkit-1/polkit-agent-helper-1";
-      }
+    systemd.tmpfiles.rules = [
+      # Probably no more needed, clean up
+      "R /var/lib/polkit-1"
+      "R /var/lib/PolicyKit"
     ];
 
-    system.activationScripts.polkit =
-      ''
-        # Probably no more needed, clean up
-        rm -rf /var/lib/{polkit-1,PolicyKit}
-      '';
-
-    users.extraUsers.polkituser = {
+    users.users.polkituser = {
       description = "PolKit daemon";
       uid = config.ids.uids.polkituser;
     };

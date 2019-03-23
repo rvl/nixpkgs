@@ -2,13 +2,13 @@
 
 stdenv.mkDerivation rec {
   name = "mcelog-${version}";
-  version = "144";
+  version = "161";
 
   src = fetchFromGitHub {
-    sha256 = "05b1x9z6x9yz3xmb93qvwwssjbvp28bawy8as9bfm29pyhzdxx6k";
-    rev = "v${version}";
-    repo = "mcelog";
-    owner = "andikleen";
+    owner  = "andikleen";
+    repo   = "mcelog";
+    rev    = "v${version}";
+    sha256 = "1bqz53xgvwab3r487ihri3nvk7nsgjykdv8m993983vxsi2bgjmz";
   };
 
   postPatch = ''
@@ -28,6 +28,12 @@ stdenv.mkDerivation rec {
 
   installFlags = [ "DESTDIR=$(out)" "prefix=" "DOCDIR=/share/doc" ];
 
+  postInstall = ''
+    mkdir -p $out/lib/systemd/system
+    substitute mcelog.service $out/lib/systemd/system/mcelog.service \
+      --replace /usr/sbin $out/bin
+  '';
+
   meta = with stdenv.lib; {
     description = "Log x86 machine checks: memory, IO, and CPU hardware errors";
     longDescription = ''
@@ -41,6 +47,5 @@ stdenv.mkDerivation rec {
     homepage = http://mcelog.org/;
     license = licenses.gpl2;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ nckx ];
   };
 }

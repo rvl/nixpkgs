@@ -1,5 +1,5 @@
 { stdenv, lib, fetchurl, perl, unzip, zip, which, pkgconfig
-, qtbase, qtscript, SDL2, libtheora, openal, glew, physfs, fribidi
+, qtbase, qtscript, SDL2, libtheora, openal, glew, physfs, fribidi, libXrandr
 , withVideos ? false
 }:
 
@@ -12,15 +12,15 @@ let
 in
 
 stdenv.mkDerivation rec {
-  version = "3.2.2";
+  version = "3.2.3";
   name = "${pname}-${version}";
 
   src = fetchurl {
     url = "mirror://sourceforge/${pname}/releases/${version}/${name}.tar.xz";
-    sha256 = "064xfxwkqpvqyy7kz46cwi71mxmimxi4wgjly9g51wwxkvz8snmg";
+    sha256 = "10kmpr4cby95zwqsl1zwx95d9achli6khq7flv6xmrq30a39xazw";
   };
 
-  buildInputs = [ qtbase qtscript SDL2 libtheora openal glew physfs fribidi ];
+  buildInputs = [ qtbase qtscript SDL2 libtheora openal glew physfs fribidi libXrandr ];
   nativeBuildInputs = [ perl zip unzip pkgconfig ];
 
   postPatch = ''

@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, ... }:
 
 with lib;
 
@@ -26,7 +26,7 @@ with lib;
 
   config = mkIf (config.services.mail.sendmailSetuidWrapper != null) {
 
-    security.setuidOwners = [ config.services.mail.sendmailSetuidWrapper ];
+    security.wrappers.sendmail = config.services.mail.sendmailSetuidWrapper;
 
   };
 

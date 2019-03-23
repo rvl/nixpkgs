@@ -1,5 +1,5 @@
-{ stdenv, fetchurl, pkgconfig, gtk, gettext, libxml2, intltool, libart_lgpl
-, libgnomecups, bison, flex }:
+{ stdenv, fetchurl, pkgconfig, gtk2, gettext, libxml2, intltool, libart_lgpl
+, libgnomecups, bison2, flex }:
 
 stdenv.mkDerivation rec {
   name = "libgnomeprint-2.18.8";
@@ -11,7 +11,8 @@ stdenv.mkDerivation rec {
 
   patches = [ ./bug653388.patch ];
 
-  buildInputs = [ pkgconfig gtk gettext intltool libart_lgpl libgnomecups bison flex ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ gtk2 gettext intltool libart_lgpl libgnomecups bison2 flex ];
 
   propagatedBuildInputs = [ libxml2 ];
 

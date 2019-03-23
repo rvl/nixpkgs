@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchgit, autoconf, libtool, automake, pkgconfig, git
+{ stdenv, fetchgit, autoconf, libtool, automake, pkgconfig, git
 , bison, flex, postgresql }:
 
 let
@@ -16,7 +16,8 @@ in stdenv.mkDerivation {
     leaveDotGit = true;
   };
 
-  buildInputs = [ autoconf automake libtool pkgconfig git ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ autoconf automake libtool git ];
 
   propagatedBuildInputs = [ bison flex postgresql ];
 
@@ -39,7 +40,7 @@ in stdenv.mkDerivation {
       store historical records of the ledger and participate in consensus.
     '';
     homepage = https://www.stellar.org/;
-    platforms = platforms.linux;
+    platforms = [ "x86_64-linux" ];
     maintainers = with maintainers; [ chris-martin ];
     license = licenses.asl20;
   };

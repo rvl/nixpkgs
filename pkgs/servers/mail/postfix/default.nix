@@ -1,7 +1,9 @@
-{ stdenv, lib, fetchurl, makeWrapper, gnused, db, openssl, cyrus_sasl
-, coreutils, findutils, gnugrep, gawk, icu, pcre
+{ stdenv, lib, fetchurl, makeWrapper, gnused, db, openssl, cyrus_sasl, libnsl
+, coreutils, findutils, gnugrep, gawk, icu, pcre, m4
+, buildPackages
+, withLDAP ? true, openldap
 , withPgSQL ? false, postgresql
-, withMySQL ? false, libmysql
+, withMySQL ? false, mysql
 , withSQLite ? false, sqlite
 }:
 
@@ -10,29 +12,33 @@ let
     "-DUSE_TLS" "-DUSE_SASL_AUTH" "-DUSE_CYRUS_SASL" "-I${cyrus_sasl.dev}/include/sasl"
     "-DHAS_DB_BYPASS_MAKEDEFS_CHECK"
    ] ++ lib.optional withPgSQL "-DHAS_PGSQL"
-     ++ lib.optionals withMySQL [ "-DHAS_MYSQL" "-I${lib.getDev libmysql}/include/mysql" ]
-     ++ lib.optional withSQLite "-DHAS_SQLITE");
+     ++ lib.optionals withMySQL [ "-DHAS_MYSQL" "-I${mysql.connector-c}/include/mysql" "-L${mysql.connector-c}/lib/mysql" ]
+     ++ lib.optional withSQLite "-DHAS_SQLITE"
+     ++ lib.optionals withLDAP ["-DHAS_LDAP" "-DUSE_LDAP_SASL"]);
    auxlibs = lib.concatStringsSep " " ([
      "-ldb" "-lnsl" "-lresolv" "-lsasl2" "-lcrypto" "-lssl"
    ] ++ lib.optional withPgSQL "-lpq"
      ++ lib.optional withMySQL "-lmysqlclient"
-     ++ lib.optional withSQLite "-lsqlite3");
+     ++ lib.optional withSQLite "-lsqlite3"
+     ++ lib.optional withLDAP "-lldap");
 
 in stdenv.mkDerivation rec {
 
   name = "postfix-${version}";
 
-  version = "3.1.3";
+  version = "3.4.3";
 
   src = fetchurl {
     url = "ftp://ftp.cs.uu.nl/mirror/postfix/postfix-release/official/${name}.tar.gz";
-    sha256 = "0ya9h7ynhq8h7zgq0qkvfwx5rsam7i3vkbyh6rx63qlpcxz15y2j";
+    sha256 = "1c4ga3p0jshs9xyfq07j6jl9hj42p47q6nbmy42cijax90bhayz3";
   };
 
-  buildInputs = [ makeWrapper gnused db openssl cyrus_sasl icu pcre ]
+  nativeBuildInputs = [ makeWrapper m4 ];
+  buildInputs = [ db openssl cyrus_sasl icu libnsl pcre ]
                 ++ lib.optional withPgSQL postgresql
-                ++ lib.optional withMySQL libmysql
-                ++ lib.optional withSQLite sqlite;
+                ++ lib.optional withMySQL mysql.connector-c
+                ++ lib.optional withSQLite sqlite
+                ++ lib.optional withLDAP openldap;
 
   hardeningDisable = [ "format" ];
   hardeningEnable = [ "pie" ];
@@ -44,13 +50,17 @@ in stdenv.mkDerivation rec {
     ./relative-symlinks.patch
   ];
 
-  preBuild = ''
+  postPatch = stdenv.lib.optionalString (stdenv.hostPlatform != stdenv.buildPlatform) ''
+    sed -e 's!bin/postconf!${buildPackages.postfix}/bin/postconf!' -i postfix-install
+  '' + ''
     sed -e '/^PATH=/d' -i postfix-install
     sed -e "s|@PACKAGE@|$out|" -i conf/post-install
 
     # post-install need skip permissions check/set on all symlinks following to /nix/store
     sed -e "s|@NIX_STORE@|$NIX_STORE|" -i conf/post-install
+  '';
 
+  postConfigure = ''
     export command_directory=$out/sbin
     export config_directory=/etc/postfix
     export meta_directory=$out/etc/postfix
@@ -64,8 +74,12 @@ in stdenv.mkDerivation rec {
     export readme_directory=$out/share/postfix/doc
     export sendmail_path=$out/bin/sendmail
 
+    makeFlagsArray+=(AR=$AR _AR=$AR RANLIB=$RANLIB _RANLIB=$RANLIB)
+
     make makefiles CCARGS='${ccargs}' AUXLIBS='${auxlibs}'
   '';
+
+  NIX_LDFLAGS = lib.optional withLDAP "-llber";
 
   installTargets = [ "non-interactive-package" ];
 
@@ -83,9 +97,9 @@ in stdenv.mkDerivation rec {
   '';
 
   meta = {
-    homepage = "http://www.postfix.org/";
+    homepage = http://www.postfix.org/;
     description = "A fast, easy to administer, and secure mail server";
-    license = lib.licenses.bsdOriginal;
+    license = with lib.licenses; [ ipl10 epl20 ];
     platforms = lib.platforms.linux;
     maintainers = [ lib.maintainers.rickynils ];
   };

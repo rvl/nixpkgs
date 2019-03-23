@@ -11,8 +11,8 @@ stdenv.mkDerivation rec {
     owner = "flok99";
   };
 
-  buildInputs = [ libmrss ]
-    ++ stdenv.lib.optional doCheck cppcheck;
+  buildInputs = [ libmrss ];
+  checkInputs = [ cppcheck ];
 
   postPatch = ''
     substituteInPlace Makefile --replace -liconv_hook ""
@@ -32,6 +32,5 @@ stdenv.mkDerivation rec {
     homepage = http://www.vanheusden.com/rsstail/;
     license = licenses.gpl2Plus;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ nckx ];
   };
 }

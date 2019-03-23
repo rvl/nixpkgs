@@ -1,14 +1,14 @@
-{ stdenv, fetchFromGitHub, cmake, libpfm, zlib, pkgconfig, python2Packages, which, procps, gdb }:
+{ stdenv, fetchFromGitHub, cmake, libpfm, zlib, pkgconfig, python2Packages, which, procps, gdb, capnproto }:
 
 stdenv.mkDerivation rec {
-  version = "4.4.0";
+  version = "5.2.0";
   name = "rr-${version}";
 
   src = fetchFromGitHub {
     owner = "mozilla";
     repo = "rr";
     rev = version;
-    sha256 = "1ijzs5lwscg0k5ch1bljiqqh35rzai75xcgghgkjbz86ynmf62rd";
+    sha256 = "19jsnm8n2smalx2z60x9d8f6g4kdm7zghwyjfvwcxnslk1vn9dkc";
   };
 
   postPatch = ''
@@ -17,8 +17,13 @@ stdenv.mkDerivation rec {
     patchShebangs .
   '';
 
+  # TODO: remove this preConfigure hook after 5.2.0 since it is fixed upstream
+  # see https://github.com/mozilla/rr/issues/2269
+  preConfigure = ''substituteInPlace CMakeLists.txt --replace "std=c++11" "std=c++14"'';
+
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs = [
-    cmake libpfm zlib python2Packages.python pkgconfig python2Packages.pexpect which procps gdb
+    cmake libpfm zlib python2Packages.python python2Packages.pexpect which procps gdb capnproto
   ];
   cmakeFlags = [
     "-DCMAKE_C_FLAGS_RELEASE:STRING="
@@ -39,7 +44,7 @@ stdenv.mkDerivation rec {
   preCheck = "export HOME=$TMPDIR";
 
   meta = {
-    homepage = http://rr-project.org/;
+    homepage = https://rr-project.org/;
     description = "Records nondeterministic executions and debugs them deterministically";
     longDescription = ''
       rr aspires to be your primary debugging tool, replacing -- well,
@@ -48,8 +53,8 @@ stdenv.mkDerivation rec {
       time the same execution is replayed.
     '';
 
-    license = "custom";
+    license = with stdenv.lib.licenses; [ mit bsd2 ];
     maintainers = with stdenv.lib.maintainers; [ pierron thoughtpolice ];
-    platforms = stdenv.lib.platforms.linux;
+    platforms = stdenv.lib.platforms.x86;
   };
 }

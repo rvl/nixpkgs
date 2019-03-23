@@ -1,31 +1,90 @@
-{ fetchurl, stdenv, dpkg, makeWrapper, which
-, gcc, orc, xorg, qt4, zlib
-, ...}:
-
-assert stdenv.system == "i686-linux" || stdenv.system == "x86_64-linux";
+{ fetchurl, stdenv, dpkg, which
+, makeWrapper
+, alsaLib
+, desktop-file-utils
+, dbus
+, libcap
+, fontconfig
+, freetype
+, gcc
+, gconf
+, glib
+, icu
+, libxml2
+, libxslt
+, orc
+, nss
+, nspr
+, qtbase
+, qtsvg
+, qtdeclarative
+, qtwebchannel
+, qtquickcontrols
+, qtwebkit
+, qtwebengine
+, sqlite
+, xorg
+, zlib
+# The provided wrapper does this, but since we don't use it
+# we emulate the behavior.  The downside is that this
+# will leave entries on your system after uninstalling mendeley.
+# (they can be removed by running '$out/bin/install-mendeley-link-handler.sh -u')
+, autorunLinkHandler ? true
+# Update script
+, writeScript
+, runtimeShell
+}:
 
 let
   arch32 = "i686-linux";
-  arch64 = "x86_64-linux";
 
-  arch = if stdenv.system == arch32
+  arch = if stdenv.hostPlatform.system == arch32
     then "i386"
     else "amd64";
 
-  shortVersion = "1.16.3-stable";
+  shortVersion = "1.19.1-stable";
 
   version = "${shortVersion}_${arch}";
 
   url = "http://desktop-download.mendeley.com/download/apt/pool/main/m/mendeleydesktop/mendeleydesktop_${version}.deb";
-  sha256 = if stdenv.system == arch32
-    then "14cxysn1l6s6z8awmqj1glm4146jif0852wiyhjg1dhhh25cvpbv"
-    else "1hdvawj8g4hpj36xy5ys27h1fa76xcdx8apsxa6hpg5xmxvcamqz";
+  sha256 = if stdenv.hostPlatform.system == arch32
+    then "0fcyl5i8xdgb5j0x1643qc0j74d8p11jczvqmgqkqh0wgid1y1ad"
+    else "1dzwa2cnn9xakrhhq159fhh71gw5wlbf017rrikdlia694m8akq6";
 
   deps = [
+    qtbase
+    qtsvg
+    qtdeclarative
+    qtwebchannel
+    qtquickcontrols
+    qtwebkit
+    qtwebengine
+    alsaLib
+    dbus
+    freetype
+    fontconfig
     gcc.cc
+    gconf
+    glib
+    icu
+    libcap
+    libxml2
+    libxslt
+    nspr
+    nss
     orc
-    qt4
+    sqlite
     xorg.libX11
+    xorg.xcbutilkeysyms
+    xorg.libxcb
+    xorg.libXcomposite
+    xorg.libXext
+    xorg.libXrender
+    xorg.libXi
+    xorg.libXcursor
+    xorg.libXtst
+    xorg.libXrandr
+    xorg.xcbutilimage
     zlib
   ];
 
@@ -39,29 +98,47 @@ stdenv.mkDerivation {
     sha256 = sha256;
   };
 
-  buildInputs = [ dpkg makeWrapper which ];
+  nativeBuildInputs = [ makeWrapper ];
+  buildInputs = [ dpkg which ] ++ deps;
+
+  propagatedUserEnvPkgs = [ gconf ];
 
   unpackPhase = "true";
 
   installPhase = ''
     dpkg-deb -x $src $out
-    mv $out/opt/mendeleydesktop/{bin,lib,plugins,share} $out
+    mv $out/opt/mendeleydesktop/{bin,lib,share} $out
 
     interpreter=$(patchelf --print-interpreter $(readlink -f $(which patchelf)))
-    patchelf --set-interpreter $interpreter $out/bin/mendeleydesktop
+    patchelf --set-interpreter $interpreter \
+             --set-rpath ${stdenv.lib.makeLibraryPath deps}:$out/lib \
+             $out/bin/mendeleydesktop
 
-    librarypath="${stdenv.lib.makeLibraryPath deps}:$out/lib:$out/lib/qt"
-    wrapProgram $out/bin/mendeleydesktop --prefix LD_LIBRARY_PATH : "$librarypath"
+    wrapProgram $out/bin/mendeleydesktop \
+      --add-flags "--unix-distro-build" \
+      ${stdenv.lib.optionalString autorunLinkHandler # ignore errors installing the link handler
+      ''--run "$out/bin/install-mendeley-link-handler.sh $out/bin/mendeleydesktop ||:"''}
+
+    # Remove bundled qt bits
+    rm -rf $out/lib/qt
+    rm $out/bin/qt* $out/bin/Qt*
+
+    # Patch up link handler script
+    wrapProgram $out/bin/install-mendeley-link-handler.sh \
+      --prefix PATH ':' ${stdenv.lib.makeBinPath [ which gconf desktop-file-utils ] }
   '';
 
   dontStrip = true;
   dontPatchElf = true;
 
-  meta = {
+  updateScript = import ./update.nix { inherit stdenv writeScript runtimeShell; };
+
+  meta = with stdenv.lib; {
     homepage = http://www.mendeley.com;
     description = "A reference manager and academic social network";
-    license = stdenv.lib.licenses.unfree;
-    platforms = stdenv.lib.platforms.linux;
+    license = licenses.unfree;
+    platforms = [ "x86_64-linux" "i686-linux" ];
+    maintainers  = with maintainers; [ dtzWill ];
   };
 
 }

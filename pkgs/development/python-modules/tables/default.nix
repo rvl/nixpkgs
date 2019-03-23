@@ -1,17 +1,17 @@
-{ stdenv, fetchurl, python, buildPythonPackage
-, cython, bzip2, lzo, numpy, numexpr, hdf5 }:
+{ stdenv, fetchPypi, python, buildPythonPackage
+, cython, bzip2, lzo, numpy, numexpr, hdf5, six, c-blosc }:
 
 buildPythonPackage rec {
-  version = "3.2.2";
-  name = "tables-${version}";
+  version = "3.4.4";
+  pname = "tables";
 
-  src = fetchurl {
-    url = "mirror://pypi/t/tables/${name}.tar.gz";
-    sha256 = "3564b351a71ec1737b503b001eb7ceae1f65d5d6e3ffe1ea75aafba10f37fa84";
+  src = fetchPypi {
+    inherit pname version;
+    sha256 = "bdc5c073712af2a43babd139c4855fc99496bb2c3f3f5d1b4770a985e6f9ce29";
   };
 
-  buildInputs = [ hdf5 cython bzip2 lzo ];
-  propagatedBuildInputs = [ numpy numexpr ];
+  buildInputs = [ hdf5 cython bzip2 lzo c-blosc ];
+  propagatedBuildInputs = [ numpy numexpr six ];
 
   # The setup script complains about missing run-paths, but they are
   # actually set.
@@ -19,6 +19,7 @@ buildPythonPackage rec {
     [ "--hdf5=${hdf5}"
       "--lzo=${lzo}"
       "--bzip2=${bzip2.dev}"
+      "--blosc=${c-blosc}"
     ];
 
   # Run the test suite.
@@ -29,7 +30,7 @@ buildPythonPackage rec {
   # github issue:
   #     https://github.com/PyTables/PyTables/issues/269
   checkPhase = ''
-    ${python}/bin/${python.executable} <<EOF
+    ${python.interpreter} <<EOF
     import sysconfig
     import sys
     import os
@@ -50,7 +51,7 @@ buildPythonPackage rec {
 
   meta = {
     description = "Hierarchical datasets for Python";
-    homepage = "http://www.pytables.org/";
+    homepage = http://www.pytables.org/;
     license = stdenv.lib.licenses.bsd2;
   };
 }

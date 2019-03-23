@@ -1,17 +1,21 @@
-{ stdenv, fetchurl, bash }:
+{ stdenv, fetchurl, pkgconfig }:
 
 stdenv.mkDerivation rec {
   name    = "capstone-${version}";
-  version = "3.0.4";
+  version = "4.0.1";
 
   src = fetchurl {
     url    = "https://github.com/aquynh/capstone/archive/${version}.tar.gz";
-    sha256 = "1whl5c8j6vqvz2j6ay2pyszx0jg8d3x8hq66cvgghmjchvsssvax";
+    sha256 = "1isxw2qwy1fi3m3w7igsr5klzczxc5cxndz0a78dfss6ps6ymfvr";
   };
 
   configurePhase = '' patchShebangs make.sh '';
   buildPhase = '' ./make.sh '';
   installPhase = '' env PREFIX=$out ./make.sh install '';
+  
+  nativeBuildInputs = [
+    pkgconfig
+  ];
 
   enableParallelBuilding = true;
 

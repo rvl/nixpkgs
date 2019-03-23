@@ -2,17 +2,18 @@
 
 stdenv.mkDerivation rec {
   name = "thepeg-${version}";
-  version = "2.0.3";
+  version = "2.1.4";
 
   src = fetchurl {
-    url = "http://www.hepforge.org/archive/thepeg/ThePEG-${version}.tar.bz2";
-    sha256 = "0d26linwv92iq23n4gx154jvyd0lz5vg41kf4nxa01nspy7scyy5";
+    url = "https://www.hepforge.org/archive/thepeg/ThePEG-${version}.tar.bz2";
+    sha256 = "1x9dfxmsbmzmsxrv3cczfyrnqkxjcpy89v6v7ycysrx9k8qkf320";
   };
 
   buildInputs = [ boost fastjet gsl hepmc lhapdf rivet zlib ];
 
   configureFlags = [
     "--with-hepmc=${hepmc}"
+    "--with-rivet=${rivet}"
     "--without-javagui"
   ];
 

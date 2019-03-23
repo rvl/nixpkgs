@@ -1,24 +1,25 @@
 { stdenv, fetchurl, fuse, pkgconfig }:
 
 stdenv.mkDerivation rec {
-  version = "1.12.6";
+  version = "1.13.10";
   name    = "bindfs-${version}";
 
   src = fetchurl {
-    url    = "http://bindfs.org/downloads/${name}.tar.gz";
-    sha256 = "0s90n1n4rvpcg51ixr5wx8ixml1xnc7w28xlbnms34v19pzghm59";
+    url    = "https://bindfs.org/downloads/${name}.tar.gz";
+    sha256 = "14wfp2dcjm0f1pmqqvkf94k7pijbi8ka395cm3hryqpi4k0w3f4j";
   };
 
   dontStrip = true;
 
-  buildInputs = [ fuse pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ fuse ];
   postFixup = ''
     ln -s $out/bin/bindfs $out/bin/mount.fuse.bindfs
   '';
 
   meta = {
     description = "A FUSE filesystem for mounting a directory to another location";
-    homepage    = http://bindfs.org;
+    homepage    = https://bindfs.org;
     license     = stdenv.lib.licenses.gpl2;
     maintainers = with stdenv.lib.maintainers; [ lovek323 ];
     platforms   = stdenv.lib.platforms.unix;

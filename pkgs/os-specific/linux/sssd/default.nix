@@ -1,30 +1,31 @@
-{ stdenv, fetchurl, pkgs, lib, glibc, augeas, dnsutils, c-ares,
-  cyrus_sasl, ding-libs, libnl, libunistring, nss, samba, libnfsidmap, doxygen,
+{ stdenv, fetchurl, fetchpatch, glibc, augeas, dnsutils, c-ares, curl,
+  cyrus_sasl, ding-libs, libnl, libunistring, nss, samba, nfs-utils, doxygen,
   python, python3, pam, popt, talloc, tdb, tevent, pkgconfig, ldb, openldap,
-  pcre, kerberos, cifs_utils, glib, keyutils, dbus, fakeroot, libxslt, libxml2,
-  docbook_xml_xslt, ldap, systemd, nspr, check, cmocka, uid_wrapper,
-  nss_wrapper, docbook_xml_dtd_44, ncurses, Po4a, http-parser, jansson }:
+  pcre, kerberos, cifs-utils, glib, keyutils, dbus, fakeroot, libxslt, libxml2,
+  libuuid, ldap, systemd, nspr, check, cmocka, uid_wrapper,
+  nss_wrapper, ncurses, Po4a, http-parser, jansson,
+  docbook_xsl, docbook_xml_dtd_44,
+  withSudo ? false }:
 
 let
-  name = "sssd-${version}";
-  version = "1.14.2";
-
-  docbookFiles = "${pkgs.docbook_xml_xslt}/share/xml/docbook-xsl/catalog.xml:${pkgs.docbook_xml_dtd_44}/xml/dtd/docbook/catalog.xml";
+  docbookFiles = "${docbook_xsl}/share/xml/docbook-xsl/catalog.xml:${docbook_xml_dtd_44}/xml/dtd/docbook/catalog.xml";
 in
-stdenv.mkDerivation {
-  inherit name;
-  inherit version;
+stdenv.mkDerivation rec {
+  name = "sssd-${version}";
+  version = "1.16.4";
 
   src = fetchurl {
     url = "https://fedorahosted.org/released/sssd/${name}.tar.gz";
-    sha1 = "167b2216c536035175ff041d0449e0a874c68601";
+    sha256 = "0ngr7cgimyjc6flqkm7psxagp1m4jlzpqkn28pliifbmdg6i5ckb";
   };
+
+  # Something is looking for <libxml/foo.h> instead of <libxml2/libxml/foo.h>
+  NIX_CFLAGS_COMPILE = "-I${libxml2.dev}/include/libxml2";
 
   preConfigure = ''
     export SGML_CATALOG_FILES="${docbookFiles}"
     export PYTHONPATH=${ldap}/lib/python2.7/site-packages
-    export PATH=$PATH:${pkgs.openldap}/libexec
-    export CPATH=${pkgs.libxml2.dev}/include/libxml2
+    export PATH=$PATH:${openldap}/libexec
 
     configureFlagsArray=(
       --prefix=$out
@@ -42,14 +43,16 @@ stdenv.mkDerivation {
       --with-ldb-lib-dir=$out/modules/ldb
       --with-nscd=${glibc.bin}/sbin/nscd
     )
+  '' + stdenv.lib.optionalString withSudo ''
+    configureFlagsArray+=("--with-sudo")
   '';
 
   enableParallelBuilding = true;
-  buildInputs = [ augeas dnsutils c-ares cyrus_sasl ding-libs libnl libunistring nss
-                  samba libnfsidmap doxygen python python3 popt
+  buildInputs = [ augeas dnsutils c-ares curl cyrus_sasl ding-libs libnl libunistring nss
+                  samba nfs-utils doxygen python python3 popt
                   talloc tdb tevent pkgconfig ldb pam openldap pcre kerberos
-                  cifs_utils glib keyutils dbus fakeroot libxslt libxml2
-                  ldap systemd nspr check cmocka uid_wrapper
+                  cifs-utils glib keyutils dbus fakeroot libxslt libxml2
+                  libuuid ldap systemd nspr check cmocka uid_wrapper
                   nss_wrapper ncurses Po4a http-parser jansson ];
 
   makeFlags = [
@@ -82,6 +85,7 @@ stdenv.mkDerivation {
     description = "System Security Services Daemon";
     homepage = https://fedorahosted.org/sssd/;
     license = licenses.gpl3;
+    platforms = platforms.linux;
     maintainers = [ maintainers.e-user ];
   };
 }

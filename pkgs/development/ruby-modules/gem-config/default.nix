@@ -19,16 +19,32 @@
 
 { lib, fetchurl, writeScript, ruby, kerberos, libxml2, libxslt, python, stdenv, which
 , libiconv, postgresql, v8_3_16_14, clang, sqlite, zlib, imagemagick
-, pkgconfig , ncurses, xapian, gpgme, utillinux, fetchpatch, tzdata, icu, libffi
-, cmake, libssh2, openssl, mysql, darwin, git, perl, gecode_3, curl
-, libmsgpack, qt48, libsodium, snappy, libossp_uuid, lxc
+, pkgconfig , ncurses, xapian_1_2_22, gpgme, utillinux, fetchpatch, tzdata, icu, libffi
+, cmake, libssh2, openssl, mysql, darwin, git, perl, pcre, gecode_3, curl
+, msgpack, qt59, libsodium, snappy, libossp_uuid, lxc, libpcap, xorg, gtk2, buildRubyGem
+, cairo, re2, rake, gobject-introspection, gdk_pixbuf, zeromq, czmq, graphicsmagick, libcxx
+, file, libvirt, glib, vips, taglib
+, libselinux ? null, libsepol ? null
 }@args:
 
 let
   v8 = v8_3_16_14;
+
+  rainbow_rake = buildRubyGem {
+    pname = "rake";
+    gemName = "rake";
+    source.sha256 = "01j8fc9bqjnrsxbppncai05h43315vmz9fwg28qdsgcjw9ck1d7n";
+    type = "gem";
+    version = "12.0.0";
+  };
 in
 
 {
+  atk = attrs: {
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ gtk2 pcre rake ];
+  };
+
   bundler = attrs:
     let
       templates = "${attrs.ruby.gemPath}/gems/${attrs.gemName}-${attrs.version}/lib/bundler/templates/";
@@ -44,12 +60,31 @@ in
       '';
     };
 
+  cairo = attrs: {
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ gtk2 pcre xorg.libpthreadstubs xorg.libXdmcp];
+  };
+
+  cairo-gobject = attrs: {
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ cairo pcre xorg.libpthreadstubs xorg.libXdmcp ];
+  };
+
   capybara-webkit = attrs: {
-    buildInputs = [ qt48 ];
+    buildInputs = [ qt59.qtbase qt59.qtwebkit ] ++ stdenv.lib.optionals stdenv.isDarwin [ darwin.apple_sdk.frameworks.Cocoa ];
+    NIX_CFLAGS_COMPILE = stdenv.lib.optionalString stdenv.isDarwin "-I${libcxx}/include/c++/v1";
   };
 
   charlock_holmes = attrs: {
     buildInputs = [ which icu zlib ];
+  };
+
+  curb = attrs: {
+    buildInputs = [ curl ];
+  };
+
+  curses = attrs: {
+    buildInputs = [ ncurses ];
   };
 
   dep-selector-libgecode = attrs: {
@@ -60,22 +95,122 @@ in
     '';
   };
 
+  digest-sha3 = attrs: {
+    hardeningDisable = [ "format" ];
+  };
+
+  ethon = attrs: {
+    dontBuild = false;
+    postPatch = ''
+      substituteInPlace lib/ethon/curls/settings.rb \
+        --replace "libcurl" "${curl.out}/lib/libcurl${stdenv.hostPlatform.extensions.sharedLibrary}"
+    '';
+  };
+
+  fog-dnsimple = attrs: {
+    postInstall = ''
+      cd $(cat $out/nix-support/gem-meta/install-path)
+      rm {$out/bin,bin,../../bin}/{setup,console}
+    '';
+  };
+
+  redis-rack = attrs: {
+    dontBuild = false;
+    preBuild = ''
+      exec 3>&1
+      output="$(gem build $gemspec | tee >(cat - >&3))"
+      exec 3>&-
+      sed -i 's!"rake".freeze!!' $gemspec
+    '';
+  };
+
+  ffi-rzmq-core = attrs: {
+    postInstall = ''
+      installPath=$(cat $out/nix-support/gem-meta/install-path)
+      sed -i $installPath/lib/ffi-rzmq-core/libzmq.rb -e 's@inside_gem =.*@inside_gem = "${zeromq}/lib"@'
+    '';
+  };
+
+  mini_magick = attrs: {
+    postInstall = ''
+      installPath=$(cat $out/nix-support/gem-meta/install-path)
+      echo -e "\nENV['PATH'] += ':${graphicsmagick}/bin'\n" >> $installPath/lib/mini_magick/configuration.rb
+    '';
+  };
+
+  do_sqlite3 = attrs: {
+    buildInputs = [ sqlite ];
+  };
+
   eventmachine = attrs: {
     buildInputs = [ openssl ];
   };
 
   ffi = attrs: {
-    buildInputs = [ libffi pkgconfig ];
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ libffi ];
+  };
+
+  gdk_pixbuf2 = attrs: {
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ rake gdk_pixbuf ];
   };
 
   gpgme = attrs: {
     buildInputs = [ gpgme ];
   };
 
+  gio2 = attrs: {
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ gtk2 pcre gobject-introspection ] ++ lib.optionals stdenv.isLinux [ utillinux libselinux libsepol ];
+  };
+
+  gitlab-markup = attrs: { meta.priority = 1; };
+
+  glib2 = attrs: {
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ gtk2 pcre ];
+  };
+
+  gtk2 = attrs: {
+    nativeBuildInputs = [ pkgconfig ] ++ lib.optionals stdenv.isLinux [ utillinux libselinux libsepol ];
+    buildInputs = [ gtk2 pcre xorg.libpthreadstubs xorg.libXdmcp];
+    # CFLAGS must be set for this gem to detect gdkkeysyms.h correctly
+    CFLAGS = "-I${gtk2.dev}/include/gtk-2.0 -I/non-existent-path";
+  };
+
+  gobject-introspection = attrs: {
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ gobject-introspection gtk2 pcre ];
+  };
+
+  grpc = attrs: {
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ openssl ];
+    hardeningDisable = [ "format" ];
+    NIX_CFLAGS_COMPILE = [ "-Wno-error=stringop-overflow" "-Wno-error=implicit-fallthrough" ];
+  };
+
   hitimes = attrs: {
     buildInputs =
       stdenv.lib.optionals stdenv.isDarwin
         [ darwin.apple_sdk.frameworks.CoreServices ];
+  };
+
+  iconv = attrs: {
+    buildFlags = lib.optional stdenv.isDarwin "--with-iconv-dir=${libiconv}";
+  };
+
+  # disable bundle install as it can't install anything in addition to what is
+  # specified in pkgs/applications/misc/jekyll/Gemfile anyway. Also do chmod_R
+  # to compensate for read-only files in site_template in nix store.
+  jekyll = attrs: {
+    postInstall = ''
+      installPath=$(cat $out/nix-support/gem-meta/install-path)
+      sed -i $installPath/lib/jekyll/commands/new.rb \
+          -e 's@Exec.run("bundle", "install"@Exec.run("true"@' \
+          -e 's@FileUtils.cp_r site_template + "/.", path@FileUtils.cp_r site_template + "/.", path; FileUtils.chmod_R "u+w", path@'
+    '';
   };
 
   # note that you need version >= v3.16.14.8,
@@ -86,16 +221,37 @@ in
     buildFlags = [ "--with-system-v8=true" ];
   };
 
-  msgpack = attrs: {
-    buildInputs = [ libmsgpack ];
+  libxml-ruby = attrs: {
+    buildFlags = [
+      "--with-xml2-lib=${libxml2.out}/lib"
+      "--with-xml2-include=${libxml2.dev}/include/libxml2"
+    ];
   };
-  
+
+  magic = attrs: {
+    buildInputs = [ file ];
+    postInstall = ''
+      installPath=$(cat $out/nix-support/gem-meta/install-path)
+      sed -e 's@ENV\["MAGIC_LIB"\] ||@ENV\["MAGIC_LIB"\] || "${file}/lib/libmagic.so" ||@' -i $installPath/lib/magic/api.rb
+    '';
+  };
+
+  metasploit-framework = attrs: {
+    preInstall = ''
+      export HOME=$TMPDIR
+    '';
+  };
+
+  msgpack = attrs: {
+    buildInputs = [ msgpack ];
+  };
+
   mysql = attrs: {
-    buildInputs = [ mysql.lib zlib openssl ];
+    buildInputs = [ mysql.connector-c zlib openssl ];
   };
 
   mysql2 = attrs: {
-    buildInputs = [ mysql.lib zlib openssl ];
+    buildInputs = [ mysql.connector-c zlib openssl ];
   };
 
   ncursesw = attrs: {
@@ -119,8 +275,21 @@ in
     ] ++ lib.optional stdenv.isDarwin "--with-iconv-dir=${libiconv}";
   };
 
+  ovirt-engine-sdk = attrs: {
+    buildInputs = [ curl libxml2 ];
+  };
+
+  pango = attrs: {
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ gtk2 xorg.libXdmcp pcre xorg.libpthreadstubs ];
+  };
+
   patron = attrs: {
     buildInputs = [ curl ];
+  };
+
+  pcaprub = attrs: {
+    buildInputs = [ libpcap ];
   };
 
   pg = attrs: {
@@ -133,16 +302,41 @@ in
     buildInputs = [ openssl ];
   };
 
-  rbnacl = spec: {
-    postInstall = ''
-    sed -i $(cat $out/nix-support/gem-meta/install-path)/lib/rbnacl.rb -e "2a \
-    RBNACL_LIBSODIUM_GEM_LIB_PATH = '${libsodium.out}/lib/libsodium.${if stdenv.isDarwin then "dylib" else "so"}'
-    "
-    '';
+  rainbow = attrs: {
+    buildInputs = [ rainbow_rake ];
+  };
+
+  rbczmq = { ... }: {
+    buildInputs = [ zeromq czmq ];
+    buildFlags = [ "--with-system-libs" ];
+  };
+
+  rbnacl = spec:
+    if lib.versionOlder spec.version "6.0.0" then {
+      postInstall = ''
+        sed -i $(cat $out/nix-support/gem-meta/install-path)/lib/rbnacl.rb -e "2a \
+        RBNACL_LIBSODIUM_GEM_LIB_PATH = '${libsodium.out}/lib/libsodium${stdenv.hostPlatform.extensions.sharedLibrary}'
+        "
+      '';
+    } else {
+      buildInputs = [ libsodium ];
+    };
+
+  re2 = attrs: {
+    buildInputs = [ re2 ];
   };
 
   rmagick = attrs: {
-    buildInputs = [ imagemagick pkgconfig which ];
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ imagemagick which ];
+  };
+
+  ruby-libvirt = attrs: {
+    buildInputs = [ libvirt pkgconfig ];
+    buildFlags = [
+      "--with-libvirt-include=${libvirt}/include"
+      "--with-libvirt-lib=${libvirt}/lib"
+    ];
   };
 
   ruby-lxc = attrs: {
@@ -156,8 +350,30 @@ in
       "--with-ldflags=-L${ncurses.out}/lib"
     ];
   };
+
+  ruby-vips = attrs: {
+    postInstall = ''
+      cd "$(cat $out/nix-support/gem-meta/install-path)"
+
+      substituteInPlace lib/vips.rb \
+        --replace "glib-2.0" "${glib.out}/lib/libglib-2.0${stdenv.hostPlatform.extensions.sharedLibrary}"
+
+      substituteInPlace lib/vips.rb \
+        --replace "gobject-2.0" "${glib.out}/lib/libgobject-2.0${stdenv.hostPlatform.extensions.sharedLibrary}"
+
+      substituteInPlace lib/vips.rb \
+        --replace "vips_libname = 'vips'" "vips_libname = '${vips}/lib/libvips${stdenv.hostPlatform.extensions.sharedLibrary}'"
+    '';
+  };
+
   rugged = attrs: {
-    buildInputs = [ cmake pkgconfig openssl libssh2 zlib ];
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ cmake openssl libssh2 zlib ];
+    dontUseCmakeConfigure = true;
+  };
+
+  sassc = attrs: {
+    nativeBuildInputs = [ rake ];
   };
 
   scrypt = attrs:
@@ -167,6 +383,10 @@ in
         sed -i -e "s/-arch i386//" Rakefile ext/scrypt/Rakefile
       '';
     } else {};
+
+  semian = attrs: {
+    buildInputs = [ openssl ];
+  };
 
   sequel_pg = attrs: {
     buildInputs = [ postgresql ];
@@ -191,12 +411,28 @@ in
 
       substituteInPlace lib/sup/crypto.rb \
         --replace 'which gpg2' \
-                  '${which}/bin/which gpg2'
+                  '${which}/bin/which gpg'
     '';
+  };
+
+  rb-readline = attrs: {
+    dontBuild = false;
+    postPatch = ''
+      substituteInPlace lib/rbreadline.rb \
+        --replace 'infocmp' '${ncurses.dev}/bin/infocmp'
+    '';
+  };
+
+  taglib-ruby = attrs: {
+    buildInputs = [ taglib ];
   };
 
   timfel-krb5-auth = attrs: {
     buildInputs = [ kerberos ];
+  };
+
+  tiny_tds = attrs: {
+    nativeBuildInputs = [ pkgconfig openssl ];
   };
 
   therubyracer = attrs: {
@@ -211,14 +447,20 @@ in
     buildInputs = [ curl ];
   };
 
-  tzinfo = attrs: {
+  tzinfo = attrs: lib.optionalAttrs (lib.versionAtLeast attrs.version "1.0") {
     dontBuild = false;
-    postPatch = ''
-      substituteInPlace lib/tzinfo/zoneinfo_data_source.rb \
-        --replace "/usr/share/zoneinfo" "${tzdata}/share/zoneinfo"
-    '';
+    postPatch =
+      let
+        path = if lib.versionAtLeast attrs.version "2.0"
+               then "lib/tzinfo/data_sources/zoneinfo_data_source.rb"
+               else "lib/tzinfo/zoneinfo_data_source.rb";
+      in
+        ''
+          substituteInPlace ${path} \
+            --replace "/usr/share/zoneinfo" "${tzdata}/share/zoneinfo"
+        '';
   };
-  
+
   uuid4r = attrs: {
     buildInputs = [ which libossp_uuid ];
   };
@@ -226,13 +468,18 @@ in
   xapian-ruby = attrs: {
     # use the system xapian
     dontBuild = false;
-    buildInputs = [ xapian pkgconfig zlib ];
+    nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ xapian_1_2_22 zlib ];
     postPatch = ''
       cp ${./xapian-Rakefile} Rakefile
     '';
     preInstall = ''
-      export XAPIAN_CONFIG=${xapian}/bin/xapian-config
+      export XAPIAN_CONFIG=${xapian_1_2_22}/bin/xapian-config
     '';
   };
+
+   zookeeper = attrs: {
+     buildInputs = stdenv.lib.optionals stdenv.isDarwin [ darwin.cctools ];
+   };
 
 }

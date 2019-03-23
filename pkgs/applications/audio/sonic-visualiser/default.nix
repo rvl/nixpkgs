@@ -2,8 +2,8 @@
 
 { stdenv, fetchurl, alsaLib, bzip2, fftw, libjack2, libX11, liblo
 , libmad, libogg, librdf, librdf_raptor, librdf_rasqal, libsamplerate
-, libsndfile, pkgconfig, libpulseaudio, makeQtWrapper, qtbase, redland
-, qmakeHook, rubberband, serd, sord, vampSDK, fftwFloat
+, libsndfile, pkgconfig, libpulseaudio, qtbase, redland
+, qmake, rubberband, serd, sord, vampSDK, fftwFloat
 }:
 
 stdenv.mkDerivation rec {
@@ -11,16 +11,15 @@ stdenv.mkDerivation rec {
   version = "2.4.1";
 
   src = fetchurl {
-    url = "http://code.soundsoftware.ac.uk/attachments/download/1185/${name}.tar.gz";
+    url = "https://code.soundsoftware.ac.uk/attachments/download/1185/${name}.tar.gz";
     sha256 = "06nlha70kgrby16nyhngrv5q846xagnxdinv608v7ga7vpywwmyb";
   };
 
   buildInputs =
-    [ libsndfile qtbase qmakeHook fftw fftwFloat bzip2 librdf rubberband
+    [ libsndfile qtbase fftw fftwFloat bzip2 librdf rubberband
       libsamplerate vampSDK alsaLib librdf_raptor librdf_rasqal redland
       serd
       sord
-      pkgconfig
       # optional
       libjack2
       # portaudio
@@ -32,7 +31,7 @@ stdenv.mkDerivation rec {
       libX11
     ];
 
-  nativeBuildInputs = [ makeQtWrapper qmakeHook ];
+  nativeBuildInputs = [ pkgconfig qmake ];
 
   configurePhase = ''
     for i in sonic-visualiser svapp svcore svgui;
@@ -44,7 +43,6 @@ stdenv.mkDerivation rec {
     mkdir -p $out/{bin,share/sonic-visualiser}
     cp sonic-visualiser $out/bin/
     cp -r samples $out/share/sonic-visualiser/
-    wrapQtProgram "$out/bin/sonic-visualiser"
   '';
 
   meta = with stdenv.lib; {

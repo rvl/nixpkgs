@@ -1,51 +1,69 @@
-{ stdenv, fetchurl, qt4, bzip2, lib3ds, levmar, muparser, unzip, vcg }:
+{ fetchFromGitHub, libGLU, llvmPackages, qtbase, qtscript, qtxmlpatterns }:
 
-stdenv.mkDerivation rec {
-  name = "meshlab-1.3.3";
+let
+  meshlabRev = "d596d7c086c51fbdfb56050f9c30b55dd0286d4c";
+  vcglibRev = "6c3c940e34327322507c703889f9f1cfa73ab183";
+  # ^ this should be the latest commit in the vcglib devel branch at the time of the meshlab revision
 
-  src = fetchurl {
-    url = "mirror://sourceforge/meshlab/meshlab/MeshLab%20v1.3.3/MeshLabSrc_AllInc_v133.tgz";
-    sha256 = "03wqaibfbfag2w1zi1a5z6h546r9d7pg2sjl5pwg24w7yp8rr0n9";
-  };
+  stdenv = llvmPackages.stdenv; # only building with clang seems to be tested upstream
+in stdenv.mkDerivation {
+  name = "meshlab-20180627-beta";
 
-  # I don't know why I need this; without this, the rpath set at the beginning of the
-  # buildPhase gets removed from the 'meshlab' binary
-  dontPatchELF = true;
+  srcs =
+    [
+      (fetchFromGitHub {
+        owner = "cnr-isti-vclab";
+        repo = "meshlab";
+        rev = meshlabRev;
+        sha256 = "0xi7wiyy0yi545l5qvccbqahlcsf70mhx829gf7bq29640si4rax";
+        name = "meshlab-${meshlabRev}";
+      })
+      (fetchFromGitHub {
+        owner = "cnr-isti-vclab";
+        repo = "vcglib";
+        rev = vcglibRev;
+        sha256 = "0jfgjvf21y9ncmyr7caipy3ardhig7hh9z8miy885c99b925hhwd";
+        name = "vcglib-${vcglibRev}";
+      })
+    ];
 
-  patches = [ ./include-unistd.diff ];
+  sourceRoot = "meshlab-${meshlabRev}";
 
   hardeningDisable = [ "format" ];
+  enableParallelBuilding = true;
+
+  patches = [ ./fix-20180627-beta.patch ];
 
   buildPhase = ''
-    mkdir -p "$out/include"
+    # MeshLab has ../vcglib hardcoded everywhere, so move the source dir
+    mv ../vcglib-${vcglibRev} ../vcglib
+
+    cd src
     export NIX_LDFLAGS="-rpath $out/opt/meshlab $NIX_LDFLAGS"
-    cd meshlab/src
+    export QMAKESPEC="linux-clang"
+
     pushd external
     qmake -recursive external.pro
-    make
+    buildPhase
     popd
     qmake -recursive meshlab_full.pro
-    make
+    buildPhase
   '';
 
   installPhase = ''
-    mkdir -p $out/opt/meshlab $out/bin $out/lib
-    pushd distrib
-    cp -R * $out/opt/meshlab
-    popd
+    mkdir -p $out/opt/meshlab $out/bin
+    cp -Rv distrib/* $out/opt/meshlab
     ln -s $out/opt/meshlab/meshlab $out/bin/meshlab
+    ln -s $out/opt/meshlab/meshlabserver $out/bin/meshlabserver
   '';
 
-  sourceRoot = ".";
-
-  buildInputs = [ qt4 unzip vcg ];
+  buildInputs = [ libGLU llvmPackages.openmp qtbase qtscript qtxmlpatterns ];
 
   meta = {
-    description = "System for the processing and editing of unstructured 3D triangular meshes";
-    homepage = http://meshlab.sourceforge.net/;
-    license = stdenv.lib.licenses.gpl2Plus;
+    description = "A system for processing and editing 3D triangular meshes.";
+    homepage = http://www.meshlab.net/;
+    license = stdenv.lib.licenses.gpl3;
     maintainers = with stdenv.lib.maintainers; [viric];
     platforms = with stdenv.lib.platforms; linux;
-    broken = stdenv.isLinux && stdenv.isi686;
   };
 }

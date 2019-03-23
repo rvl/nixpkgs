@@ -1,42 +1,42 @@
-{stdenv, fetchurl, gnome3, glib, json_glib, libxml2, libarchive, libsoup, gobjectIntrospection, meson, ninja, pkgconfig,  valadoc}:
+{ stdenv, fetchurl, pkgconfig, meson, ninja, makeFontsConf, vala_0_40
+, gnome3, glib, json-glib, libarchive, libsoup, gobject-introspection }:
 
-stdenv.mkDerivation rec {
-  major = "0.2";
-  minor = "3";
-  version = "${major}.${minor}";
-
-  name = "libhttpseverywhere-${version}";
+let
+  pname = "libhttpseverywhere";
+  version = "0.8.3";
+in stdenv.mkDerivation rec {
+  name = "${pname}-${version}";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/libhttpseverywhere/${major}/libhttpseverywhere-${version}.tar.xz";
-    sha256 = "0ndk6yyfcd7iwwkv4rkivhd08k0x8v03gnp9dk1ms4bxb1l2i8l1";
+    url = "mirror://gnome/sources/${pname}/${stdenv.lib.versions.majorMinor version}/${name}.tar.xz";
+    sha256 = "1jmn6i4vsm89q1axlq4ajqkzqmlmjaml9xhw3h9jnal46db6y00w";
   };
 
-  nativeBuildInputs = [ gnome3.vala valadoc  gobjectIntrospection meson ninja pkgconfig ];
-  buildInputs = [ glib gnome3.libgee libxml2 json_glib libsoup libarchive ];
+  # Broken with newest Vala https://gitlab.gnome.org/GNOME/libhttpseverywhere/issues/1
+  nativeBuildInputs = [ vala_0_40 gobject-introspection meson ninja pkgconfig ];
+  buildInputs = [ glib gnome3.libgee json-glib libsoup libarchive ];
 
-  configurePhase = ''
-    mkdir build
-    cd build
-    meson.py --prefix "$out" ..
-  '';
-
-  buildPhase = ''
-    ninja
-    ninja devhelp
-  '';
-
-  installPhase = "ninja install";
+  mesonFlags = [ "-Denable_valadoc=true" ];
 
   doCheck = true;
 
-  checkPhase = "./httpseverywhere_test";
+  checkPhase = "(cd test && ./httpseverywhere_test)";
 
-  meta = {
-    description = "library to use HTTPSEverywhere in desktop applications";
-    homepage    = https://git.gnome.org/browse/libhttpseverywhere;
-    license     = stdenv.lib.licenses.lgpl3;
-    platforms   = stdenv.lib.platforms.linux;
-    maintainers = with stdenv.lib.maintainers; [ sternenseemann ];
+  FONTCONFIG_FILE = makeFontsConf { fontDirectories = [ ]; };
+
+  outputs = [ "out" "devdoc" ];
+
+  passthru = {
+    updateScript = gnome3.updateScript {
+      packageName = pname;
+    };
+  };
+
+  meta = with stdenv.lib; {
+    description = "Library to use HTTPSEverywhere in desktop applications";
+    homepage = https://gitlab.gnome.org/GNOME/libhttpseverywhere;
+    license = licenses.lgpl3;
+    platforms = platforms.linux;
+    maintainers = with maintainers; [ sternenseemann ] ++ gnome3.maintainers;
   };
 }

@@ -1,9 +1,11 @@
-{ fetchzip }:
+{ fetchFromGitHub }:
 
 rec {
-  version = "3.5.0";
-  src = fetchzip {
-    url = "https://github.com/NICMx/releases/raw/master/Jool/Jool-${version}.zip";
-    sha256 = "06jp6gpfryn66q0z4w3gwkvfr17bcrjvys597nj49pxfiz4vczb2";
+  version = "unstable-20180706";
+  src = fetchFromGitHub {
+    owner = "NICMx";
+    repo = "Jool";
+    rev = "de791931d94e972c36bb3c102a9cadab5230c285";
+    sha256 = "09mr7lc9k17znpslsfmndx4vgl240llcgblxm92fizmwz23y1d6c";
   };
 }

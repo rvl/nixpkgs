@@ -1,13 +1,13 @@
 { stdenv, fetchurl, pidgin, intltool, libxml2, nss, nspr }:
 
-let version = "1.20.0"; in
+let version = "1.23.3"; in
 
 stdenv.mkDerivation {
   name = "pidgin-sipe-${version}";
 
   src = fetchurl {
     url = "mirror://sourceforge/sipe/pidgin-sipe-${version}.tar.gz";
-    sha256 = "14d8q9by531hfssm6ydn75xkgidka3ar4sy3czjdb03s1ps82srs";
+    sha256 = "0aaiblnagncb0lhdwb8qbps6hxxmyfjg7sdi15lrkl98i3fahg4n";
   };
 
   meta = with stdenv.lib; {

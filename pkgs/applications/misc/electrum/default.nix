@@ -1,54 +1,76 @@
-{ stdenv, fetchurl, python2Packages }:
+{ stdenv, fetchFromGitHub, python3, python3Packages, zbar, secp256k1 }:
 
-python2Packages.buildPythonApplication rec {
-  name = "electrum-${version}";
-  version = "2.7.12";
+let
+  qdarkstyle = python3Packages.buildPythonPackage rec {
+    pname = "QDarkStyle";
+    version = "2.5.4";
+    src = python3Packages.fetchPypi {
+      inherit pname version;
+      sha256 = "1w715m1i5pycfqcpkrggpn0rs9cakx6cm5v8rggcxnf4p0i0kdiy";
+    };
+    doCheck = false; # no tests
+  };
+in
 
-  src = fetchurl {
-    url = "https://download.electrum.org/${version}/Electrum-${version}.tar.gz";
-    sha256 = "0vxdfl208if7mdsnva1jg37bnay2dsz3ww157aqwcv1j6512fi1n";
+python3Packages.buildPythonApplication rec {
+  pname = "electrum";
+  version = "3.3.4";
+
+  src = fetchFromGitHub {
+    owner = "spesmilo";
+    repo = "electrum";
+    rev = version;
+    sha256 = "0yxdpc602jnd14xz3px85ka0b6db98zwbgfi9a3vj8p1k3mmiwaj";
   };
 
-  propagatedBuildInputs = with python2Packages; [
-    dns
+  propagatedBuildInputs = with python3Packages; [
+    aiorpcx
+    aiohttp
+    aiohttp-socks
+    dnspython
     ecdsa
-    jsonrpclib
+    jsonrpclib-pelix
+    matplotlib
     pbkdf2
-    protobuf3_0
-    pyasn1
-    pyasn1-modules
-    pycrypto
-    pyqt4
+    protobuf
+    pyaes
+    pycryptodomex
+    pyqt5
+    pysocks
+    qdarkstyle
     qrcode
     requests
-    slowaes
-    tlslite
+    tlslite-ng
 
     # plugins
-    trezor
     keepkey
+    trezor
+    btchip
+
     # TODO plugins
-    # matplotlib
-    # btchip
     # amodem
   ];
 
   preBuild = ''
     sed -i 's,usr_share = .*,usr_share = "'$out'/share",g' setup.py
-    pyrcc4 icons.qrc -o gui/qt/icons_rc.py
-    # Recording the creation timestamps introduces indeterminism to the build
-    sed -i '/Created: .*/d' gui/qt/icons_rc.py
+    sed -i "s|name = 'libzbar.*'|name='${zbar}/lib/libzbar.so'|" electrum/qrscanner.py
+    substituteInPlace ./electrum/ecc_fast.py --replace libsecp256k1.so.0 ${secp256k1}/lib/libsecp256k1.so.0
   '';
 
   postInstall = ''
     # Despite setting usr_share above, these files are installed under
     # $out/nix ...
-    mv $out/lib/python2.7/site-packages/nix/store/*/share $out
-    rm -rf $out/lib/python2.7/site-packages/nix
+    mv $out/${python3.sitePackages}/nix/store"/"*/share $out
+    rm -rf $out/${python3.sitePackages}/nix
+
+    substituteInPlace $out/share/applications/electrum.desktop \
+      --replace "Exec=electrum %u" "Exec=$out/bin/electrum %u"
   '';
 
-  doInstallCheck = true;
-  installCheckPhase = ''
+  checkInputs = with python3Packages; [ pytest ];
+
+  checkPhase = ''
+    py.test electrum/tests
     $out/bin/electrum help >/dev/null
   '';
 

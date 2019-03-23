@@ -2,22 +2,21 @@
 
 with stdenv.lib;
 
-assert stdenv.isLinux;
-
 let
   arch =
-    if stdenv.system == "x86_64-linux" then "x64"
-    else if stdenv.system == "i686-linux" then "x86"
-    else abort "Unsupported architecture";
+    if stdenv.hostPlatform.system == "x86_64-linux" then "x64"
+    else if stdenv.hostPlatform.system == "i686-linux" then "x86"
+    else throwSystem;
+  throwSystem = throw "Unsupported system: ${stdenv.hostPlatform.system}";
   sha256 =
-    if stdenv.system == "x86_64-linux" then "011xg1frhjavv6zj1y3da0yh7rl6v1ax6xy2g8fk3sry9bi2p4j3"
-    else if stdenv.system == "i686-linux" then "03ml9xv19km99f0z7fpr21b1zkxvw7q39kjzd8wpb2pds51wnc62"
-    else abort "Unsupported architecture";
+    if stdenv.hostPlatform.system == "x86_64-linux" then "11mxa4kls5xjj3462ycrfvfxb1xkk23p5m9iirvwsi0zdmhpnwm8"
+    else if stdenv.hostPlatform.system == "i686-linux" then "03ml9xv19km99f0z7fpr21b1zkxvw7q39kjzd8wpb2pds51wnc62"
+    else throwSystem;
   libraries = stdenv.lib.makeLibraryPath [ stdenv.cc.cc ];
 
 in stdenv.mkDerivation rec {
   name = "logmein-hamachi-${version}";
-  version = "2.1.0.174";
+  version = "2.1.0.198";
 
   src = fetchurl {
     url = "https://www.vpn.net/installers/${name}-${arch}.tgz";
@@ -38,7 +37,7 @@ in stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "A hosted VPN service that lets you securely extend LAN-like networks to distributed teams";
-    homepage = "https://secure.logmein.com/products/hamachi/";
+    homepage = https://secure.logmein.com/products/hamachi/;
     license = licenses.unfreeRedistributable;
     maintainers = with maintainers; [ abbradar ];
     platforms = platforms.linux;

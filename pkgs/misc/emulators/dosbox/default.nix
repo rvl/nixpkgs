@@ -1,26 +1,18 @@
-{ stdenv, fetchurl, SDL, makeDesktopItem, mesa }:
+{ stdenv, lib, fetchurl, makeDesktopItem, SDL, SDL_net, SDL_sound, libGLU_combined, libpng }:
 
-stdenv.mkDerivation rec { 
-  name = "dosbox-0.74";
+stdenv.mkDerivation rec {
+  name = "dosbox-0.74-2";
 
   src = fetchurl {
     url = "mirror://sourceforge/dosbox/${name}.tar.gz";
-    sha256 = "01cfjc5bs08m4w79nbxyv7rnvzq2yckmgrbq36njn06lw8b4kxqk";
+    sha256 = "1ksp1b5szi0vy4x55rm3j1y9wq5mlslpy8llpg87rpdyjlsk0xvh";
   };
-
-  patches =
-    [ # Fix building with GCC 4.6.
-      (fetchurl {
-        url = "http://sources.gentoo.org/cgi-bin/viewvc.cgi/gentoo-x86/games-emulation/dosbox/files/dosbox-0.74-gcc46.patch?revision=1.1";
-        sha256 = "03iv1ph7fccfw327ngnhvzwyiix7fsbdb5mmpxivzkidhlrssxq9";
-      })
-    ];
-
-  patchFlags = "-p0";
 
   hardeningDisable = [ "format" ];
 
-  buildInputs = [ SDL mesa ];
+  buildInputs = [ SDL SDL_net SDL_sound libGLU_combined libpng ];
+
+  configureFlags = lib.optional stdenv.isDarwin "--disable-sdltest";
 
   desktopItem = makeDesktopItem {
     name = "dosbox";
@@ -36,9 +28,13 @@ stdenv.mkDerivation rec {
      cp ${desktopItem}/share/applications/* $out/share/applications
   '';
 
-  meta = {
+  enableParallelBuilding = true;
+
+  meta = with lib; {
     homepage = http://www.dosbox.com/;
     description = "A DOS emulator";
-    platforms = stdenv.lib.platforms.unix;
+    platforms = platforms.unix;
+    maintainers = with maintainers; [ matthewbauer ];
+    license = licenses.gpl2;
   };
 }

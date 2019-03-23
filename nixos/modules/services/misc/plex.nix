@@ -4,7 +4,6 @@ with lib;
 
 let
   cfg = config.services.plex;
-  plex = pkgs.plex;
 in
 {
   options = {
@@ -82,7 +81,7 @@ in
       after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
       preStart = ''
-        test -d "${cfg.dataDir}" || {
+        test -d "${cfg.dataDir}/Plex Media Server" || {
           echo "Creating initial Plex data directory in \"${cfg.dataDir}\"."
           mkdir -p "${cfg.dataDir}/Plex Media Server"
           chown -R ${cfg.user}:${cfg.group} "${cfg.dataDir}"
@@ -91,9 +90,11 @@ in
         # Copy the database skeleton files to /var/lib/plex/.skeleton
         # See the the Nix expression for Plex's package for more information on
         # why this is done.
-        test -d "${cfg.dataDir}/.skeleton" || mkdir "${cfg.dataDir}/.skeleton"
+        install --owner ${cfg.user} --group ${cfg.group} -d "${cfg.dataDir}/.skeleton"
         for db in "com.plexapp.plugins.library.db"; do
-            cp "${cfg.package}/usr/lib/plexmediaserver/Resources/base_$db" "${cfg.dataDir}/.skeleton/$db"
+            if [ ! -e  "${cfg.dataDir}/.skeleton/$db" ]; then
+              cp "${cfg.package}/usr/lib/plexmediaserver/Resources/base_$db" "${cfg.dataDir}/.skeleton/$db"
+            fi
             chmod u+w "${cfg.dataDir}/.skeleton/$db"
             chown ${cfg.user}:${cfg.group} "${cfg.dataDir}/.skeleton/$db"
         done
@@ -135,7 +136,8 @@ in
         User = cfg.user;
         Group = cfg.group;
         PermissionsStartOnly = "true";
-        ExecStart = "/bin/sh -c ${cfg.package}/usr/lib/plexmediaserver/Plex\\ Media\\ Server";
+        ExecStart = "\"${cfg.package}/usr/lib/plexmediaserver/Plex Media Server\"";
+        KillSignal = "SIGQUIT";
         Restart = "on-failure";
       };
       environment = {
@@ -143,7 +145,8 @@ in
         PLEX_MEDIA_SERVER_HOME="${cfg.package}/usr/lib/plexmediaserver";
         PLEX_MEDIA_SERVER_MAX_PLUGIN_PROCS="6";
         PLEX_MEDIA_SERVER_TMPDIR="/tmp";
-        LD_LIBRARY_PATH="${cfg.package}/usr/lib/plexmediaserver";
+        PLEX_MEDIA_SERVER_USE_SYSLOG="true";
+        LD_LIBRARY_PATH="/run/opengl-driver/lib:${cfg.package}/usr/lib/plexmediaserver";
         LC_ALL="en_US.UTF-8";
         LANG="en_US.UTF-8";
       };
@@ -154,14 +157,14 @@ in
       allowedUDPPorts = [ 1900 5353 32410 32412 32413 32414 ];
     };
 
-    users.extraUsers = mkIf (cfg.user == "plex") {
+    users.users = mkIf (cfg.user == "plex") {
       plex = {
         group = cfg.group;
         uid = config.ids.uids.plex;
       };
     };
 
-    users.extraGroups = mkIf (cfg.group == "plex") {
+    users.groups = mkIf (cfg.group == "plex") {
       plex = {
         gid = config.ids.gids.plex;
       };

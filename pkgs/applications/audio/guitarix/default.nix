@@ -1,8 +1,8 @@
-{ stdenv, fetchurl, gettext, intltool, pkgconfig, python
-, avahi, bluez, boost, eigen, fftw, glib, glib_networking
-, glibmm, gsettings_desktop_schemas, gtkmm2, libjack2
-, ladspaH, librdf, libsndfile, lilv, lv2, serd, sord, sratom
-, webkitgtk2, wrapGAppsHook, zita-convolver, zita-resampler
+{ stdenv, fetchurl, gettext, intltool, pkgconfig, python2
+, avahi, bluez, boost, eigen, fftw, glib, glib-networking
+, glibmm, gsettings-desktop-schemas, gtkmm2, libjack2
+, ladspaH, libav, librdf, libsndfile, lilv, lv2, serd, sord, sratom
+, wrapGAppsHook, zita-convolver, zita-resampler, curl, wafHook
 , optimizationSupport ? false # Enable support for native CPU extensions
 }:
 
@@ -12,20 +12,20 @@ in
 
 stdenv.mkDerivation rec {
   name = "guitarix-${version}";
-  version = "0.35.2";
+  version = "0.37.3";
 
   src = fetchurl {
     url = "mirror://sourceforge/guitarix/guitarix2-${version}.tar.xz";
-    sha256 = "1qj3adjhg511jygbjkl9k5v0gcjmg6ifc479rspfyf45m383pp3p";
+    sha256 = "1wfm8wrwrnqpb4ihy75n7l9i6vml536jlq9pdx2pblbc4ba3paac";
   };
 
-  nativeBuildInputs = [ gettext intltool wrapGAppsHook pkgconfig python ];
+  nativeBuildInputs = [ gettext intltool wrapGAppsHook pkgconfig python2 wafHook ];
 
   buildInputs = [
-    avahi bluez boost eigen fftw glib glibmm glib_networking.out
-    gsettings_desktop_schemas gtkmm2 libjack2 ladspaH librdf
-    libsndfile lilv lv2 serd sord sratom webkitgtk2 zita-convolver
-    zita-resampler
+    avahi bluez boost eigen fftw glib glibmm glib-networking.out
+    gsettings-desktop-schemas gtkmm2 libjack2 ladspaH libav librdf
+    libsndfile lilv lv2 serd sord sratom zita-convolver
+    zita-resampler curl
   ];
 
   configureFlags = [
@@ -33,13 +33,10 @@ stdenv.mkDerivation rec {
     "--no-desktop-update"
     "--enable-nls"
     "--no-faust" # todo: find out why --faust doesn't work
+    "--install-roboto-font"
+    "--includeresampler"
+    "--convolver-ffmpeg"
   ] ++ optional optimizationSupport "--optimization";
-
-  configurePhase = ''python waf configure --prefix=$out $configureFlags'';
-
-  buildPhase = ''python waf build'';
-
-  installPhase = ''python waf install'';
 
   meta = with stdenv.lib; {
     description = "A virtual guitar amplifier for Linux running with JACK";

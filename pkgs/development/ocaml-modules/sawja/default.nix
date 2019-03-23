@@ -4,16 +4,16 @@ assert stdenv.lib.versionAtLeast (stdenv.lib.getVersion ocaml) "3.12";
 
 let
   pname = "sawja";
-  version = "1.5";
+  version = "1.5.6";
   webpage = "http://sawja.inria.fr/";
 in
 stdenv.mkDerivation rec {
 
-  name = "ocaml-${pname}-${version}";
+  name = "ocaml${ocaml.version}-${pname}-${version}";
 
   src = fetchurl {
-    url = "https://gforge.inria.fr/frs/download.php/33091/${pname}-${version}.tar.bz2";
-    sha256 = "0i8qgqkw9vgj6k2g6npss268ivxdkzx5qj2a52jbd8ih59rn68cm";
+    url = https://gforge.inria.fr/frs/download.php/file/37819/sawja-1.5.6.tar.bz2;
+    sha256 = "0dkfdc8h94r7kj4p8q57fz7fssypgmjrix8xff0va7x1nya5sdp3";
   };
 
   buildInputs = [ which perl ocaml findlib camlp4 ];

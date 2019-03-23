@@ -95,27 +95,25 @@ in
 {
 
   ###### interface
-
-  options.services.quagga =
+  imports = [
     {
+      options.services.quagga = {
+        zebra = (serviceOptions "zebra") // {
+          enable = mkOption {
+            type = types.bool;
+            default = any isEnabled services;
+            description = ''
+              Whether to enable the Zebra routing manager.
 
-      zebra = (serviceOptions "zebra") // {
-
-        enable = mkOption {
-          type = types.bool;
-          default = any isEnabled services;
-          example = true;
-          description = ''
-            Whether to enable the Zebra routing manager.
-
-            The Zebra routing manager is automatically enabled
-            if any routing protocols are configured.
-          '';
+              The Zebra routing manager is automatically enabled
+              if any routing protocols are configured.
+            '';
+          };
         };
-
       };
-
-    } // (genAttrs services serviceOptions);
+    }
+    { options.services.quagga = (genAttrs services serviceOptions); }
+  ];
 
   ###### implementation
 
@@ -134,7 +132,7 @@ in
     users.groups = {
       quagga = {};
       # Members of the quaggavty group can use vtysh to inspect the Quagga daemons
-      quaggavty = {};
+      quaggavty = { members = [ "quagga" ]; };
     };
 
     systemd.services =

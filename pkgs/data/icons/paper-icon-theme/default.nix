@@ -1,28 +1,34 @@
-{ stdenv, fetchFromGitHub, autoreconfHook }:
+{ stdenv, fetchFromGitHub, meson, ninja, gtk3, python3 }:
 
 stdenv.mkDerivation rec {
-  name = "${package-name}-${version}";
-  package-name = "paper-icon-theme";
-  version = "2016-11-05";
+  name = "${pname}-${version}";
+  pname = "paper-icon-theme";
+  version = "2018-06-24";
 
   src = fetchFromGitHub {
     owner = "snwh";
-    repo = package-name;
-    rev = "2a1f25a47fe8fb92e9d4db5537bbddb539586602";
-    sha256 = "0v956wrfraaj5qznz86q7s3zi55xd3gxmg7pzcfsw2ghgfv13swd";
+    repo = pname;
+    rev = "c7cd013fba06dd8fd5cdff9f885520e2923266b8";
+    sha256 = "0x45zkjnmbz904df63ph06npbm3phpgck4xwyymx8r8jgrfplk6v";
   };
 
-  nativeBuildInputs = [ autoreconfHook ];
+  nativeBuildInputs = [ meson ninja gtk3 python3 ];
 
   postPatch = ''
-    substituteInPlace Makefile.am --replace '$(DESTDIR)'/usr $out
+    patchShebangs meson/post_install.py
+  '';
+
+  postInstall = ''
+    # The cache for Paper-Mono-Dark is missing
+    gtk-update-icon-cache "$out"/share/icons/Paper-Mono-Dark;
   '';
 
   meta = with stdenv.lib; {
     description = "Modern icon theme designed around bold colours and simple geometric shapes";
-    homepage = http://snwh.org/paper;
+    homepage = https://snwh.org/paper;
     license = with licenses; [ cc-by-sa-40 lgpl3 ];
-    platforms = platforms.all;
+    # darwin cannot deal with file names differing only in case
+    platforms = platforms.linux;
     maintainers = with maintainers; [ romildo ];
   };
 }

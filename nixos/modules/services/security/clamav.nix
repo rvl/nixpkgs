@@ -76,16 +76,18 @@ in
     };
   };
 
-  config = mkIf cfg.updater.enable or cfg.daemon.enable {
+  config = mkIf (cfg.updater.enable || cfg.daemon.enable) {
     environment.systemPackages = [ pkg ];
-    users.extraUsers = singleton {
+
+    users.users = singleton {
       name = clamavUser;
       uid = config.ids.uids.clamav;
+      group = clamavGroup;
       description = "ClamAV daemon user";
       home = stateDir;
     };
 
-    users.extraGroups = singleton {
+    users.groups = singleton {
       name = clamavGroup;
       gid = config.ids.gids.clamav;
     };
@@ -95,8 +97,8 @@ in
 
     systemd.services.clamav-daemon = mkIf cfg.daemon.enable {
       description = "ClamAV daemon (clamd)";
-      after = mkIf cfg.updater.enable [ "clamav-freshclam.service" ];
-      requires = mkIf cfg.updater.enable [ "clamav-freshclam.service" ];
+      after = optional cfg.updater.enable "clamav-freshclam.service";
+      requires = optional cfg.updater.enable "clamav-freshclam.service";
       wantedBy = [ "multi-user.target" ];
       restartTriggers = [ clamdConfigFile ];
 
@@ -135,6 +137,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkg}/bin/freshclam";
+        SuccessExitStatus = "1"; # if databases are up to date
         PrivateTmp = "yes";
         PrivateDevices = "yes";
       };

@@ -3,14 +3,18 @@
 stdenv.mkDerivation rec {
 
   name = "cbatticon-${version}";
-  version = "1.6.4";
+  version = "1.6.8";
 
   src = fetchFromGitHub {
     owner = "valr";
     repo = "cbatticon";
     rev = version;
-    sha256 = "0m3bj408mbini97kq0cdf048lnfkdn7bd8ikbfijd7dwfdzv27i5";
+    sha256 = "16g26vin1693dbdr9qsnw36fdchx394lp79gvp7gcbw0w1ny9av6";
   };
+
+  patchPhase = ''
+    sed -i -e 's/ -Wno-format//g' Makefile
+  '';
 
   makeFlags = "PREFIX=$(out)";
 

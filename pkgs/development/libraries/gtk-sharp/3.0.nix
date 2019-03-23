@@ -31,8 +31,9 @@ stdenv.mkDerivation {
   #   done
   # '';
 
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs = [
-    pkgconfig mono glib pango gtk3 GConf libglade libgnomecanvas
+    mono glib pango gtk3 GConf libglade libgnomecanvas
     libgtkhtml libgnomeui libgnomeprint libgnomeprintui gtkhtml libxml2
   ];
 
@@ -46,5 +47,6 @@ stdenv.mkDerivation {
 
   meta = {
     platforms = stdenv.lib.platforms.linux;
+    broken = true; # 2018-09-21, build has failed since 2018-04-28
   };
 }

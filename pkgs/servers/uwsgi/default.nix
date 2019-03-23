@@ -1,13 +1,13 @@
-{ stdenv, lib, fetchurl, pkgconfig, jansson
+{ stdenv, lib, fetchurl, pkgconfig, jansson, pcre
 # plugins: list of strings, eg. [ "python2" "python3" ]
-, plugins
-, pam, withPAM ? false
-, systemd, withSystemd ? false
+, plugins ? []
+, pam, withPAM ? stdenv.isLinux
+, systemd, withSystemd ? stdenv.isLinux
 , python2, python3, ncurses
-, ruby
+, ruby, php-embed, mysql
 }:
 
-let pythonPlugin = pkg : lib.nameValuePair "python${if pkg ? isPy2 then "2" else "3"}" {
+let pythonPlugin = pkg : lib.nameValuePair "python${if pkg.isPy2 then "2" else "3"}" {
                            interpreter = pkg.interpreter;
                            path = "plugins/python";
                            inputs = [ pkg ncurses ];
@@ -26,8 +26,15 @@ let pythonPlugin = pkg : lib.nameValuePair "python${if pkg ? isPy2 then "2" else
                     inputs = [ ruby ];
                   })
                   (lib.nameValuePair "cgi" {
+                    # usage: https://uwsgi-docs.readthedocs.io/en/latest/CGI.html?highlight=cgi
                     path = "plugins/cgi";
                     inputs = [ ];
+                  })
+                  (lib.nameValuePair "php" {
+                    # usage: https://uwsgi-docs.readthedocs.io/en/latest/PHP.html#running-php-apps-with-nginx
+                    path = "plugins/php";
+                    inputs = [ php-embed ] ++ php-embed.buildInputs;
+                    NIX_CFLAGS_LINK = [ "-L${mysql.connector-c}/lib/mysql" ];
                   })
                 ];
 
@@ -42,16 +49,16 @@ in
 
 stdenv.mkDerivation rec {
   name = "uwsgi-${version}";
-  version = "2.0.14";
+  version = "2.0.18";
 
   src = fetchurl {
-    url = "http://projects.unbit.it/downloads/${name}.tar.gz";
-    sha256 = "11r829j4fyk7y068arqmwbc9dj6lc0n3l6bn6pr5z0vdjbpx3cr1";
+    url = "https://projects.unbit.it/downloads/${name}.tar.gz";
+    sha256 = "10zmk4npknigmbqcq1wmhd461dk93159px172112vyq0i19sqwj9";
   };
 
   nativeBuildInputs = [ python3 pkgconfig ];
 
-  buildInputs =  [ jansson ]
+  buildInputs =  [ jansson pcre ]
               ++ lib.optional withPAM pam
               ++ lib.optional withSystemd systemd
               ++ lib.concatMap (x: x.inputs) needed
@@ -74,7 +81,7 @@ stdenv.mkDerivation rec {
   buildPhase = ''
     mkdir -p $pluginDir
     python3 uwsgiconfig.py --build nixos
-    ${lib.concatMapStringsSep ";" (x: "${x.interpreter or "python3"} uwsgiconfig.py --plugin ${x.path} nixos ${x.name}") needed}
+    ${lib.concatMapStringsSep ";" (x: "${x.preBuild or ""}\n ${x.interpreter or "python3"} uwsgiconfig.py --plugin ${x.path} nixos ${x.name}") needed}
   '';
 
   installPhase = ''
@@ -82,13 +89,13 @@ stdenv.mkDerivation rec {
     ${lib.concatMapStringsSep "\n" (x: x.install or "") needed}
   '';
 
-  NIX_CFLAGS_LINK = [ "-lsystemd" ];
+  NIX_CFLAGS_LINK = lib.optional withSystemd "-lsystemd" ++ lib.concatMap (x: x.NIX_CFLAGS_LINK or []) needed;
 
   meta = with stdenv.lib; {
-    homepage = "http://uwsgi-docs.readthedocs.org/en/latest/";
+    homepage = https://uwsgi-docs.readthedocs.org/en/latest/;
     description = "A fast, self-healing and developer/sysadmin-friendly application container server coded in pure C";
     license = licenses.gpl2;
-    maintainers = with maintainers; [ abbradar ];
+    maintainers = with maintainers; [ abbradar schneefux ];
     platforms = platforms.linux;
   };
 }

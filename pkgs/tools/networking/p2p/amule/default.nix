@@ -8,16 +8,13 @@
 assert httpServer -> libpng != null;
 assert client -> libX11 != null;
 with stdenv;
-let
-  # Enable/Disable Feature
-  edf = enabled: flag: if enabled then "--enable-" + flag else "--disable-" + flag;
-in
+
 mkDerivation rec {
-  name = "aMule-2.3.1";
+  name = "aMule-2.3.2";
 
   src = fetchurl {
     url = "mirror://sourceforge/amule/${name}.tar.xz";
-    sha256 = "0hvpx3c005nvxsfand5bwfxxiq3mv0mpykajfm2lkygjh1rw2383";
+    sha256 = "0a1rd33hjl30qyzgb5y8m7dxs38asci3kjnlvims1ky6r3yj0izn";
   };
 
   buildInputs =
@@ -25,17 +22,20 @@ mkDerivation rec {
     ++ lib.optional httpServer libpng
     ++ lib.optional client libX11;
 
-  patches = [ ./gcc47.patch ]; # from Gentoo
+  # See: https://github.com/amule-project/amule/issues/126
+  patches = [ ./upnp-1.8.patch ];
 
-  configureFlags = ''
-    --with-crypto-prefix=${cryptopp}
-    --disable-debug
-    --enable-optimize
-    ${edf monolithic "monolithic"}
-    ${edf daemon "amule-daemon"}
-    ${edf client "amule-gui"}
-    ${edf httpServer "webserver"}
-  '';
+  enableParallelBuilding = true;
+
+  configureFlags = [
+    "--with-crypto-prefix=${cryptopp}"
+    "--disable-debug"
+    "--enable-optimize"
+    (stdenv.lib.enableFeature monolithic "monolithic")
+    (stdenv.lib.enableFeature daemon "amule-daemon")
+    (stdenv.lib.enableFeature client "amule-gui")
+    (stdenv.lib.enableFeature httpServer "webserver")
+  ];
 
   postConfigure = ''
     sed -i "src/libs/ec/file_generator.pl"     \
@@ -65,7 +65,7 @@ mkDerivation rec {
 
     license = stdenv.lib.licenses.gpl2Plus;
 
-    platforms = stdenv.lib.platforms.gnu;  # arbitrary choice
+    platforms = stdenv.lib.platforms.gnu ++ stdenv.lib.platforms.linux;  # arbitrary choice
     maintainers = [ stdenv.lib.maintainers.phreedom ];
   };
 }

@@ -1,29 +1,39 @@
-{ fetchurl, fetchpatch, stdenv, gnutls, glib, pkgconfig, check, libotr, python }:
+{ fetchurl, stdenv, gnutls, glib, pkgconfig, check, libotr, python
+, enableLibPurple ? false, pidgin ? null
+, enablePam ? false, pam ? null
+}:
 
 with stdenv.lib;
 stdenv.mkDerivation rec {
-  name = "bitlbee-3.4.2";
+  name = "bitlbee-3.5.1";
 
   src = fetchurl {
     url = "mirror://bitlbee/src/${name}.tar.gz";
-    sha256 = "0mza8lnfwibmklz8hdzg4f7p83hblf4h6fbf7d732kzpvra5bj39";
+    sha256 = "0sgsn0fv41rga46mih3fyv65cvfa6rvki8x92dn7bczbi7yxfdln";
   };
 
-  buildInputs = [ gnutls glib pkgconfig libotr python ]
-    ++ optional doCheck check;
+  nativeBuildInputs = [ pkgconfig ] ++ optional doCheck check;
+
+  buildInputs = [ gnutls glib libotr python ]
+    ++ optional enableLibPurple pidgin
+    ++ optional enablePam pam;
 
   configureFlags = [
-    "--gcov=1"
     "--otr=1"
     "--ssl=gnutls"
     "--pidfile=/var/lib/bitlbee/bitlbee.pid"
-  ];
+  ] ++ optional enableLibPurple "--purple=1"
+    ++ optional enablePam "--pam=1";
 
-  buildPhase = ''
-    make install-dev
+  installTargets = [ "install" "install-dev" ];
+
+  doCheck = !enableLibPurple; # Checks fail with libpurple for some reason
+  checkPhase = ''
+    # check flags set VERBOSE=y which breaks the build due overriding a command
+    make check
   '';
 
-  doCheck = true;
+  enableParallelBuilding = true;
 
   meta = {
     description = "IRC instant messaging gateway";
@@ -39,10 +49,10 @@ stdenv.mkDerivation rec {
       Messenger, AIM and ICQ.
     '';
 
-    homepage = http://www.bitlbee.org/;
+    homepage = https://www.bitlbee.org/;
     license = licenses.gpl2Plus;
 
-    maintainers = with maintainers; [ wkennington pSub ];
-    platforms = platforms.gnu;  # arbitrary choice
+    maintainers = with maintainers; [ pSub ];
+    platforms = platforms.gnu ++ platforms.linux;  # arbitrary choice
   };
 }

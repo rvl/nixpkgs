@@ -14,14 +14,14 @@ stdenv.mkDerivation rec {
   buildInputs = [
     python gyp
   ] ++ lib.optional stdenv.isLinux utillinux;
- 
+
   buildPhase = ''
     python ./gyp_bud -f make
     make -C out
   '';
 
   installPhase = ''
-    ensureDir $out/bin
+    mkdir -p $out/bin
     cp out/Release/bud $out/bin
   '';
 
@@ -29,6 +29,8 @@ stdenv.mkDerivation rec {
     description = "A TLS terminating proxy";
     license     = licenses.mit;
     platforms   = platforms.linux;
+    # Does not build on aarch64-linux.
+    badPlatforms = [ "aarch64-linux" ];
     maintainers = with maintainers; [ cstrahan ];
   };
 }

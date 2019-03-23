@@ -6,56 +6,117 @@ let
       inherit php;
       inherit (pkgs) stdenv autoreconfHook fetchurl;
     };
-  isPhpOlder55 = pkgs.lib.versionOlder php.version "5.5";
-  isPhp7 = pkgs.lib.versionAtLeast php.version "7.0";
 
-  apcu = if isPhp7 then apcu51 else apcu40;
+  isPhp73 = pkgs.lib.versionAtLeast php.version "7.3";
 
-  apcu40 = assert !isPhp7; buildPecl {
-    name = "apcu-4.0.7";
-
-    sha256 = "1mhbz56mbnq7dryf2d64l84lj3fpr5ilmg2424glans3wcg772hp";
+  apcu = buildPecl {
+    name = "apcu-5.1.15";
+    sha256 = "0v91fxh3z3amwicqlmz7lvnh4zfl2d7kj2zc8pvlvj2lms8ql5zc";
+    buildInputs = [ (if isPhp73 then pkgs.pcre2 else pkgs.pcre) ];
+    doCheck = true;
+    checkTarget = "test";
+    checkFlagsArray = ["REPORT_EXIT_STATUS=1" "NO_INTERACTION=1"];
+    makeFlags = [ "phpincludedir=$(dev)/include" ];
+    outputs = [ "out" "dev" ];
   };
 
-  apcu51 = assert isPhp7; buildPecl {
-    name = "apcu-5.1.2";
+  apcu_bc = buildPecl {
+    name = "apcu_bc-1.0.4";
+    sha256 = "1raww7alwayg9nk0akly1mdrjypxlwg8safnmaczl773cwpw5cbw";
+    buildInputs = [ apcu (if isPhp73 then pkgs.pcre2 else pkgs.pcre) ];
+  };
 
-    sha256 = "0r5pfbjbmdj46h20jm3iqmy969qd27ajyf0phjhgykv6j0cqjlgd";
+  ast = buildPecl {
+    name = "ast-1.0.0";
+
+    sha256 = "0abccvwif1pih222lbj2z4cf9ibciz48xj35lfixyry163vabkck";
+  };
+
+  couchbase = buildPecl rec {
+    name = "couchbase-${version}";
+    version = "2.6.0";
+
+    buildInputs = [ pkgs.libcouchbase pkgs.zlib igbinary pcs ];
+
+    src = pkgs.fetchFromGitHub {
+      owner = "couchbase";
+      repo = "php-couchbase";
+      rev = "v${version}";
+      sha256 = "0lhcvgd4a0wvxniinxajj48p5krbp44h8932021qq14rv94r4k0b";
+    };
+
+    configureFlags = [ "--with-couchbase" ];
+
+    patches = [
+      (pkgs.writeText "php-couchbase.patch" ''
+        --- a/config.m4
+        +++ b/config.m4
+        @@ -9,7 +9,7 @@ if test "$PHP_COUCHBASE" != "no"; then
+             LIBCOUCHBASE_DIR=$PHP_COUCHBASE
+           else
+             AC_MSG_CHECKING(for libcouchbase in default path)
+        -    for i in /usr/local /usr; do
+        +    for i in ${pkgs.libcouchbase}; do
+               if test -r $i/include/libcouchbase/couchbase.h; then
+                 LIBCOUCHBASE_DIR=$i
+                 AC_MSG_RESULT(found in $i)
+        @@ -154,6 +154,8 @@ COUCHBASE_FILES=" \
+             igbinary_inc_path="$phpincludedir"
+           elif test -f "$phpincludedir/ext/igbinary/igbinary.h"; then
+             igbinary_inc_path="$phpincludedir"
+        +  elif test -f "${igbinary.dev}/include/ext/igbinary/igbinary.h"; then
+        +    igbinary_inc_path="${igbinary.dev}/include"
+           fi
+           if test "$igbinary_inc_path" = ""; then
+             AC_MSG_WARN([Cannot find igbinary.h])
+      '')
+    ];
+  };
+
+  php_excel = buildPecl rec {
+    name = "php_excel-${version}";
+    version = "1.0.2";
+    phpVersion = "php7";
+
+    buildInputs = [ pkgs.libxl ];
+
+    src = pkgs.fetchurl {
+      url = "https://github.com/iliaal/php_excel/releases/download/Excel-1.0.2-PHP7/excel-${version}-${phpVersion}.tgz";
+      sha256 = "0dpvih9gpiyh1ml22zi7hi6kslkilzby00z1p8x248idylldzs2n";
+    };
+
+    configureFlags = [ "--with-excel" "--with-libxl-incdir=${pkgs.libxl}/include_c" "--with-libxl-libdir=${pkgs.libxl}/lib" ];
+  };
+
+  igbinary = buildPecl {
+    name = "igbinary-2.0.8";
+
+    configureFlags = [ "--enable-igbinary" ];
+
+    makeFlags = [ "phpincludedir=$(dev)/include" ];
+
+    outputs = [ "out" "dev" ];
+
+    sha256 = "105nyn703k9p9c7wwy6npq7xd9mczmmlhyn0gn2v2wz0f88spjxs";
+  };
+
+  mailparse = assert !isPhp73; buildPecl {
+    name = "mailparse-3.0.2";
+
+    sha256 = "0fw447ralqihsjnn0fm2hkaj8343cvb90v0d1wfclgz49256y6nq";
   };
 
   imagick = buildPecl {
-    name = "imagick-3.4.3RC1";
-    sha256 = "0siyxpszjz6s095s2g2854bhprjq49rf22v6syjiwvndg1pc9fsh";
-    configureFlags = "--with-imagick=${pkgs.imagemagick.dev}";
+    name = "imagick-3.4.3";
+    sha256 = "0z2nc92xfc5axa9f2dy95rmsd2c81q8cs1pm4anh0a50x9g5ng0z";
+    configureFlags = [ "--with-imagick=${pkgs.imagemagick.dev}" ];
     nativeBuildInputs = [ pkgs.pkgconfig ];
+    buildInputs = [ (if isPhp73 then pkgs.pcre2 else pkgs.pcre) ];
   };
 
-  # No support for PHP 7 yet
-  memcache = assert !isPhp7; buildPecl {
-    name = "memcache-3.0.8";
+  memcached = if isPhp73 then memcached73 else memcached7;
 
-    sha256 = "04c35rj0cvq5ygn2jgmyvqcb0k8d03v4k642b6i37zgv7x15pbic";
-
-    configureFlags = "--with-zlib-dir=${pkgs.zlib.dev}";
-  };
-
-  memcached = if isPhp7 then memcachedPhp7 else memcached22;
-
-  memcached22 = assert !isPhp7; buildPecl {
-    name = "memcached-2.2.0";
-
-    sha256 = "0n4z2mp4rvrbmxq079zdsrhjxjkmhz6mzi7mlcipz02cdl7n1f8p";
-
-    configureFlags = [
-      "--with-zlib-dir=${pkgs.zlib.dev}"
-      "--with-libmemcached-dir=${pkgs.libmemcached}"
-    ];
-
-    buildInputs = with pkgs; [ pkgconfig cyrus_sasl ];
-  };
-
-  # Not released yet
-  memcachedPhp7 = assert isPhp7; buildPecl rec {
+  memcached7 = assert !isPhp73; buildPecl rec {
     name = "memcached-php7";
 
     src = fetchgit {
@@ -69,50 +130,86 @@ let
       "--with-libmemcached-dir=${pkgs.libmemcached}"
     ];
 
-    buildInputs = with pkgs; [ pkgconfig cyrus_sasl ];
+    nativeBuildInputs = [ pkgs.pkgconfig ];
+    buildInputs = with pkgs; [ cyrus_sasl zlib ];
   };
 
-  # No support for PHP 7 yet (and probably never will be)
-  spidermonkey = assert !isPhp7; buildPecl rec {
-    name = "spidermonkey-1.0.0";
+  memcached73 = assert isPhp73; buildPecl rec {
+    name = "memcached-php73";
 
-    sha256 = "1ywrsp90w6rlgq3v2vmvp2zvvykkgqqasab7h9bf3vgvgv3qasbg";
+    src = fetchgit {
+      url = "https://github.com/php-memcached-dev/php-memcached";
+      rev = "6d8f5d524f35e72422b9e81319b96f23af02adcc";
+      sha256 = "1s1d5r3n2h9zys8sqvv52fld6jy21ki7cl0gbbvd9dixqc0lf1jh";
+    };
 
     configureFlags = [
-      "--with-spidermonkey=${pkgs.spidermonkey_1_8_5}"
+      "--with-zlib-dir=${pkgs.zlib.dev}"
+      "--with-libmemcached-dir=${pkgs.libmemcached}"
     ];
 
-    buildInputs = [ pkgs.spidermonkey_1_8_5 ];
+    nativeBuildInputs = [ pkgs.pkgconfig ];
+    buildInputs = with pkgs; [ cyrus_sasl zlib ];
   };
 
-  xdebug = if isPhp7 then xdebug24 else xdebug23;
+  oci8 = buildPecl rec {
+    name = "oci8-2.1.8";
+    sha256 = "1bp6fss2f2qmd5bdk7x22j8vx5qivrdhz4x7csf29vjgj6gvchxy";
+    buildInputs = [ pkgs.re2c pkgs.oracle-instantclient ];
+    configureFlags = [ "--with-oci8=shared,instantclient,${pkgs.oracle-instantclient}/lib" ];
+  };
 
-  xdebug23 = assert !isPhp7; buildPecl {
-    name = "xdebug-2.3.1";
+  pcs = buildPecl rec {
+    name = "pcs-1.3.3";
 
-    sha256 = "0k567i6w7cw14m13s7ip0946pvy5ii16cjwjcinnviw9c24na0xm";
+    sha256 = "0d4p1gpl8gkzdiv860qzxfz250ryf0wmjgyc8qcaaqgkdyh5jy5p";
+  };
+
+  sqlsrv = buildPecl rec {
+    name = "sqlsrv-5.6.0";
+    sha256 = "089iy2lz7p3x9c88zaxrg37m74gh3phxqsldr33nj16rpb5d67bc";
+    buildInputs = [ pkgs.unixODBC ];
+  };
+
+  pdo_sqlsrv = buildPecl rec {
+    name = "pdo_sqlsrv-5.6.0";
+    sha256 = "11g07l6mn804hbcmwqwfd6a4yx5bz54bmk5j2dpm8nil1rq9qb7r";
+    buildInputs = [ pkgs.unixODBC ];
+  };
+
+  xdebug =  if isPhp73 then xdebug73 else xdebug7;
+
+  xdebug7 = assert !isPhp73; buildPecl {
+    name = "xdebug-2.6.1";
+
+    sha256 = "0xxxy6n4lv7ghi9liqx133yskg07lw316vhcds43n1sjq3b93rns";
 
     doCheck = true;
     checkTarget = "test";
   };
 
-  xdebug24 = buildPecl {
-    name = "xdebug-2.4.0RC3";
+  xdebug73 = assert isPhp73; buildPecl {
+    name = "xdebug-2.7.0beta1";
 
-    sha256 = "06ppsihw4cl8kxmywvic6wsm4ps9pvsns2vbab9ivrfyp8b6h5dy";
+    sha256 = "1ghh14z55l4jklinkgjkfhkw53lp2r7lgmyh7q8kdnf7jnpwx84h";
 
     doCheck = true;
     checkTarget = "test";
   };
 
-  # Since PHP 5.5 OPcache is integrated in the core and has to be enabled via --enable-opcache during compilation.
-  zendopcache = assert isPhpOlder55; buildPecl {
-    name = "zendopcache-7.0.3";
+  yaml = buildPecl {
+    name = "yaml-2.0.4";
 
-    sha256 = "0qpfbkfy4wlnsfq4vc4q5wvaia83l89ky33s08gqrcfp3p1adn88";
+    sha256 = "1036zhc5yskdfymyk8jhwc34kvkvsn5kaf50336153v4dqwb11lp";
+
+    configureFlags = [
+      "--with-yaml=${pkgs.libyaml}"
+    ];
+
+    nativeBuildInputs = [ pkgs.pkgconfig ];
   };
 
-  zmq = buildPecl {
+  zmq = assert !isPhp73; buildPecl {
     name = "zmq-1.1.3";
 
     sha256 = "1kj487vllqj9720vlhfsmv32hs2dy2agp6176mav6ldx31c3g4n4";
@@ -121,128 +218,51 @@ let
       "--with-zmq=${pkgs.zeromq}"
     ];
 
-    buildInputs = [ pkgs.pkgconfig ];
+    nativeBuildInputs = [ pkgs.pkgconfig ];
   };
 
-  # No support for PHP 7 and probably never will be
-  xcache = assert !isPhp7; buildPecl rec {
-    name = "xcache-${version}";
-
-    version = "3.2.0";
-
-    src = pkgs.fetchurl {
-      url = "http://xcache.lighttpd.net/pub/Releases/${version}/${name}.tar.bz2";
-      sha256 = "1gbcpw64da9ynjxv70jybwf9y88idm01kb16j87vfagpsp5s64kx";
-    };
-
-    doCheck = true;
-    checkTarget = "test";
-
-    configureFlags = [
-      "--enable-xcache"
-      "--enable-xcache-coverager"
-      "--enable-xcache-optimizer"
-      "--enable-xcache-assembler"
-      "--enable-xcache-encoder"
-      "--enable-xcache-decoder"
-    ];
-
-    buildInputs = [ pkgs.m4 ];
-  };
-
-  #pthreads requires a build of PHP with ZTS (Zend Thread Safety) enabled
-  #--enable-maintainer-zts or --enable-zts on Windows
-  pthreads = if isPhp7 then pthreads31 else pthreads20;
-
-  pthreads20 = assert (pkgs.config.php.zts or false) && (!isPhp7); buildPecl {
-    name = "pthreads-2.0.10";
-    sha256 = "1xlcb1b1g10jd0xhm3c01a06yqpb5qln47pd1k522138324qvpwb";
-  };
-
-  pthreads31 = assert (pkgs.config.php.zts or false) && isPhp7; buildPecl {
+  pthreads = assert (pkgs.config.php.zts or false); buildPecl {
     name = "pthreads-3.1.5";
     sha256 = "1ziap0py3zrc7qj9lw4nzq6wx1viyj8v9y1babchizzan014x6p5";
+    meta.broken = true;
   };
 
-  # No support for PHP 7 yet
-  geoip = assert !isPhp7; buildPecl {
-    name = "geoip-1.1.0";
-    sha256 = "1fcqpsvwba84gqqmwyb5x5xhkazprwkpsnn4sv2gfbsd4svxxil2";
-
-    configureFlags = [ "--with-geoip=${pkgs.geoip}" ];
-
-    buildInputs = [ pkgs.geoip ];
+  redis = buildPecl {
+    name = "redis-4.2.0";
+    sha256 = "105k2rfz97svrqzdhd0a0668mn71c8v0j7hks95832fsvn5dhmbn";
   };
 
-  redis = if isPhp7 then redisPhp7 else redis22;
-
-  redis22 = buildPecl {
-    name = "redis-2.2.7";
-    sha256 = "00n9dpk9ak0bl35sbcd3msr78sijrxdlb727nhg7f2g7swf37rcm";
-  };
-
-  # Not released yet
-  redisPhp7 = assert isPhp7; buildPecl rec {
-    name = "redis-php7";
-
-    src = fetchgit {
-      url = "https://github.com/phpredis/phpredis";
-      rev = "4a37e47d0256581ce2f7a3b15b5bb932add09f36";
-      sha256 = "1qm2ifa0zf95l1g967iiabmja17srpwz73lfci7z13ffdw1ayhfd";
-    };
-  };
-
-  v8 = assert isPhp7; buildPecl rec {
-    version = "0.1.0";
+  v8 = buildPecl rec {
+    version = "0.2.2";
     name = "v8-${version}";
 
-    src = pkgs.fetchurl {
-      url = "https://github.com/pinepain/php-v8/archive/v${version}.tar.gz";
-      sha256 = "18smnxd34b486f5n8j0wk9z7r5x1w84v89mgf76z0bn7gxdxl0xj";
-    };
+    sha256 = "103nys7zkpi1hifqp9miyl0m1mn07xqshw3sapyz365nb35g5q71";
 
-    buildInputs = [ pkgs.v8 ];
-    configureFlags = [ "--with-v8=${pkgs.v8}" ];
-
-    patches = [
-      (builtins.toFile "link-libv8_libbase.patch" ''
-        Index: php-v8/config.m4
-        ===================================================================
-        --- php-v8.orig/config.m4
-        +++ php-v8/config.m4
-        @@ -69,7 +69,7 @@ if test "$PHP_V8" != "no"; then
-               #static_link_extra="libv8_base.a libv8_libbase.a libv8_libplatform.a libv8_snapshot.a"
-               ;;
-             * )
-        -      static_link_extra="libv8_libplatform.a"
-        +      static_link_extra="libv8_libplatform.a libv8_libbase.a"
-               #static_link_extra="libv8_base.a libv8_libbase.a libv8_libplatform.a libv8_snapshot.a"
-               ;;
-           esac
-	''
-      )];
+    buildInputs = [ pkgs.v8_6_x ];
+    configureFlags = [ "--with-v8=${pkgs.v8_6_x}" ];
   };
 
-  v8js = assert isPhp7; buildPecl rec {
-    version = "1.3.2";
+  v8js = assert !isPhp73; buildPecl rec {
+    version = "2.1.0";
     name = "v8js-${version}";
 
-    sha256 = "1x7gxi70zgj3vaxs89nfbnwlqcxrps1inlyfzz66pbzdbfwvc8z8";
+    sha256 = "0g63dyhhicngbgqg34wl91nm3556vzdgkq19gy52gvmqj47rj6rg";
 
-    buildInputs = [ pkgs.v8 ];
-    configureFlags = [ "--with-v8js=${pkgs.v8}" ];
+    buildInputs = [ pkgs.v8_6_x ];
+    configureFlags = [ "--with-v8js=${pkgs.v8_6_x}" ];
   };
 
   composer = pkgs.stdenv.mkDerivation rec {
     name = "composer-${version}";
-    version = "1.2.0";
+    version = "1.8.0";
 
     src = pkgs.fetchurl {
       url = "https://getcomposer.org/download/${version}/composer.phar";
-      sha256 = "15chwfsqmwmhry3bv13a5y4ih1vzb0j8h1dfd49pnzzd8lai706w";
+      sha256 = "19pg9ip2mpyf5cyq34fld7qwl77mshqw3c4nif7sxmpnar6sh089";
     };
 
-    phases = [ "installPhase" ];
+    unpackPhase = ":";
+
     buildInputs = [ pkgs.makeWrapper ];
 
     installPhase = ''
@@ -260,13 +280,100 @@ let
     };
   };
 
+  box = pkgs.stdenv.mkDerivation rec {
+    name = "box-${version}";
+    version = "2.7.5";
+
+    src = pkgs.fetchurl {
+      url = "https://github.com/box-project/box2/releases/download/${version}/box-${version}.phar";
+      sha256 = "1zmxdadrv0i2l8cz7xb38gnfmfyljpsaz2nnkjzqzksdmncbgd18";
+    };
+
+    phases = [ "installPhase" ];
+    buildInputs = [ pkgs.makeWrapper ];
+
+    installPhase = ''
+      mkdir -p $out/bin
+      install -D $src $out/libexec/box/box.phar
+      makeWrapper ${php}/bin/php $out/bin/box \
+        --add-flags "-d phar.readonly=0 $out/libexec/box/box.phar"
+    '';
+
+    meta = with pkgs.lib; {
+      description = "An application for building and managing Phars";
+      license = licenses.mit;
+      homepage = https://box-project.github.io/box2/;
+      maintainers = with maintainers; [ jtojnar ];
+    };
+  };
+
+  php-cs-fixer = pkgs.stdenv.mkDerivation rec {
+    name = "php-cs-fixer-${version}";
+    version = "2.14.0";
+
+    src = pkgs.fetchurl {
+      url = "https://github.com/FriendsOfPHP/PHP-CS-Fixer/releases/download/v${version}/php-cs-fixer.phar";
+      sha256 = "0ap5bhm1h2ldyzlch7bz5n3jj2bpm4wd6bzw51g414pk9vksswc1";
+    };
+
+    phases = [ "installPhase" ];
+    buildInputs = [ pkgs.makeWrapper ];
+
+    installPhase = ''
+      mkdir -p $out/bin
+      install -D $src $out/libexec/php-cs-fixer/php-cs-fixer.phar
+      makeWrapper ${php}/bin/php $out/bin/php-cs-fixer \
+        --add-flags "$out/libexec/php-cs-fixer/php-cs-fixer.phar"
+    '';
+
+    meta = with pkgs.lib; {
+      description = "A tool to automatically fix PHP coding standards issues";
+      license = licenses.mit;
+      homepage = http://cs.sensiolabs.org/;
+      maintainers = with maintainers; [ jtojnar ];
+    };
+  };
+
+  php-parallel-lint = pkgs.stdenv.mkDerivation rec {
+    name = "php-parallel-lint-${version}";
+    version = "1.0.0";
+
+    src = pkgs.fetchFromGitHub {
+      owner = "JakubOnderka";
+      repo = "PHP-Parallel-Lint";
+      rev = "v${version}";
+      sha256 = "16nv8yyk2z3l213dg067l6di4pigg5rd8yswr5xgd18jwbys2vnw";
+    };
+
+    buildInputs = [ pkgs.makeWrapper composer box ];
+
+    buildPhase = ''
+      composer dump-autoload
+      box build
+    '';
+
+    installPhase = ''
+      mkdir -p $out/bin
+      install -D parallel-lint.phar $out/libexec/php-parallel-lint/php-parallel-lint.phar
+      makeWrapper ${php}/bin/php $out/bin/php-parallel-lint \
+        --add-flags "$out/libexec/php-parallel-lint/php-parallel-lint.phar"
+    '';
+
+    meta = with pkgs.lib; {
+      description = "This tool check syntax of PHP files faster than serial check with fancier output";
+      license = licenses.bsd2;
+      homepage = https://github.com/JakubOnderka/PHP-Parallel-Lint;
+      maintainers = with maintainers; [ jtojnar ];
+    };
+  };
+
   phpcs = pkgs.stdenv.mkDerivation rec {
     name = "phpcs-${version}";
-    version = "2.6.0";
+    version = "3.4.0";
 
     src = pkgs.fetchurl {
       url = "https://github.com/squizlabs/PHP_CodeSniffer/releases/download/${version}/phpcs.phar";
-      sha256 = "02mlv44x508rnkzkwiyh7lg2ah7aqyxcq65q9ycj06czm0xdzs41";
+      sha256 = "1d6zf0ab76r5ibb80q46silhy87hrwh50gfvhd0i25wzad7r09mw";
     };
 
     phases = [ "installPhase" ];
@@ -283,7 +390,94 @@ let
       description = "PHP coding standard tool";
       license = licenses.bsd3;
       homepage = https://squizlabs.github.io/PHP_CodeSniffer/;
-      maintainers = with maintainers; [ javaguirre ];
+      maintainers = with maintainers; [ javaguirre etu ];
+    };
+  };
+
+  phpcbf = pkgs.stdenv.mkDerivation rec {
+    name = "phpcbf-${version}";
+    version = "3.4.0";
+
+    src = pkgs.fetchurl {
+      url = "https://github.com/squizlabs/PHP_CodeSniffer/releases/download/${version}/phpcbf.phar";
+      sha256 = "0iscs4hg1msk8198pmkdmbxn1g53gbq3i5qgszs0bi6hz3ng9ag9";
+    };
+
+    phases = [ "installPhase" ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+
+    installPhase = ''
+      mkdir -p $out/bin
+      install -D $src $out/libexec/phpcbf/phpcbf.phar
+      makeWrapper ${php}/bin/php $out/bin/phpcbf \
+        --add-flags "$out/libexec/phpcbf/phpcbf.phar"
+    '';
+
+    meta = with pkgs.lib; {
+      description = "PHP coding standard beautifier and fixer";
+      license = licenses.bsd3;
+      homepage = https://squizlabs.github.io/PHP_CodeSniffer/;
+      maintainers = with maintainers; [ cmcdragonkai etu ];
+    };
+  };
+
+  phpstan = pkgs.stdenv.mkDerivation rec {
+    name = "phpstan-${version}";
+    version = "0.11.3";
+
+    src = pkgs.fetchurl {
+      url = "https://github.com/phpstan/phpstan/releases/download/${version}/phpstan.phar";
+      sha256 = "0wiyrjymnhh0bzf0di27k59j2dprczwxiq19spj9gyfkbfw8fgci";
+    };
+
+    phases = [ "installPhase" ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+
+    installPhase = ''
+      mkdir -p $out/bin
+      install -D $src $out/libexec/phpstan/phpstan.phar
+      makeWrapper ${php}/bin/php $out/bin/phpstan \
+        --add-flags "$out/libexec/phpstan/phpstan.phar"
+    '';
+
+    meta = with pkgs.lib; {
+      description = "PHP Static Analysis Tool";
+      longDescription = ''
+        PHPStan focuses on finding errors in your code without actually running
+        it. It catches whole classes of bugs even before you write tests for the
+        code. It moves PHP closer to compiled languages in the sense that the
+        correctness of each line of the code can be checked before you run the
+        actual line.
+      '';
+      license = licenses.mit;
+      homepage = https://github.com/phpstan/phpstan;
+      maintainers = with maintainers; [ etu ];
+    };
+  };
+
+  psysh = pkgs.stdenv.mkDerivation rec {
+    name = "psysh-${version}";
+    version = "0.9.8";
+
+    src = pkgs.fetchurl {
+      url = "https://github.com/bobthecow/psysh/releases/download/v${version}/psysh-v${version}.tar.gz";
+      sha256 = "0xs9bl0hplkm2hajmm4qca65bm2x7wnx4vbmk0d2jxpvwrgqgnzd";
+    };
+
+    phases = [ "installPhase" ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+
+    installPhase = ''
+      mkdir -p $out/bin
+      tar -xzf $src -C $out/bin
+      wrapProgram $out/bin/psysh
+    '';
+
+    meta = with pkgs.lib; {
+      description = "PsySH is a runtime developer console, interactive debugger and REPL for PHP.";
+      license = licenses.mit;
+      homepage = https://psysh.org/;
+      maintainers = with maintainers; [ caugner ];
     };
   };
 }; in self

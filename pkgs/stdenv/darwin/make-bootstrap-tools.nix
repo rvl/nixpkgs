@@ -3,7 +3,7 @@
 with import pkgspath { inherit system; };
 
 let
-  llvmPackages = llvmPackages_37;
+  llvmPackages = llvmPackages_5;
 in rec {
   coreutils_ = coreutils.override (args: {
     # We want coreutils without ACL support.
@@ -12,8 +12,15 @@ in rec {
     singleBinary = false;
   });
 
+  # We want a version of cctools without LLVM, because the LTO support ends up making
+  # the bootstrap tools huge and isn't really necessary for bootstrap
+  cctools_ = darwin.cctools.override { llvm = null; };
+
   # Avoid debugging larger changes for now.
   bzip2_ = bzip2.override (args: { linkStatic = true; });
+
+  # Avoid messing with libkrb5 and libnghttp2.
+  curl_ = curl.override (args: { gssSupport = false; http2Support = false; });
 
   build = stdenv.mkDerivation {
     name = "stdenv-bootstrap-tools";
@@ -34,7 +41,7 @@ in rec {
 
       cp -rL ${darwin.Libsystem}/include $out
       chmod -R u+w $out/include
-      cp -rL ${icu.dev}/include*             $out/include
+      cp -rL ${darwin.ICU}/include*             $out/include
       cp -rL ${libiconv}/include/*       $out/include
       cp -rL ${gnugrep.pcre.dev}/include/*   $out/include
       mv $out/include $out/include-Libsystem
@@ -60,8 +67,8 @@ in rec {
 
       # This used to be in-nixpkgs, but now is in the bundle
       # because I can't be bothered to make it partially static
-      cp ${curl.bin}/bin/curl $out/bin
-      cp -d ${curl.out}/lib/libcurl*.dylib $out/lib
+      cp ${curl_.bin}/bin/curl $out/bin
+      cp -d ${curl_.out}/lib/libcurl*.dylib $out/lib
       cp -d ${libssh2.out}/lib/libssh*.dylib $out/lib
       cp -d ${openssl.out}/lib/*.dylib $out/lib
 
@@ -70,6 +77,7 @@ in rec {
       cp -d ${gettext}/lib/libintl*.dylib $out/lib
       chmod +x $out/lib/libintl*.dylib
       cp -d ${ncurses.out}/lib/libncurses*.dylib $out/lib
+      cp -d ${libxml2.out}/lib/libxml2*.dylib $out/lib
 
       # Copy what we need of clang
       cp -d ${llvmPackages.clang-unwrapped}/bin/clang $out/bin
@@ -84,14 +92,14 @@ in rec {
       mkdir $out/include
       cp -rd ${llvmPackages.libcxx}/include/c++     $out/include
 
-      cp -d ${icu.out}/lib/libicu*.dylib $out/lib
+      cp -d ${darwin.ICU}/lib/libicu*.dylib $out/lib
       cp -d ${zlib.out}/lib/libz.*       $out/lib
       cp -d ${gmpxx.out}/lib/libgmp*.*   $out/lib
       cp -d ${xz.out}/lib/liblzma*.*     $out/lib
 
       # Copy binutils.
-      for i in as ld ar ranlib nm strip otool install_name_tool dsymutil lipo; do
-        cp ${darwin.cctools}/bin/$i $out/bin
+      for i in as ld ar ranlib nm strip otool install_name_tool lipo; do
+        cp ${cctools_}/bin/$i $out/bin
       done
 
       cp -rd ${pkgs.darwin.CF}/Library $out
@@ -101,9 +109,9 @@ in rec {
       nuke-refs $out/bin/*
 
       rpathify() {
-        local libs=$(${darwin.cctools}/bin/otool -L "$1" | tail -n +2 | grep -o "$NIX_STORE.*-\S*") || true
+        local libs=$(${cctools_}/bin/otool -L "$1" | tail -n +2 | grep -o "$NIX_STORE.*-\S*") || true
         for lib in $libs; do
-          ${darwin.cctools}/bin/install_name_tool -change $lib "@rpath/$(basename $lib)" "$1"
+          ${cctools_}/bin/install_name_tool -change $lib "@rpath/$(basename $lib)" "$1"
         done
       }
 
@@ -175,6 +183,9 @@ in rec {
   unpack = stdenv.mkDerivation (bootstrapFiles // {
     name = "unpack";
 
+    reexportedLibrariesFile =
+      ../../os-specific/darwin/apple-source-releases/Libsystem/reexported_libraries;
+
     # This is by necessity a near-duplicate of unpack-bootstrap-tools.sh. If we refer to it directly,
     # we can't make any changes to it due to our testing stdenv depending on it. Think of this as the
     # unpack-bootstrap-tools.sh for the next round of bootstrap tools.
@@ -206,7 +217,7 @@ in rec {
         $out/lib/system/libsystem_kernel.dylib
 
       # TODO: this logic basically duplicates similar logic in the Libsystem expression. Deduplicate them!
-      libs=$(otool -arch x86_64 -L /usr/lib/libSystem.dylib | tail -n +3 | awk '{ print $1 }')
+      libs=$(cat $reexportedLibrariesFile | grep -v '^#')
 
       for i in $libs; do
         if [ "$i" != "/usr/lib/system/libsystem_kernel.dylib" ] && [ "$i" != "/usr/lib/system/libsystem_c.dylib" ]; then
@@ -301,8 +312,8 @@ in rec {
       export flags="-idirafter ${unpack}/include-Libsystem --sysroot=${unpack} -L${unpack}/lib"
 
       export CPP="clang -E $flags"
-      export CC="clang $flags -Wl,-rpath,${unpack}/lib -Wl,-v"
-      export CXX="clang++ $flags --stdlib=libc++ -lc++abi -isystem${unpack}/include/c++/v1 -Wl,-rpath,${unpack}/lib -Wl,-v"
+      export CC="clang $flags -Wl,-rpath,${unpack}/lib -Wl,-v -Wl,-sdk_version,10.10"
+      export CXX="clang++ $flags --stdlib=libc++ -lc++abi -isystem${unpack}/include/c++/v1 -Wl,-rpath,${unpack}/lib -Wl,-v -Wl,-sdk_version,10.10"
 
       echo '#include <stdio.h>' >> foo.c
       echo '#include <float.h>' >> foo.c

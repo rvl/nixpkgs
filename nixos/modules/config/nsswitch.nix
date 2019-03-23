@@ -6,26 +6,36 @@ with lib;
 
 let
 
-  inherit (config.services.avahi) nssmdns;
-  inherit (config.services.samba) nsswins;
-  ldap = (config.users.ldap.enable && config.users.ldap.nsswitch);
-  sssd = config.services.sssd.enable;
+  # only with nscd up and running we can load NSS modules that are not integrated in NSS
+  canLoadExternalModules = config.services.nscd.enable;
+  myhostname = canLoadExternalModules;
+  mymachines = canLoadExternalModules;
+  nssmdns = canLoadExternalModules && config.services.avahi.nssmdns;
+  nsswins = canLoadExternalModules && config.services.samba.nsswins;
+  ldap = canLoadExternalModules && (config.users.ldap.enable && config.users.ldap.nsswitch);
+  sssd = canLoadExternalModules && config.services.sssd.enable;
+  resolved = canLoadExternalModules && config.services.resolved.enable;
+  googleOsLogin = canLoadExternalModules && config.security.googleOsLogin.enable;
 
-  hostArray = [ "files" "mymachines" ]
-    ++ optionals nssmdns [ "mdns_minimal [!UNAVAIL=return]" ]
-    ++ optionals nsswins [ "wins" ]
+  hostArray = [ "files" ]
+    ++ optional mymachines "mymachines"
+    ++ optional nssmdns "mdns_minimal [NOTFOUND=return]"
+    ++ optional nsswins "wins"
+    ++ optional resolved "resolve [!UNAVAIL=return]"
     ++ [ "dns" ]
-    ++ optionals nssmdns [ "mdns" ]
-    ++ ["myhostname" ];
+    ++ optional nssmdns "mdns"
+    ++ optional myhostname "myhostname";
 
   passwdArray = [ "files" ]
     ++ optional sssd "sss"
-    ++ optionals ldap [ "ldap" ]
-    ++ [ "mymachines" ];
+    ++ optional ldap "ldap"
+    ++ optional mymachines "mymachines"
+    ++ optional googleOsLogin "cache_oslogin oslogin"
+    ++ [ "systemd" ];
 
   shadowArray = [ "files" ]
     ++ optional sssd "sss"
-    ++ optionals ldap [ "ldap" ];
+    ++ optional ldap "ldap";
 
   servicesArray = [ "files" ]
     ++ optional sssd "sss";
@@ -34,6 +44,7 @@ in {
   options = {
 
     # NSS modules.  Hacky!
+    # Only works with nscd!
     system.nssModules = mkOption {
       type = types.listOf types.path;
       internal = true;
@@ -50,9 +61,30 @@ in {
         };
     };
 
+    system.nssHosts = mkOption {
+      type = types.listOf types.str;
+      default = [];
+      example = [ "mdns" ];
+      description = ''
+        List of host entries to configure in <filename>/etc/nsswitch.conf</filename>.
+      '';
+    };
+
   };
 
   config = {
+    assertions = [
+      {
+        # generic catch if the NixOS module adding to nssModules does not prevent it with specific message.
+        assertion = config.system.nssModules.path != "" -> canLoadExternalModules;
+        message = "Loading NSS modules from path ${config.system.nssModules.path} requires nscd being enabled.";
+      }
+      {
+        # resolved does not need to add to nssModules, therefore needs an extra assertion
+        assertion = resolved -> canLoadExternalModules;
+        message = "Loading systemd-resolved's nss-resolve NSS module requires nscd being enabled.";
+      }
+    ];
 
     # Name Service Switch configuration file.  Required by the C
     # library.  !!! Factor out the mdns stuff.  The avahi module
@@ -62,7 +94,7 @@ in {
       group:     ${concatStringsSep " " passwdArray}
       shadow:    ${concatStringsSep " " shadowArray}
 
-      hosts:     ${concatStringsSep " " hostArray}
+      hosts:     ${concatStringsSep " " config.system.nssHosts}
       networks:  files
 
       ethers:    files
@@ -71,12 +103,14 @@ in {
       rpc:       files
     '';
 
+    system.nssHosts = hostArray;
+
     # Systemd provides nss-myhostname to ensure that our hostname
     # always resolves to a valid IP address.  It returns all locally
     # configured IP addresses, or ::1 and 127.0.0.2 as
     # fallbacks. Systemd also provides nss-mymachines to return IP
     # addresses of local containers.
-    system.nssModules = [ config.systemd.package.out ];
-
+    system.nssModules = (optionals canLoadExternalModules [ config.systemd.package.out ])
+      ++ optional googleOsLogin pkgs.google-compute-engine-oslogin.out;
   };
 }

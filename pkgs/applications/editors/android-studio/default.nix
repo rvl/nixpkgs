@@ -1,126 +1,57 @@
-{ bash
-, buildFHSUserEnv
-, coreutils
-, fetchurl
-, findutils
-, file
-, git
-, glxinfo
-, gnugrep
-, gnutar
-, gzip
-, fontconfig
-, freetype
-, libpulseaudio
-, libX11
-, libXext
-, libXi
-, libXrandr
-, libXrender
-, libXtst
-, makeWrapper
-, pciutils
-, pkgsi686Linux
-, setxkbmap
-, stdenv
-, unzip
-, which
-, writeTextFile
-, xkeyboard_config
-, zlib
-, fontsConf
-}:
+{ stdenv, callPackage, makeFontsConf, gnome2 }:
 
 let
-
-  version = "2.2.3.0";
-  build = "145.3537739";
-
-  androidStudio = stdenv.mkDerivation {
-    name = "android-studio";
-    buildInputs = [
-      makeWrapper
-      unzip
-    ];
-    installPhase = ''
-      cp -r . $out
-      wrapProgram $out/bin/studio.sh \
-        --set PATH "${stdenv.lib.makeBinPath [
-
-          # Checked in studio.sh
-          coreutils
-          findutils
-          gnugrep
-          which
-
-          # For Android emulator
-          file
-          glxinfo
-          pciutils
-          setxkbmap
-
-          # Used during setup wizard
-          gnutar
-          gzip
-
-          # Runtime stuff
-          git
-
-        ]}" \
-        --prefix LD_LIBRARY_PATH : "${stdenv.lib.makeLibraryPath [
-
-          # Crash at startup without these
-          fontconfig
-          freetype
-          libXext
-          libXi
-          libXrender
-          libXtst
-
-          # Gradle wants libstdc++.so.6
-          stdenv.cc.cc.lib
-          # mksdcard wants 32 bit libstdc++.so.6
-          pkgsi686Linux.stdenv.cc.cc.lib
-
-          # aapt wants libz.so.1
-          zlib
-          pkgsi686Linux.zlib
-          # Support multiple monitors
-          libXrandr
-
-          # For Android emulator
-          libpulseaudio
-          libX11
-
-        ]}" \
-        --set QT_XKB_CONFIG_ROOT "${xkeyboard_config}/share/X11/xkb" \
-        --set FONTCONFIG_FILE ${fontsConf}
-    '';
-    src = fetchurl {
-      url = "https://dl.google.com/dl/android/studio/ide-zips/${version}/android-studio-ide-${build}-linux.zip";
-      sha256 = "10fmffkvvbnmgjxb4rq7rjwnn16jp5phw6div4n7hh2ad6spf8wq";
+  mkStudio = opts: callPackage (import ./common.nix opts) {
+    fontsConf = makeFontsConf {
+      fontDirectories = [];
     };
-    meta = {
-      description = "The Official IDE for Android";
-      homepage = https://developer.android.com/studio/index.html;
-      license = stdenv.lib.licenses.asl20;
-      platforms = [ "x86_64-linux" ];
-    };
+    inherit (gnome2) GConf gnome_vfs;
   };
-
-  # Android Studio downloads prebuilt binaries as part of the SDK. These tools
-  # (e.g. `mksdcard`) have `/lib/ld-linux.so.2` set as the interpreter. An FHS
-  # environment is used as a work around for that.
-  fhsEnv = buildFHSUserEnv {
-    name = "android-studio-fhs-env";
+  stableVersion = {
+    version = "3.3.2.0"; # "Android Studio 3.3.2"
+    build = "182.5314842";
+    sha256Hash = "0smh3d3v8n0isxg7fkls20622gp52f58i2b6wa4a0g8wnvmd6mw2";
   };
-
-in writeTextFile {
-  name = "android-studio-${version}";
-  destination = "/bin/android-studio";
-  executable = true;
-  text = ''
-    #!${bash}/bin/bash
-    ${fhsEnv}/bin/android-studio-fhs-env ${androidStudio}/bin/studio.sh
+  betaVersion = {
+    version = "3.4.0.16"; # "Android Studio 3.4 RC 2"
+    build = "183.5370308";
+    sha256Hash = "0d7d6n7n1zzhxpdykbwwbrw139mqxkp20d4l0570pk7975p1s2q9";
+  };
+  latestVersion = { # canary & dev
+    version = "3.5.0.6"; # "Android Studio 3.5 Canary 7"
+    build = "183.5346365";
+    sha256Hash = "0dfkhzsxabrv8cwgyv3gicpglgpccmi1ig5shlhp6a006awgfyj0";
+  };
+in rec {
+  # Old alias (TODO @primeos: Remove after 19.03 is branched off):
+  preview = throw ''
+    The attributes "android-studio-preview" and "androidStudioPackages.preview"
+    are now deprecated and will be removed soon, please use
+    "androidStudioPackages.beta" instead. This attribute corresponds to the
+    beta channel, if you want the latest release you can use
+    "androidStudioPackages.dev" or "androidStudioPackages.canary" instead
+    (currently, there is no difference between both channels).
   '';
+
+  # Attributes are named by their corresponding release channels
+
+  stable = mkStudio (stableVersion // {
+    channel = "stable";
+    pname = "android-studio";
+  });
+
+  beta = mkStudio (betaVersion // {
+    channel = "beta";
+    pname = "android-studio-beta";
+  });
+
+  dev = mkStudio (latestVersion // {
+    channel = "dev";
+    pname = "android-studio-dev";
+  });
+
+  canary = mkStudio (latestVersion // {
+    channel = "canary";
+    pname = "android-studio-canary";
+  });
 }

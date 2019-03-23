@@ -1,39 +1,24 @@
-{ stdenv, buildOcaml, fetchurl, ocaml, findlib, ocamlbuild, opam, uucp, uutf, cmdliner }:
+{ stdenv, fetchurl, ocaml, findlib, ocamlbuild, topkg, uchar, uucp, uutf, cmdliner }:
 
 let
   pname = "uuseg";
   webpage = "http://erratique.ch/software/${pname}";
 in
 
-buildOcaml rec {
+stdenv.mkDerivation rec {
 
-  minimumSupportedOcamlVersion = "4.01";
-
-  name = pname;
-  version = "0.9.0";
+  name = "ocaml${ocaml.version}-${pname}-${version}";
+  version = "11.0.0";
 
   src = fetchurl {
     url = "${webpage}/releases/${pname}-${version}.tbz";
-    sha256 = "00n4zi8dyw2yzi4nr2agcrr33b0q4dr9mgnkczipf4c0gm5cm50h";
+    sha256 = "17mn8p9pn340kmvfgnl1m64zbpy60r6svkwsdn2lcg3yi2jlbrwp";
   };
 
-  buildInputs = [ ocaml findlib ocamlbuild opam cmdliner ];
-  propagatedBuildInputs = [ uucp uutf ];
+  buildInputs = [ ocaml findlib ocamlbuild cmdliner topkg uutf ];
+  propagatedBuildInputs = [ uucp uchar ];
 
-  createFindlibDestdir = true;
-
-  unpackCmd = "tar xjf $src";
-
-  buildPhase = ''
-    ocaml pkg/build.ml \
-      native=true native-dynlink=true \
-      uutf=true cmdliner=true
-  '';
-
-  installPhase = ''
-    opam-installer --script --prefix=$out ${pname}.install | sh
-    ln -s $out/lib/${pname} $out/lib/ocaml/${ocaml.version}/site-lib/${pname}
-  '';
+  inherit (topkg) buildPhase installPhase;
 
   meta = with stdenv.lib; {
     description = "An OCaml library for segmenting Unicode text";

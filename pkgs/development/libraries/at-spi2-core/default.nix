@@ -1,32 +1,51 @@
-{ stdenv, fetchurl, python, pkgconfig, popt, intltool, dbus_glib
-, libX11, xextproto, libSM, libICE, libXtst, libXi, gobjectIntrospection }:
+{ stdenv
+, fetchurl
+
+, meson
+, ninja
+, pkgconfig
+, gobject-introspection
+
+, dbus
+, glib
+, libX11
+, libXtst # at-spi2-core can be build without X support, but due it is a client-side library, GUI-less usage is a very rare case
+, libXi
+, fixDarwinDylibNames
+
+, gnome3 # To pass updateScript
+}:
 
 stdenv.mkDerivation rec {
-  versionMajor = "2.22";
-  versionMinor = "0";
-  moduleName   = "at-spi2-core";
-  name = "${moduleName}-${versionMajor}.${versionMinor}";
+  name = "${pname}-${version}";
+  pname = "at-spi2-core";
+  version = "2.30.1";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/${moduleName}/${versionMajor}/${name}.tar.xz";
-    sha256 = "415ea3af21318308798e098be8b3a17b2f0cf2fe16cecde5ad840cf4e0f2c80a";
+    url = "mirror://gnome/sources/${pname}/${stdenv.lib.versions.majorMinor version}/${name}.tar.xz";
+    sha256 = "0j6aa071lnhpgv9h8l0pqimk8pc152gqpcbmq8djlj7h3f7iyvw5";
   };
 
   outputs = [ "out" "dev" ];
 
-  buildInputs = [
-    python pkgconfig popt  intltool dbus_glib
-    libX11 xextproto libSM libICE libXtst libXi
-    gobjectIntrospection
-  ];
+  nativeBuildInputs = [ meson ninja pkgconfig gobject-introspection ]
+    # Fixup rpaths because of meson, remove with meson-0.47
+    ++ stdenv.lib.optional stdenv.isDarwin fixDarwinDylibNames;
+  buildInputs = [ dbus glib libX11 libXtst libXi ];
 
-  # ToDo: on non-NixOS we create a symlink from there?
-  configureFlags = "--with-dbus-daemondir=/run/current-system/sw/bin/";
+  doCheck = false; # fails with "AT-SPI: Couldn't connect to accessibility bus. Is at-spi-bus-launcher running?"
 
-  NIX_LDFLAGS = with stdenv; lib.optionalString isDarwin "-lintl";
+  passthru = {
+    updateScript = gnome3.updateScript {
+      packageName = pname;
+    };
+  };
 
   meta = with stdenv.lib; {
+    description = "Assistive Technology Service Provider Interface protocol definitions and daemon for D-Bus";
+    homepage = https://gitlab.gnome.org/GNOME/at-spi2-core;
+    license = licenses.lgpl2Plus; # NOTE: 2018-06-06: Please check the license when upstream sorts-out licensing: https://gitlab.gnome.org/GNOME/at-spi2-core/issues/2
+    maintainers = with maintainers; [ jtojnar gnome3.maintainers ];
     platforms = platforms.unix;
   };
 }
-

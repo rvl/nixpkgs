@@ -16,13 +16,18 @@ stdenv.mkDerivation rec {
     ./log-stdout.patch
   ];
 
+  # Read all configuration from /run/longview
   postPatch = ''
-    substituteInPlace Linode/Longview/Util.pm --replace /var/run/longview.pid /run/longview.pid
+    substituteInPlace Linode/Longview/Util.pm \
+        --replace /var/run/longview.pid /run/longview/longview.pid \
+        --replace /etc/linode /run/longview
+    substituteInPlace Linode/Longview.pl \
+        --replace /etc/linode /run/longview
   '';
 
   buildInputs = [ perl makeWrapper glibc ]
     ++ (with perlPackages; [
-      LWPUserAgent
+      LWP
       LWPProtocolHttps
       MozillaCA
       CryptSSLeay
@@ -58,6 +63,6 @@ stdenv.mkDerivation rec {
     license = licenses.gpl2Plus;
     maintainers = [ maintainers.rvl ];
     inherit version;
-    platforms = platforms.linux;
+    platforms = [ "x86_64-linux" "i686-linux" ];
   };
 }

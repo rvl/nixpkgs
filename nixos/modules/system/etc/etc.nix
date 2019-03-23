@@ -20,8 +20,8 @@ let
     sources = map (x: x.source) etc';
     targets = map (x: x.target) etc';
     modes = map (x: x.mode) etc';
-    uids  = map (x: x.uid) etc';
-    gids  = map (x: x.gid) etc';
+    users  = map (x: x.user) etc';
+    groups  = map (x: x.group) etc';
   };
 
 in
@@ -108,6 +108,26 @@ in
               '';
             };
 
+            user = mkOption {
+              default = "+${toString config.uid}";
+              type = types.str;
+              description = ''
+                User name of created file.
+                Only takes affect when the file is copied (that is, the mode is not 'symlink').
+                Changing this option takes precedence over <literal>uid</literal>.
+              '';
+            };
+
+            group = mkOption {
+              default = "+${toString config.gid}";
+              type = types.str;
+              description = ''
+                Group name of created file.
+                Only takes affect when the file is copied (that is, the mode is not 'symlink').
+                Changing this option takes precedence over <literal>gid</literal>.
+              '';
+            };
+
           };
 
           config = {
@@ -130,11 +150,11 @@ in
 
     system.build.etc = etc;
 
-    system.activationScripts.etc = stringAfter [ "stdio" ]
+    system.activationScripts.etc = stringAfter [ "users" "groups" ]
       ''
         # Set up the statically computed bits of /etc.
         echo "setting up /etc..."
-        ${pkgs.perl}/bin/perl -I${pkgs.perlPackages.FileSlurp}/lib/perl5/site_perl ${./setup-etc.pl} ${etc}/etc
+        ${pkgs.perl}/bin/perl -I${pkgs.perlPackages.FileSlurp}/${pkgs.perl.libPrefix} ${./setup-etc.pl} ${etc}/etc
       '';
 
   };

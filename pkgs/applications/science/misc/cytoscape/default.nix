@@ -2,11 +2,11 @@
 
 stdenv.mkDerivation rec {
   name = "cytoscape-${version}";
-  version = "3.4.0";
+  version = "3.7.1";
 
   src = fetchurl {
-    url = "http://chianti.ucsd.edu/${name}/${name}.tar.gz";
-    sha256 = "065fsqa01w7j85nljwwc0677lfw112xphnyn1c4hb04166q082p2";
+    url = "https://github.com/cytoscape/cytoscape/releases/download/${version}/${name}.tar.gz";
+    sha256 = "1mhsngbwbgdwl70wj7850zg94534lasihwv2ryifardm35mkh48k";
   };
 
   buildInputs = [jre makeWrapper];
@@ -17,7 +17,7 @@ stdenv.mkDerivation rec {
 
     ln -s $out/share/cytoscape.sh $out/bin/cytoscape
 
-    wrapProgram $out/share/gen_vmoptions.sh \
+    wrapProgram $out/share/cytoscape.sh \
       --set JAVA_HOME "${jre}" \
       --set JAVA  "${jre}/bin/java"
 
@@ -25,7 +25,7 @@ stdenv.mkDerivation rec {
   '';
 
   meta = {
-    homepage = "http://www.cytoscape.org";
+    homepage = http://www.cytoscape.org;
     description = "A general platform for complex network analysis and visualization";
     license = stdenv.lib.licenses.lgpl21;
     maintainers = [stdenv.lib.maintainers.mimadrid];

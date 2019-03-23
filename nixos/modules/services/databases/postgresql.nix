@@ -24,19 +24,16 @@ let
 
   postgresql = postgresqlAndPlugins cfg.package;
 
-  flags = optional cfg.enableTCPIP "-i";
-
   # The main PostgreSQL configuration file.
   configFile = pkgs.writeText "postgresql.conf"
     ''
       hba_file = '${pkgs.writeText "pg_hba.conf" cfg.authentication}'
       ident_file = '${pkgs.writeText "pg_ident.conf" cfg.identMap}'
       log_destination = 'stderr'
+      listen_addresses = '${if cfg.enableTCPIP then "*" else "localhost"}'
       port = ${toString cfg.port}
       ${cfg.extraConfig}
     '';
-
-  pre84 = versionOlder (builtins.parseDrvName postgresql.name).version "8.4";
 
 in
 
@@ -58,7 +55,7 @@ in
 
       package = mkOption {
         type = types.package;
-        example = literalExample "pkgs.postgresql92";
+        example = literalExample "pkgs.postgresql_9_6";
         description = ''
           PostgreSQL package to use.
         '';
@@ -74,7 +71,7 @@ in
 
       dataDir = mkOption {
         type = types.path;
-        default = "/var/db/postgresql";
+        example = "/var/lib/postgresql/9.6";
         description = ''
           Data directory for PostgreSQL.
         '';
@@ -121,7 +118,7 @@ in
       extraPlugins = mkOption {
         type = types.listOf types.path;
         default = [];
-        example = literalExample "[ (pkgs.postgis.override { postgresql = pkgs.postgresql94; }).v_2_1_4 ]";
+        example = literalExample "[ (pkgs.postgis.override { postgresql = pkgs.postgresql_9_4; }) ]";
         description = ''
           When this list contains elements a new store path is created.
           PostgreSQL and the elements are symlinked into it. Then pg_config,
@@ -147,6 +144,16 @@ in
           Contents of the <filename>recovery.conf</filename> file.
         '';
       };
+      superUser = mkOption {
+        type = types.str;
+        default= if versionAtLeast config.system.stateVersion "17.09" then "postgres" else "root";
+        internal = true;
+        description = ''
+          NixOS traditionally used 'root' as superuser, most other distros use 'postgres'.
+          From 17.09 we also try to follow this standard. Internal since changing this value
+          would lead to breakage while setting up databases.
+        '';
+        };
     };
 
   };
@@ -160,24 +167,32 @@ in
       # Note: when changing the default, make it conditional on
       # ‘system.stateVersion’ to maintain compatibility with existing
       # systems!
-      mkDefault (if versionAtLeast config.system.stateVersion "16.03" then pkgs.postgresql95 else pkgs.postgresql94);
+      mkDefault (if versionAtLeast config.system.stateVersion "17.09" then pkgs.postgresql_9_6
+            else if versionAtLeast config.system.stateVersion "16.03" then pkgs.postgresql_9_5
+            else pkgs.postgresql_9_4);
+
+    services.postgresql.dataDir =
+      mkDefault (if versionAtLeast config.system.stateVersion "17.09" then "/var/lib/postgresql/${config.services.postgresql.package.psqlSchema}"
+                 else "/var/db/postgresql");
 
     services.postgresql.authentication = mkAfter
       ''
         # Generated file; do not edit!
-        local all all              ident ${optionalString pre84 "sameuser"}
+        local all all              ident
         host  all all 127.0.0.1/32 md5
         host  all all ::1/128      md5
       '';
 
-    users.extraUsers.postgres =
+    users.users.postgres =
       { name = "postgres";
         uid = config.ids.uids.postgres;
         group = "postgres";
         description = "PostgreSQL server user";
+        home = "${cfg.dataDir}";
+        useDefaultShell = true;
       };
 
-    users.extraGroups.postgres.gid = config.ids.gids.postgres;
+    users.groups.postgres.gid = config.ids.gids.postgres;
 
     environment.systemPackages = [ postgresql ];
 
@@ -205,7 +220,7 @@ in
           ''
             # Initialise the database.
             if ! test -e ${cfg.dataDir}/PG_VERSION; then
-              initdb -U root
+              initdb -U ${cfg.superUser}
               # See postStart!
               touch "${cfg.dataDir}/.first_startup"
             fi
@@ -215,7 +230,7 @@ in
                 "${cfg.dataDir}/recovery.conf"
             ''}
 
-             exec postgres ${toString flags}
+             exec postgres
           '';
 
         serviceConfig =
@@ -223,6 +238,9 @@ in
             User = "postgres";
             Group = "postgres";
             PermissionsStartOnly = true;
+            Type = if lib.versionAtLeast cfg.package.version "9.6"
+                   then "notify"
+                   else "simple";
 
             # Shut down Postgres using SIGINT ("Fast Shutdown mode").  See
             # http://www.postgresql.org/docs/current/static/server-shutdown.html
@@ -237,14 +255,14 @@ in
         # Wait for PostgreSQL to be ready to accept connections.
         postStart =
           ''
-            while ! psql --port=${toString cfg.port} postgres -c "" 2> /dev/null; do
+            while ! ${pkgs.sudo}/bin/sudo -u ${cfg.superUser} psql --port=${toString cfg.port} -d postgres -c "" 2> /dev/null; do
                 if ! kill -0 "$MAINPID"; then exit 1; fi
                 sleep 0.1
             done
 
             if test -e "${cfg.dataDir}/.first_startup"; then
               ${optionalString (cfg.initialScript != null) ''
-                psql -f "${cfg.initialScript}" --port=${toString cfg.port} postgres
+                ${pkgs.sudo}/bin/sudo -u ${cfg.superUser} psql -f "${cfg.initialScript}" --port=${toString cfg.port} -d postgres
               ''}
               rm -f "${cfg.dataDir}/.first_startup"
             fi
@@ -256,5 +274,5 @@ in
   };
 
   meta.doc = ./postgresql.xml;
-
+  meta.maintainers = with lib.maintainers; [ thoughtpolice ];
 }

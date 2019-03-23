@@ -1,22 +1,29 @@
-{ stdenv, fetchurl, cmake, boost, SDL2, python2, freetype, openal, libogg, libvorbis, zlib, libpng, libtiff, libjpeg, mesa, glew, doxygen
-, libxslt, makeWrapper }:
+{ stdenv, fetchFromGitHub, fetchpatch, cmake, doxygen, graphviz, makeWrapper
+, boost, SDL2, python2, freetype, openal, libogg, libvorbis, zlib, libpng, libtiff
+, libjpeg, libGLU_combined, glew, libxslt
+}:
 
 stdenv.mkDerivation rec {
-  version = "0.4.6";
+  version = "0.4.8";
   name = "freeorion-${version}";
 
-  src = fetchurl {
-    url = "https://github.com/freeorion/freeorion/releases/download/v0.4.6/FreeOrion_v0.4.6_2016-09-16.49f9123_Source.tar.gz";
-    sha256 = "04g3x1cymf7mnmc2f5mm3c2r5izjmy7z3pvk2ykzz8f8b2kz6gry";
+  src = fetchFromGitHub {
+    owner  = "freeorion";
+    repo   = "freeorion";
+    rev = "v${version}";
+    sha256 = "1lj1q2ljjgbbiqxb53wdrrcz0zxxr3vv9jqrhbzvfsss7q808jfw";
   };
 
-  buildInputs = [ cmake boost SDL2 python2 freetype openal libogg libvorbis zlib libpng libtiff libjpeg mesa glew doxygen makeWrapper ];
+  buildInputs = [
+	(boost.override { enablePython = true; })
+    SDL2 python2 freetype openal libogg libvorbis zlib libpng libtiff libjpeg libGLU_combined glew ];
 
-  patches = [
-    ./fix_rpaths.patch
-  ];
+  nativeBuildInputs = [ cmake doxygen graphviz makeWrapper ];
 
   enableParallelBuilding = true;
+
+  patches = [
+  ];
 
   postInstall = ''
     mkdir -p $out/fixpaths
@@ -26,17 +33,20 @@ stdenv.mkDerivation rec {
       --subst-var-by out "$out/"
     substitute ${./fix-paths.sh} $out/fixpaths/fix-paths \
       --subst-var-by libxsltBin ${libxslt.bin} \
+      --subst-var-by shell ${stdenv.shell} \
       --subst-var out
     chmod +x $out/fixpaths/fix-paths
 
     wrapProgram $out/bin/freeorion \
-      --run $out/fixpaths/fix-paths
+      --run $out/fixpaths/fix-paths \
+      --prefix LD_LIBRARY_PATH : $out/lib/freeorion
   '';
 
   meta = with stdenv.lib; {
     description = "A free, open source, turn-based space empire and galactic conquest (4X) computer game";
-    homepage = "http://www.freeorion.org";
-    license = [ licenses.gpl2 licenses.cc-by-sa-30 ];
+    homepage = http://www.freeorion.org;
+    license = with licenses; [ gpl2 cc-by-sa-30 ];
     platforms = platforms.linux;
+    maintainers = with maintainers; [ tex ];
   };
 }

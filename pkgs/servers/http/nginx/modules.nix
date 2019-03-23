@@ -1,102 +1,63 @@
-{ fetchFromGitHub, pkgs }:
+{ fetchFromGitHub, lib, pkgs }:
 
 {
   brotli = {
-    src = fetchFromGitHub {
-      owner = "google";
+    src = let gitsrc = pkgs.fetchFromGitHub {
+      owner = "eustas";
       repo = "ngx_brotli";
-      rev = "788615eab7c5e0a984278113c55248305620df14";
-      sha256 = "02514bbjdhm9m38vljdh626d3c1783jxsxawv5c6bzblwmb8xgvf";
-    };
-    inputs = [ pkgs.libbrotli ];
-  };
-
-  rtmp = {
-    src = fetchFromGitHub {
-      owner = "arut";
-      repo = "nginx-rtmp-module";
-      rev = "v1.1.9";
-      sha256 = "19vqw1ba01m2wlncpycw9vj5n8741pv36hd3dy9jjdxwlzdjzyi5";
-    };
+      rev = "v0.1.2";
+      sha256 = "19r9igxm4hrzrhxajlxw2ccq0057h8ipkfiif725x0xqbxjskl6c";
+    }; in pkgs.runCommandNoCC "ngx_brotli-src" {} ''
+      cp -a ${gitsrc} $out
+      substituteInPlace $out/config \
+        --replace /usr/local ${lib.getDev pkgs.brotli}
+    '';
+    inputs = [ pkgs.brotli ];
   };
 
   dav = {
     src = fetchFromGitHub {
       owner = "arut";
       repo = "nginx-dav-ext-module";
-      rev = "v0.0.3";
-      sha256 = "1qck8jclxddncjad8yv911s9z7lrd58bp96jf13m0iqk54xghx91";
+      rev = "v0.1.0";
+      sha256 = "1ifahd69vz715g3zim618jbmxb7kcmzykc696grskxm0svpy294k";
     };
     inputs = [ pkgs.expat ];
-  };
-
-  syslog = rec {
-    src = fetchFromGitHub {
-      owner = "yaoweibin";
-      repo = "nginx_syslog_patch";
-      rev = "3ca5ba65541637f74467038aa032e2586321d0cb";
-      sha256 = "0y8dxkx8m1jw4v5zsvw1gfah9vh3ryq0hfmrcbjzcmwp5b5lb1i8";
-    };
-    preConfigure = ''
-      patch -p1 < "${src}/syslog-1.7.0.patch"
-    '';
-  };
-
-  moreheaders = {
-    src = fetchFromGitHub {
-      owner = "openresty";
-      repo = "headers-more-nginx-module";
-      rev = "v0.26";
-      sha256 = "01wkqhk8mk8jgmzi7jbzmg5kamffx3lmhj5yfwryvnvs6xqs74wn";
-    };
-  };
-
-  modsecurity = {
-    src = "${pkgs.modsecurity_standalone.nginx}/nginx/modsecurity";
-    inputs = [ pkgs.curl pkgs.apr pkgs.aprutil pkgs.apacheHttpd pkgs.yajl ];
-    preConfigure = ''
-      export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -I${pkgs.aprutil.dev}/include/apr-1 -I${pkgs.apacheHttpd.dev}/include -I${pkgs.apr.dev}/include/apr-1 -I${pkgs.yajl}/include"
-    '';
-  };
-
-  echo = {
-    src = fetchFromGitHub {
-      owner = "openresty";
-      repo = "echo-nginx-module";
-      rev = "v0.57";
-      sha256 = "1q0f0zprcn0ypl2qh964cq186l3f40p0z7n7x22m8cxj367vf000";
-    };
   };
 
   develkit = {
     src = fetchFromGitHub {
       owner = "simpl";
       repo = "ngx_devel_kit";
-      rev = "v0.3.0";
-      sha256 = "1br1997zqsjcb1aqm6h6xmi5yx7akxk0qvk8wxc0fnvmyhgzxgx0";
+      rev = "v0.3.1rc1";
+      sha256 = "00vqvpx67qra2hr85hkvj1dha4h7x7v9sblw7w1df11nq1gzsdbb";
     };
   };
 
-  lua = {
+  echo = {
     src = fetchFromGitHub {
       owner = "openresty";
-      repo = "lua-nginx-module";
-      rev = "v0.10.5";
-      sha256 = "0wz5j4kqa6hk7ar42bkxp0hd74psjy6sfsldh1a6p93z349iz4v5";
+      repo = "echo-nginx-module";
+      rev = "v0.61";
+      sha256 = "0brjhhphi94ms4gia7za0mfx0png4jbhvq6j0nzjwp537iyiy23k";
     };
-    inputs = [ pkgs.luajit ];
-    preConfigure = ''
-      export LUAJIT_LIB="${pkgs.luajit}/lib"
-      export LUAJIT_INC="${pkgs.luajit}/include/luajit-2.0"
-    '';
   };
 
-  set-misc = {
+  fancyindex = {
     src = fetchFromGitHub {
-      owner = "openresty";
-      repo = "set-misc-nginx-module";
-      rev = "v0.28";
-      sha256 = "1vixj60q0liri7k5ax85grj7q9vvgybkx421bwphbhai5xrjip96";
+      owner = "aperezdc";
+      repo = "ngx-fancyindex";
+      rev = "v0.4.3";
+      sha256 = "12xdx6a76sfrq0yciylvyjlnvyczszpadn31jqya8c2dzdkyyx7f";
+    };
+  };
+
+  fastcgi-cache-purge = {
+    src = fetchFromGitHub {
+      owner  = "FRiCKLE";
+      repo   = "ngx_cache_purge";
+      rev    = "2.3";
+      sha256 = "0ib2jrbjwrhvmihhnzkp4w87fxssbbmmmj6lfdwpm6ni8p9g60dw";
     };
   };
 
@@ -109,42 +70,86 @@
     };
   };
 
-  pam = {
+  ipscrub = {
     src = fetchFromGitHub {
-      owner = "stogh";
-      repo = "ngx_http_auth_pam_module";
-      rev = "v1.4";
-      sha256 = "068zwyrc1dji55rlaj2kx6n0v2n5rpj7nz26ipvz26ida712md35";
-    };
-    inputs = [ pkgs.pam ];
+      owner = "masonicboom";
+      repo = "ipscrub";
+      rev = "v1.0.1";
+      sha256 = "0qcx15c8wbsmyz2hkmyy5yd7qn1n84kx9amaxnfxkpqi05vzm1zz";
+    } + "/ipscrub";
+    inputs = [ pkgs.libbsd ];
   };
 
-  statsd = {
+  lua = {
     src = fetchFromGitHub {
-      owner = "apcera";
-      repo = "nginx-statsd";
-      rev = "2147d61dc31dd4865604be92349e6192a905d21a";
-      sha256 = "19s3kwjgf51jkwknh7cfi82p6kifl8rl146wxc3ijds12776ilsv";
+      owner = "openresty";
+      repo = "lua-nginx-module";
+      rev = "v0.10.13";
+      sha256 = "19mpc76lfhyyvkfs2n08b4rc9cf2v7rm8fskkf60hsdcf6qna822";
+    };
+    inputs = [ pkgs.luajit ];
+    preConfigure = ''
+      export LUAJIT_LIB="${pkgs.luajit}/lib"
+      export LUAJIT_INC="${pkgs.luajit}/include/luajit-2.0"
+    '';
+  };
+
+  lua-upstream = {
+    src = fetchFromGitHub {
+      owner = "openresty";
+      repo = "lua-upstream-nginx-module";
+      rev = "v0.07";
+      sha256 = "1gqccg8airli3i9103zv1zfwbjm27h235qjabfbfqk503rjamkpk";
+    };
+    inputs = [ pkgs.luajit ];
+  };
+
+  modsecurity = {
+    src = "${pkgs.modsecurity_standalone.nginx}/nginx/modsecurity";
+    inputs = [ pkgs.curl pkgs.apr pkgs.aprutil pkgs.apacheHttpd pkgs.yajl ];
+    preConfigure = ''
+      export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -I${pkgs.aprutil.dev}/include/apr-1 -I${pkgs.apacheHttpd.dev}/include -I${pkgs.apr.dev}/include/apr-1 -I${pkgs.yajl}/include"
+    '';
+  };
+
+  modsecurity-nginx = {
+    src = fetchFromGitHub {
+      owner = "SpiderLabs";
+      repo = "ModSecurity-nginx";
+      rev = "v1.0.0";
+      sha256 = "0zzpdqhbdqqy8kjkszv0mrq6136ah9v3zwr1jbh312j8izmzdyi7";
+    };
+    inputs = [ pkgs.curl pkgs.geoip pkgs.libmodsecurity pkgs.libxml2 pkgs.lmdb pkgs.yajl ];
+  };
+
+  moreheaders = {
+    src = fetchFromGitHub {
+      owner = "openresty";
+      repo = "headers-more-nginx-module";
+      rev = "v0.33";
+      sha256 = "1cgdjylrdd69vlkwwmn018hrglzjwd83nqva1hrapgcfw12f7j53";
     };
   };
 
-  upstream-check = {
+  ngx_aws_auth = {
     src = fetchFromGitHub {
-      owner = "yaoweibin";
-      repo = "nginx_upstream_check_module";
-      rev = "10782eaff51872a8f44e65eed89bbe286004bcb1";
-      sha256 = "0h98a8kiw2qkqfavysm1v16kf4cs4h39j583wapif4p0qx3bbm89";
+      owner = "anomalizer";
+      repo = "ngx_aws_auth";
+      rev = "2.1.1";
+      sha256 = "10z67g40w7wpd13fwxyknkbg3p6hn61i4v8xw6lh27br29v1y6h9";
     };
   };
 
-  # For an example usage, see https://easyengine.io/wordpress-nginx/tutorials/single-site/fastcgi-cache-with-purging/
-  fastcgi-cache-purge = {
-    src = fetchFromGitHub {
-      owner  = "FRiCKLE";
-      repo   = "ngx_cache_purge";
-      rev    = "2.3";
-      sha256 = "0ib2jrbjwrhvmihhnzkp4w87fxssbbmmmj6lfdwpm6ni8p9g60dw";
-    };
+  opentracing = {
+    src =
+      let src' = fetchFromGitHub {
+        owner = "opentracing-contrib";
+        repo = "nginx-opentracing";
+        rev = "v0.7.0";
+        sha256 = "16jzxhhsyfjaxb50jy5py9ppscidfx1shvc29ihldp0zs6d8khma";
+      };
+      in "${src'}/opentracing";
+    inputs = [ pkgs.opentracing-cpp ];
   };
 
   pagespeed =
@@ -154,8 +159,8 @@
       moduleSrc = fetchFromGitHub {
         owner  = "pagespeed";
         repo   = "ngx_pagespeed";
-        rev    = "v${version}-beta";
-        sha256 = "03dvzf1lgsjxcs1jjxq95n2rhgq0wy0f9ahvgascy0fak7qx4xj9";
+        rev    = "v${version}-stable";
+        sha256 = "0ry7vmkb2bx0sspl1kgjlrzzz6lbz07313ks2lr80rrdm2zb16wp";
       };
 
       ngx_pagespeed = pkgs.runCommand
@@ -174,5 +179,143 @@
         '';
     in {
       src = ngx_pagespeed;
+      inputs = [ pkgs.zlib pkgs.libuuid ]; # psol deps
     };
+
+  pam = {
+    src = fetchFromGitHub {
+      owner = "stogh";
+      repo = "ngx_http_auth_pam_module";
+      rev = "v1.5.1";
+      sha256 = "031q006bcv10dzxi3mzamqiyg14p48v0bzd5mrwz073pbf0ba2fl";
+    };
+    inputs = [ pkgs.pam ];
+  };
+
+  push-stream ={
+    src = fetchFromGitHub {
+      owner = "wandenberg";
+      repo = "nginx-push-stream-module";
+      rev = "0.5.4";
+      sha256 = "0izn7lqrp2zfl738aqa9i8c5lba97wkhcnqg8qbw3ipp5cysb2hr";
+    };
+  };
+
+  rtmp ={
+    src = fetchFromGitHub {
+      owner = "arut";
+      repo = "nginx-rtmp-module";
+      rev = "v1.2.1";
+      sha256 = "0na1aam176irz6w148hnvamqy1ilbn4abhdzkva0yrm35a3ksbzn";
+    };
+  };
+
+  set-misc = {
+    src = fetchFromGitHub {
+      owner = "openresty";
+      repo = "set-misc-nginx-module";
+      rev = "v0.32";
+      sha256 = "048a6jwinbjgxiprjj9ml3fdp0mhkx89g6ggams57fsx9m5vaxax";
+    };
+  };
+
+  shibboleth = {
+    src = fetchFromGitHub {
+      owner = "nginx-shib";
+      repo = "nginx-http-shibboleth";
+      rev = "48b70d87bf7796d7813813a837e52b3a86e6f6f4";
+      sha256 = "0k8xcln5sf0m4r0m550dkhl07zhncp285dpysk6r4v6vqzqmhzdc";
+    };
+  };
+
+  sla = {
+    src = fetchFromGitHub {
+      owner = "goldenclone";
+      repo = "nginx-sla";
+      rev = "7778f0125974befbc83751d0e1cadb2dcea57601";
+      sha256 = "1x5hm6r0dkm02ffny8kjd7mmq8przyd9amg2qvy5700x6lb63pbs";
+    };
+  };
+
+  statsd = {
+    src = fetchFromGitHub {
+      owner = "apcera";
+      repo = "nginx-statsd";
+      rev = "b970e40467a624ba710c9a5106879a0554413d15";
+      sha256 = "1x8j4i1i2ahrr7qvz03vkldgdjdxi6mx75mzkfizfcc8smr4salr";
+    };
+  };
+
+  stream-sts = {
+    src = fetchFromGitHub {
+      owner = "vozlt";
+      repo = "nginx-module-stream-sts";
+      rev = "v0.1.1";
+      sha256 = "1jdj1kik6l3rl9nyx61xkqk7hmqbncy0rrqjz3dmjqsz92y8zaya";
+    };
+  };
+
+  sts = {
+    src = fetchFromGitHub {
+      owner = "vozlt";
+      repo = "nginx-module-sts";
+      rev = "v0.1.1";
+      sha256 = "0nvb29641x1i7mdbydcny4qwlvdpws38xscxirajd2x7nnfdflrk";
+    };
+  };
+
+  subsFilter = {
+    src = fetchFromGitHub {
+      owner = "yaoweibin";
+      repo = "ngx_http_substitutions_filter_module";
+      rev = "v0.6.4";
+      sha256 = "0q86cv0mfffh43id5xanywyhpd7b0jijrmk8y311c13l9ajrd2rx";
+    };
+  };
+
+  sysguard = {
+    src = fetchFromGitHub {
+      owner = "vozlt";
+      repo = "nginx-module-sysguard";
+      rev = "e512897f5aba4f79ccaeeebb51138f1704a58608";
+      sha256 = "19c6w6wscbq9phnx7vzbdf4ay6p2ys0g7kp2rmc9d4fb53phrhfx";
+    };
+  };
+
+  upstream-check = {
+    src = fetchFromGitHub {
+      owner = "yaoweibin";
+      repo = "nginx_upstream_check_module";
+      rev = "9aecf15ec379fe98f62355c57b60c0bc83296f04";
+      sha256 = "1cjisxw1wykll683nw09k0i1nvzslp4dr59x58cvarpk43paim2y";
+    };
+  };
+
+  upstream-tarantool = {
+    src = fetchFromGitHub {
+      owner = "tarantool";
+      repo = "nginx_upstream_module";
+      rev = "v2.7";
+      sha256 = "05dwj0caj910p7kan2qjvm6x2x601igryhny2xzr47hhsk5q1cnx";
+    };
+    inputs = [ pkgs.msgpuck.dev pkgs.yajl ];
+  };
+
+  url = {
+    src = fetchFromGitHub {
+      owner = "vozlt";
+      repo = "nginx-module-url";
+      rev = "9299816ca6bc395625c3683fbd2aa7b916bfe91e";
+      sha256 = "0mk1gjmfnry6hgdsnlavww9bn7223idw50jlkhh5k00q5509w4ip";
+    };
+  };
+
+  vts = {
+    src = fetchFromGitHub {
+      owner = "vozlt";
+      repo = "nginx-module-vts";
+      rev = "v0.1.18";
+      sha256 = "1jq2s9k7hah3b317hfn9y3g1q4g4x58k209psrfsqs718a9sw8c7";
+    };
+  };
 }

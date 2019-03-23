@@ -12,13 +12,17 @@ let
     keyfile ${cfg.ssl.keyfile}
   '';
 
+  passwordConf = optionalString cfg.checkPasswords ''
+    password_file ${cfg.dataDir}/passwd
+  '';
+
   mosquittoConf = pkgs.writeText "mosquitto.conf" ''
-    pid_file /run/mosquitto/pid
     acl_file ${aclFile}
     persistence true
-    allow_anonymous ${if cfg.allowAnonymous then "true" else "false"}
+    allow_anonymous ${boolToString cfg.allowAnonymous}
     bind_address ${cfg.host}
     port ${toString cfg.port}
+    ${passwordConf}
     ${listenerConf}
     ${cfg.extraConf}
   '';
@@ -125,8 +129,8 @@ in
               description = ''
                 Specifies the hashed password for the MQTT User.
                 <option>hashedPassword</option> overrides <option>password</option>.
-                To generate hashed password install <literal>mkpasswd</literal>
-                package and run <literal>mkpasswd -m sha-512</literal>.
+                To generate hashed password install <literal>mosquitto</literal>
+                package and use <literal>mosquitto_passwd</literal>.
               '';
             };
 
@@ -147,10 +151,18 @@ in
 
       allowAnonymous = mkOption {
         default = false;
-        example = true;
         type = types.bool;
         description = ''
           Allow clients to connect without authentication.
+        '';
+      };
+
+      checkPasswords = mkOption {
+        default = false;
+        example = true;
+        type = types.bool;
+        description = ''
+          Refuse connection when clients provide incorrect passwords.
         '';
       };
 
@@ -183,15 +195,15 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
       serviceConfig = {
-        Type = "forking";
+        Type = "notify";
+        NotifyAccess = "main";
         User = "mosquitto";
         Group = "mosquitto";
         RuntimeDirectory = "mosquitto";
         WorkingDirectory = cfg.dataDir;
         Restart = "on-failure";
-        ExecStart = "${pkgs.mosquitto}/bin/mosquitto -c ${mosquittoConf} -d";
+        ExecStart = "${pkgs.mosquitto}/bin/mosquitto -c ${mosquittoConf}";
         ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
-        PIDFile = "/run/mosquitto/pid";
       };
       preStart = ''
         rm -f ${cfg.dataDir}/passwd
@@ -199,13 +211,13 @@ in
       '' + concatStringsSep "\n" (
         mapAttrsToList (n: c:
           if c.hashedPassword != null then
-            "echo '${n}:${c.hashedPassword}' > ${cfg.dataDir}/passwd"
+            "echo '${n}:${c.hashedPassword}' >> ${cfg.dataDir}/passwd"
           else optionalString (c.password != null)
-            "${pkgs.mosquitto}/bin/mosquitto_passwd -b ${cfg.dataDir}/passwd ${n} ${c.password}"
+            "${pkgs.mosquitto}/bin/mosquitto_passwd -b ${cfg.dataDir}/passwd ${n} '${c.password}'"
         ) cfg.users);
     };
 
-    users.extraUsers.mosquitto = {
+    users.users.mosquitto = {
       description = "Mosquitto MQTT Broker Daemon owner";
       group = "mosquitto";
       uid = config.ids.uids.mosquitto;
@@ -213,7 +225,7 @@ in
       createHome = true;
     };
 
-    users.extraGroups.mosquitto.gid = config.ids.gids.mosquitto;
+    users.groups.mosquitto.gid = config.ids.gids.mosquitto;
 
   };
 }

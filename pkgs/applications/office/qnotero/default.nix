@@ -18,22 +18,17 @@ python3Packages.buildPythonPackage rec {
 
   patchPhase = ''
       substituteInPlace ./setup.py \
-        --replace "/usr/share" "$out/usr/share"
+        --replace "/usr/share" "usr/share"
 
       substituteInPlace ./libqnotero/_themes/default.py \
-        --replace "/usr/share" "$out/usr/share"
-  '';
-
-  postInstall = ''
-      mkdir -p "$out/usr/share/qnotero"
-      mv resources "$out/usr/share/qnotero"
+         --replace "/usr/share" "$out/usr/share"
   '';
 
   meta = {
     description = "Quick access to Zotero references";
     homepage = http://www.cogsci.nl/software/qnotero;
     license = stdenv.lib.licenses.gpl2;
-    platforms = stdenv.lib.platforms.linux;
+    platforms = stdenv.lib.platforms.unix;
     maintainers = [ stdenv.lib.maintainers.nico202 ];
   };
 }

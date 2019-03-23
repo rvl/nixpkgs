@@ -1,21 +1,19 @@
 { buildPythonPackage
 , lib
-, fetchurl
+, fetchPypi
 , pytest
 }:
 
-let
+buildPythonPackage rec {
   pname = "webencodings";
-  version = "0.5";
-in buildPythonPackage rec {
-  name = "${pname}-${version}";
+  version = "0.5.1";
 
-  src = fetchurl {
-    url = "mirror://pypi/${builtins.substring 0 1 pname}/${pname}/${name}.tar.gz";
-    sha256 = "a5c55ee93b24e740fe951c37b5c228dccc1f171450e188555a775261cce1b904";
+  src = fetchPypi {
+    inherit pname version;
+    sha256 = "b36a1c245f2d304965eb4e0a82848379241dc04b865afcc4aab16748587e1923";
   };
 
-  buildInputs = [ pytest ];
+  checkInputs = [ pytest ];
 
   checkPhase = ''
     py.test webencodings/tests.py

@@ -1,19 +1,48 @@
-{ stdenv, fetchFromGitHub, python3, libftdi }:
+{ stdenv, fetchFromGitHub
+, pkgconfig, libftdi
+, python3, pypy3
+}:
+
+let
+  pypyCompatible = stdenv.isx86_64; /* pypy3 seems broken on i686 */
+  pythonPkg      = if pypyCompatible then pypy3 else python3;
+  pythonInterp   = pythonPkg.interpreter;
+in
 
 stdenv.mkDerivation rec {
   name = "icestorm-${version}";
-  version = "2016.11.01";
+  version = "2019.02.23";
 
   src = fetchFromGitHub {
-    owner = "cliffordwolf";
-    repo = "icestorm";
-    rev = "01b9822638d60e048c295d005257daa4c147761f";
-    sha256 = "088wnf55m9ii98w8j7qc99spq95y19xw4fnnw9mxi7cfkxxggsls";
+    owner  = "cliffordwolf";
+    repo   = "icestorm";
+    rev    = "3a2bfee5cbc0558641668114260d3f644d6b7c83";
+    sha256 = "1avc9b6w3xbmpq4y4lf9b5mym6aygh5hngzyasa9jyj0cx8mxcpf";
   };
 
-  buildInputs = [ python3 libftdi ];
-  preBuild = ''
-    makeFlags="PREFIX=$out $makeFlags"
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ pythonPkg libftdi ];
+  makeFlags = [ "PREFIX=$(out)" ];
+
+  enableParallelBuilding = true;
+
+  # fix icebox_vlog chipdb path. icestorm issue:
+  #   https://github.com/cliffordwolf/icestorm/issues/125
+  #
+  # also, fix up the path to the chosen Python interpreter. for pypy-compatible
+  # platforms, it offers significant performance improvements.
+  patchPhase = ''
+    substituteInPlace ./icebox/icebox_vlog.py \
+      --replace /usr/local/share "$out/share"
+
+    for x in icefuzz/Makefile icebox/Makefile icetime/Makefile; do
+      substituteInPlace "$x" --replace python3 "${pythonInterp}"
+    done
+
+    for x in $(find . -type f -iname '*.py'); do
+      substituteInPlace "$x" \
+        --replace '/usr/bin/env python3' '${pythonInterp}'
+    done
   '';
 
   meta = {
@@ -24,9 +53,9 @@ stdenv.mkDerivation rec {
       FPGAs and providing simple tools for analyzing and
       creating bitstream files.
     '';
-    homepage = http://www.clifford.at/icestorm/;
-    license = stdenv.lib.licenses.isc;
-    maintainers = [ stdenv.lib.maintainers.shell ];
-    platforms = stdenv.lib.platforms.linux;
+    homepage    = http://www.clifford.at/icestorm/;
+    license     = stdenv.lib.licenses.isc;
+    maintainers = with stdenv.lib.maintainers; [ shell thoughtpolice ];
+    platforms   = stdenv.lib.platforms.linux;
   };
 }

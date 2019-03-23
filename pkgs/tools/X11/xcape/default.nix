@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, pkgconfig, libX11, libXtst, xextproto,
+{ stdenv, fetchFromGitHub, pkgconfig, libX11, libXtst, xorgproto,
 libXi }:
 
 let
@@ -18,7 +18,7 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [ pkgconfig ];
 
-  buildInputs = [ libX11 libXtst xextproto libXi ];
+  buildInputs = [ libX11 libXtst xorgproto libXi ];
 
   makeFlags = [ "PREFIX=$(out)" "MANDIR=/share/man/man1" ];
 
@@ -34,7 +34,7 @@ stdenv.mkDerivation rec {
       is to generate the Escape key when Left Control is pressed and
       released on its own.
     '';
-    homepage = "https://github.com/alols/xcape";
+    homepage = https://github.com/alols/xcape;
     license = stdenv.lib.licenses.gpl3 ;
     platforms = stdenv.lib.platforms.linux;
     maintainers = [ stdenv.lib.maintainers.raskin ];

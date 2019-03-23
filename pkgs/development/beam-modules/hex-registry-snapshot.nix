@@ -1,15 +1,15 @@
 {stdenv, writeText, fetchFromGitHub }:
 
 stdenv.mkDerivation rec {
-    name = "hex-registry";
-    rev = "e5e494a";
-    version = "0.0.0+build.${rev}";
+    pname = "hex-registry";
+    rev = "11d7a24e9f53f52490ce255a6248e71128e73aa1";
+    version = "unstable-2018-07-12";
 
     src = fetchFromGitHub {
-        owner = "erlang-nix";
-        repo = "hex-pm-registry-snapshots";
         inherit rev;
-        sha256 = "0877dragfxs22a05d8mv42z5535kfx9rs4y7fwwbd1ybphczf8za";
+        owner  = "erlang-nix";
+        repo   = "hex-pm-registry-snapshots";
+        sha256 = "0dbpcrdh6jqmvnm1ysmy7ixyc95vnbqmikyx5kk77qwgyd43fqgi";
     };
 
     installPhase = ''

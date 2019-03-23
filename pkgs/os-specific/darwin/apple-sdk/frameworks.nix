@@ -14,7 +14,6 @@ with frameworks; with libs; {
   AppKitScripting         = [];
   AppleScriptKit          = [];
   AppleScriptObjC         = [];
-  AppleShareClientCore    = [ CoreServices ];
   AudioToolbox            = [ AudioUnit CoreAudio CF CoreMIDI ];
   AudioUnit               = [ Carbon CoreAudio CF ];
   AudioVideoBridging      = [ Foundation ];
@@ -23,6 +22,9 @@ with frameworks; with libs; {
   CalendarStore           = [];
   Cocoa                   = [ AppKit ];
   Collaboration           = [];
+  # Impure version of CoreFoundation, this should not be used unless another
+  # framework includes headers that are not available in the pure version.
+  CoreFoundation          = [];
   CoreAudio               = [ CF IOKit ];
   CoreAudioKit            = [ AudioUnit ];
   CoreData                = [];
@@ -32,7 +34,7 @@ with frameworks; with libs; {
   CoreMIDIServer          = [];
   CoreMedia               = [ ApplicationServices AudioToolbox CoreAudio CF CoreGraphics CoreVideo ];
   CoreMediaIO             = [ CF CoreMedia ];
-  CoreText                = [ CF CoreGraphics cf-private ];
+  CoreText                = [ CF CoreGraphics ];
   CoreVideo               = [ ApplicationServices CF CoreGraphics IOSurface OpenGL ];
   CoreWLAN                = [ SecurityFoundation ];
   DVComponentGlue         = [ CoreServices QuickTime ];
@@ -52,6 +54,7 @@ with frameworks; with libs; {
   GSS                     = [];
   GameController          = [];
   GameKit                 = [ Foundation ];
+  Hypervisor              = [];
   ICADevices              = [ Carbon CF IOBluetooth ];
   IMServicePlugIn         = [];
   IOBluetoothUI           = [ IOBluetooth ];
@@ -79,12 +82,9 @@ with frameworks; with libs; {
   PCSC                    = [ CoreData ];
   PreferencePanes         = [];
   PubSub                  = [];
-  Python                  = [ ApplicationServices ];
   QTKit                   = [ CoreMediaIO CoreMedia MediaToolbox QuickTime VideoToolbox ];
   QuickLook               = [ ApplicationServices CF ];
   QuickTime               = [ ApplicationServices AudioUnit Carbon CoreAudio CoreServices OpenGL QuartzCore ];
-  Ruby                    = [];
-  RubyCocoa               = [];
   SceneKit                = [];
   ScreenSaver             = [];
   Scripting               = [];
@@ -100,7 +100,6 @@ with frameworks; with libs; {
   SystemConfiguration     = [ CF Security ];
   TWAIN                   = [ Carbon ];
   Tcl                     = [];
-  Tk                      = [ ApplicationServices Carbon X11 ];
   VideoDecodeAcceleration = [ CF CoreVideo ];
   VideoToolbox            = [ CF CoreMedia CoreVideo ];
   WebKit                  = [ ApplicationServices Carbon JavaScriptCore OpenGL ];
@@ -116,4 +115,6 @@ with frameworks; with libs; {
   OpenDirectory       = [];
   Quartz              = [ QuickLook QTKit ];
   QuartzCore          = [ ApplicationServices CF CoreVideo OpenCL ];
+
+  vmnet = [];
 }

@@ -1,7 +1,8 @@
 { mkDerivation
+, lib
+, broken ? false
 , test-framework
 , test-framework-hunit
-, test-framework-quickcheck2
 , data-default
 , ghc-paths
 , haskell-src-exts
@@ -17,12 +18,9 @@
 , executable-path
 , transformers-compat
 , haddock-api
-, ghcjs-prim
 , regex-posix
-, callPackage
 
 , bootPkgs, gmp
-, jailbreak-cabal
 
 , runCommand
 , nodejs, stdenv, filepath, HTTP, HUnit, mtl, network, QuickCheck, random, stm
@@ -31,63 +29,34 @@
 , lens
 , parallel, safe, shelly, split, stringsearch, syb
 , tar, terminfo
-, vector, yaml, fetchgit, fetchFromGitHub, Cabal
+, vector, yaml, fetchgit, fetchFromGitHub
 , alex, happy, git, gnumake, autoconf, patch
 , automake, libtool
 , cryptohash
-, haddock, hspec, xhtml, primitive, cacert, pkgs
+, haddock, hspec, xhtml, pkgs
 , coreutils
 , libiconv
 
-, version ? "0.2.0"
-, ghcjsSrc ? fetchFromGitHub {
-    owner = "ghcjs";
-    repo = "ghcjs";
-    rev = "689c7753f50353dd05606ed79c51cd5a94d3922a";
-    sha256 = "076020a9gjv8ldj5ckm43sbzq9s6c5xj6lpd8v28ybpiama3m6b4";
-  }
-, ghcjsBootSrc ? fetchgit {
-    url = git://github.com/ghcjs/ghcjs-boot.git;
-    rev = "8c549931da27ba9e607f77195208ec156c840c8a";
-    sha256 = "0yg9bnabja39qysh9pg1335qbvbc0r2mdw6cky94p7kavacndfdv";
-    fetchSubmodules = true;
-  }
+, version
+, ghcjsSrc
+, ghcjsBootSrc
 , ghcjsBoot ? import ./ghcjs-boot.nix {
     inherit runCommand;
     src = ghcjsBootSrc;
   }
-, shims ? import ./shims.nix { inherit fetchFromGitHub; }
+, shims
 
 # This is the list of the Stage 1 packages that are built into a booted ghcjs installation
 # It can be generated with the command:
 # nix-shell -p haskell.packages.ghcjs.ghc --command "ghcjs-pkg list | sed -n 's/^    \(.*\)-\([0-9.]*\)$/\1_\2/ p' | sed 's/\./_/g' | sed 's/^\([^_]*\)\(.*\)$/      \"\1\"/'"
-, stage1Packages ? [
-    "array"
-    "base"
-    "binary"
-    "bytestring"
-    "containers"
-    "deepseq"
-    "directory"
-    "filepath"
-    "ghc-boot"
-    "ghc-boot-th"
-    "ghc-prim"
-    "ghci"
-    "ghcjs-prim"
-    "ghcjs-th"
-    "integer-gmp"
-    "pretty"
-    "primitive"
-    "process"
-    "rts"
-    "template-haskell"
-    "time"
-    "transformers"
-    "unix"
-  ]
+, stage1Packages
 
 , stage2 ? import ./stage2.nix
+
+, patches
+
+# used for resolving compiler plugins
+, ghcLibdir ? null
 }:
 let
   inherit (bootPkgs) ghc;
@@ -110,13 +79,13 @@ in mkDerivation (rec {
     alex happy git gnumake autoconf automake libtool patch gmp
     base16-bytestring cryptohash executable-path haddock-api
     transformers-compat QuickCheck haddock hspec xhtml
-    ghcjs-prim regex-posix libiconv
+    regex-posix libiconv
   ];
   buildTools = [ nodejs git ];
   testDepends = [
     HUnit test-framework test-framework-hunit
   ];
-  patches = [ ./ghcjs.patch ];
+  inherit patches;
   postPatch = ''
     substituteInPlace Setup.hs \
       --replace "/usr/bin/env" "${coreutils}/bin/env"
@@ -159,18 +128,22 @@ in mkDerivation (rec {
         --with-cabal ${cabal-install}/bin/cabal \
         --with-gmp-includes ${gmp.dev}/include \
         --with-gmp-libraries ${gmp.out}/lib
+  '' + lib.optionalString (ghcLibdir != null) ''
+    printf '%s' '${ghcLibdir}' > "$out/lib/ghcjs-${version}/ghc_libdir"
   '';
-  passthru = let
-    ghcjsNodePkgs = callPackage ../../../top-level/node-packages.nix {
-      generated = ./node-packages-generated.nix;
-      self = ghcjsNodePkgs;
-    };
-  in {
+  passthru = {
     inherit bootPkgs;
+    ghcVersion = ghc.version;
     isCross = true;
     isGhcjs = true;
     inherit nodejs ghcjsBoot;
-    inherit (ghcjsNodePkgs) "socket.io";
+    socket-io = pkgs.nodePackages."socket.io";
+    haskellCompilerName = "ghcjs-${version}";
+
+    # let us assume ghcjs is never actually cross compiled
+    targetPrefix = "";
+
+    enableShared = true;
 
     inherit stage1Packages;
     mkStage2 = stage2 {
@@ -178,10 +151,11 @@ in mkDerivation (rec {
     };
   };
 
-  homepage = "https://github.com/ghcjs/ghcjs";
+  homepage = https://github.com/ghcjs/ghcjs;
   description = "A Haskell to JavaScript compiler that uses the GHC API";
   license = stdenv.lib.licenses.bsd3;
   platforms = ghc.meta.platforms;
-  maintainers = with stdenv.lib.maintainers; [ jwiegley cstrahan ];
-  broken = true;  # http://hydra.nixos.org/build/45110274
+  maintainers = with stdenv.lib.maintainers; [ jwiegley cstrahan dmjio elvishjerricco ];
+  hydraPlatforms = if broken then [] else ghc.meta.platforms;
+  inherit broken;
 })

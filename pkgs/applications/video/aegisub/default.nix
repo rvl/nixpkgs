@@ -1,15 +1,15 @@
-{ stdenv, fetchurl
+{ config, stdenv, fetchurl
 , libX11, wxGTK
 , libiconv, fontconfig, freetype
-, mesa
+, libGLU_combined
 , libass, fftw, ffms
 , ffmpeg, pkgconfig, zlib # Undocumented (?) dependencies
 , icu, boost, intltool # New dependencies
 , spellcheckSupport ? true, hunspell ? null
 , automationSupport ? true, lua ? null
 , openalSupport ? false, openal ? null
-, alsaSupport ? true, alsaLib ? null
-, pulseaudioSupport ? true, libpulseaudio ? null
+, alsaSupport ? stdenv.isLinux, alsaLib ? null
+, pulseaudioSupport ? config.pulseaudio or stdenv.isLinux, libpulseaudio ? null
 , portaudioSupport ? false, portaudio ? null }:
 
 assert spellcheckSupport -> (hunspell != null);
@@ -29,8 +29,11 @@ stdenv.mkDerivation rec {
     sha256 = "11b83qazc8h0iidyj1rprnnjdivj1lpphvpa08y53n42bfa36pn5";
   };
 
+  # Fixup build with icu-59
+  postPatch = "sed '1i#include <unicode/unistr.h>' -i src/utils.cpp";
+
   buildInputs = with stdenv.lib;
-  [ pkgconfig intltool libX11 wxGTK fontconfig freetype mesa
+  [ pkgconfig intltool libX11 wxGTK fontconfig freetype libGLU_combined
     libass fftw ffms ffmpeg zlib icu boost boost.out libiconv
   ]
     ++ optional spellcheckSupport hunspell
@@ -44,6 +47,12 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
 
   hardeningDisable = [ "bindnow" "relro" ];
+
+  # this is fixed upstream though not yet in an officially released version,
+  # should be fine remove on next release (if one ever happens)
+  NIX_LDFLAGS = [
+    "-lpthread"
+  ];
 
   postInstall = "ln -s $out/bin/aegisub-* $out/bin/aegisub";
 
@@ -61,6 +70,6 @@ stdenv.mkDerivation rec {
               # but they are linked against GPL'd softwares
               # - so the resulting program will be GPL
     maintainers = [ maintainers.AndersonTorres ];
-    platforms = platforms.linux;
+    platforms = [ "i686-linux" "x86_64-linux" ];
   };
 }

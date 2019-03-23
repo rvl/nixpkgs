@@ -1,4 +1,4 @@
-{stdenv, fetchurl, libedit, ncurses, automake, autoconf, libtool
+{stdenv, fetchurl, libedit, automake, autoconf, libtool
 ,
   # icu = null: use icu which comes with firebird
 
@@ -38,7 +38,7 @@
 */
 
 stdenv.mkDerivation rec {
-  version = "2.5.6.27020-0";
+  version = "2.5.7.27050-0";
   name = "firebird-${version}";
 
   # enableParallelBuilding = false; build fails
@@ -62,7 +62,7 @@ stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "mirror://sourceforge/firebird/Firebird-${version}.tar.bz2";
-    sha256 = "0887a813wffp44hnc2gmwbc4ylpqw3fh3hz3bf6q3648344a9fdv";
+    sha256 = "06hp6bq5irqvm3h03s79qjgcc3jsjpq150y9aq7anklx9v4nhfqa";
   };
 
   hardeningDisable = [ "format" ];
@@ -82,7 +82,7 @@ stdenv.mkDerivation rec {
 
   meta = {
     description = "SQL relational database management system";
-    homepage = http://www.firebirdnews.org;
+    homepage = https://www.firebirdnews.org;
     license = ["IDPL" "Interbase-1.0"];
     maintainers = [stdenv.lib.maintainers.marcweber];
     platforms = stdenv.lib.platforms.linux;

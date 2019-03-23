@@ -1,27 +1,25 @@
 { stdenv, fetchFromGitHub, autoreconfHook, pkgconfig, zlib, readline, openssl
 , libiconv, pcsclite, libassuan, libXt
 , docbook_xsl, libxslt, docbook_xml_dtd_412
+, Carbon
 }:
 
 stdenv.mkDerivation rec {
   name = "opensc-${version}";
-  version = "0.15.0";
+  version = "0.19.0";
 
   src = fetchFromGitHub {
     owner = "OpenSC";
     repo = "OpenSC";
     rev = version;
-    sha256 = "16y3ryx606nry2li05hm88bllrragdj3sfl3yh7pf71777n4lsk4";
+    sha256 = "10575gb9l38cskq7swyjp0907wlziyxg4ppq33ndz319dsx69d87";
   };
 
-  postPatch = ''
-    sed -i 's,$(DESTDIR),$(out),g' etc/Makefile.am
-  '';
-
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs = [
-    autoreconfHook pkgconfig zlib readline openssl pcsclite libassuan
+    autoreconfHook zlib readline openssl pcsclite libassuan
     libXt libxslt libiconv docbook_xml_dtd_412
-  ];
+  ] ++ stdenv.lib.optional stdenv.isDarwin Carbon;
 
   configureFlags = [
     "--enable-zlib"
@@ -34,18 +32,18 @@ stdenv.mkDerivation rec {
     "--localstatedir=/var"
     "--sysconfdir=/etc"
     "--with-xsl-stylesheetsdir=${docbook_xsl}/xml/xsl/docbook"
-    "--with-pcsc-provider=${pcsclite}/lib/libpcsclite.so"
+    "--with-pcsc-provider=${stdenv.lib.getLib pcsclite}/lib/libpcsclite.so"
   ];
 
   installFlags = [
-    "sysconfdir=\${out}/etc"
+    "sysconfdir=$(out)/etc"
+    "completiondir=$(out)/etc"
   ];
 
   meta = with stdenv.lib; {
     description = "Set of libraries and utilities to access smart cards";
     homepage = https://github.com/OpenSC/OpenSC/wiki;
     license = licenses.lgpl21Plus;
-    maintainers = with maintainers; [ viric wkennington ];
     platforms = platforms.all;
   };
 }

@@ -31,14 +31,23 @@ rec {
 
   # Return a modified stdenv that tries to build statically linked
   # binaries.
-  makeStaticBinaries = stdenv: stdenv //
-    { mkDerivation = args: stdenv.mkDerivation (args // {
-        NIX_CFLAGS_LINK = "-static";
-        configureFlags =
-          toString args.configureFlags or ""
-          + " --disable-shared"; # brrr...
+  makeStaticBinaries = stdenv:
+    let stdenv' = if stdenv.hostPlatform.libc != "glibc" then stdenv else
+      stdenv.override (prev: {
+          extraBuildInputs = prev.extraBuildInputs or [] ++ [
+              stdenv.glibc.static
+            ];
+        });
+    in stdenv' //
+    { mkDerivation = args:
+      if stdenv'.hostPlatform.isDarwin
+      then throw "Cannot build fully static binaries on Darwin/macOS"
+      else stdenv'.mkDerivation (args // {
+        NIX_CFLAGS_LINK = toString (args.NIX_CFLAGS_LINK or "") + " -static";
+        configureFlags = (args.configureFlags or []) ++ [
+            "--disable-shared" # brrr...
+          ];
       });
-      isStatic = true;
     };
 
 
@@ -47,79 +56,12 @@ rec {
   makeStaticLibraries = stdenv: stdenv //
     { mkDerivation = args: stdenv.mkDerivation (args // {
         dontDisableStatic = true;
-        configureFlags =
-          toString args.configureFlags or ""
-          + " --enable-static --disable-shared";
+        configureFlags = (args.configureFlags or []) ++ [
+          "--enable-static"
+          "--disable-shared"
+        ];
       });
     };
-
-
-  # Return a modified stdenv that adds a cross compiler to the
-  # builds.
-  makeStdenvCross = stdenv: cross: binutilsCross: gccCross: stdenv //
-    { mkDerivation = {name ? "", buildInputs ? [], nativeBuildInputs ? [],
-            propagatedBuildInputs ? [], propagatedNativeBuildInputs ? [],
-            selfNativeBuildInput ? false, ...}@args: let
-
-            # *BuildInputs exists temporarily as another name for
-            # *HostInputs.
-
-            # In nixpkgs, sometimes 'null' gets in as a buildInputs element,
-            # and we handle that through isAttrs.
-            getNativeDrv = drv: drv.nativeDrv or drv;
-            getCrossDrv = drv: drv.crossDrv or drv;
-            nativeBuildInputsDrvs = map getNativeDrv nativeBuildInputs;
-            buildInputsDrvs = map getCrossDrv buildInputs;
-            propagatedBuildInputsDrvs = map getCrossDrv propagatedBuildInputs;
-            propagatedNativeBuildInputsDrvs = map getNativeDrv propagatedNativeBuildInputs;
-
-            # The base stdenv already knows that nativeBuildInputs and
-            # buildInputs should be built with the usual gcc-wrapper
-            # And the same for propagatedBuildInputs.
-            nativeDrv = stdenv.mkDerivation args;
-
-            # Temporary expression until the cross_renaming, to handle the
-            # case of pkgconfig given as buildInput, but to be used as
-            # nativeBuildInput.
-            hostAsNativeDrv = drv:
-                builtins.unsafeDiscardStringContext drv.nativeDrv.drvPath
-                == builtins.unsafeDiscardStringContext drv.crossDrv.drvPath;
-            buildInputsNotNull = stdenv.lib.filter
-                (drv: builtins.isAttrs drv && drv ? nativeDrv) buildInputs;
-            nativeInputsFromBuildInputs = stdenv.lib.filter hostAsNativeDrv buildInputsNotNull;
-
-            # We should overwrite the input attributes in crossDrv, to overwrite
-            # the defaults for only-native builds in the base stdenv
-            crossDrv = if cross == null then nativeDrv else
-                stdenv.mkDerivation (args // {
-                    name = name + "-" + cross.config;
-                    nativeBuildInputs = nativeBuildInputsDrvs
-                      ++ nativeInputsFromBuildInputs
-                      ++ [ gccCross binutilsCross ]
-                      ++ stdenv.lib.optional selfNativeBuildInput nativeDrv
-                        # without proper `file` command, libtool sometimes fails
-                        # to recognize 64-bit DLLs
-                      ++ stdenv.lib.optional (cross.config  == "x86_64-w64-mingw32") pkgs.file
-                      ;
-
-                    # Cross-linking dynamic libraries, every buildInput should
-                    # be propagated because ld needs the -rpath-link to find
-                    # any library needed to link the program dynamically at
-                    # loader time. ld(1) explains it.
-                    buildInputs = [];
-                    propagatedBuildInputs = propagatedBuildInputsDrvs ++ buildInputsDrvs;
-                    propagatedNativeBuildInputs = propagatedNativeBuildInputsDrvs;
-
-                    crossConfig = cross.config;
-                } // args.crossAttrs or {});
-        in nativeDrv // {
-          inherit crossDrv nativeDrv;
-        };
-    } // {
-      inherit cross gccCross binutilsCross;
-      ccCross = gccCross;
-    };
-
 
   /* Modify a stdenv so that the specified attributes are added to
      every derivation returned by its mkDerivation function.
@@ -192,7 +134,7 @@ rec {
 
      This adapter can be defined on the defaultStdenv definition.  You can
      use it by patching the all-packages.nix file or by using the override
-     feature of ~/.nixpkgs/config.nix .
+     feature of ~/.config/nixpkgs/config.nix .
   */
   validateLicenses = licensePred: stdenv: stdenv //
     { mkDerivation = args:
@@ -236,6 +178,21 @@ rec {
   useGoldLinker = stdenv: stdenv //
     { mkDerivation = args: stdenv.mkDerivation (args // {
         NIX_CFLAGS_LINK = toString (args.NIX_CFLAGS_LINK or "") + " -fuse-ld=gold";
+      });
+    };
+
+
+  /* Modify a stdenv so that it builds binaries optimized specifically
+     for the machine they are built on.
+
+     WARNING: this breaks purity! */
+  impureUseNativeOptimizations = stdenv: stdenv //
+    { mkDerivation = args: stdenv.mkDerivation (args // {
+        NIX_CFLAGS_COMPILE = toString (args.NIX_CFLAGS_COMPILE or "") + " -march=native";
+        NIX_ENFORCE_NO_NATIVE = false;
+
+        preferLocalBuild = true;
+        allowSubstitutes = false;
       });
     };
 }

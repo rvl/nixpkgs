@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchsvn, recordmydesktop, autoreconfHook, pkgconfig, glib
+{ stdenv, lib, fetchsvn, recordmydesktop, autoreconfHook, pkgconfig
 , pythonPackages, jack2, xwininfo }:
 
 let
@@ -32,6 +32,6 @@ in stdenv.mkDerivation rec {
     homepage = http://recordmydesktop.sourceforge.net/;
     license = licenses.gpl2;
     platforms = platforms.linux;
-    maintainers = [ maintainers.DamienCassou ];
+    maintainers = [ ];
   };
 }

@@ -1,11 +1,11 @@
 { stdenv, fetchurl, makeWrapper, jre, gnugrep, coreutils }:
 
 stdenv.mkDerivation rec {
-  name = "scala-2.12.1";
+  name = "scala-2.12.8";
 
   src = fetchurl {
-    url = "http://www.scala-lang.org/files/archive/${name}.tgz";
-    sha256 = "0nf37ix3rrm50s7dacwlyr8fl1hgrbxbw5yz21qf58rj8n46ic2d";
+    url = "https://www.scala-lang.org/files/archive/${name}.tgz";
+    sha256 = "18w0vdbsp0q5rxglgalwlgkggld926bqi1fxc598rn4gh46a03j4";
   };
 
   propagatedBuildInputs = [ jre ] ;
@@ -15,6 +15,10 @@ stdenv.mkDerivation rec {
     mkdir -p $out
     rm "bin/"*.bat
     mv * $out
+
+    # put docs in correct subdirectory
+    mkdir -p $out/share/doc
+    mv $out/doc $out/share/doc/scala
 
     for p in $(ls $out/bin/) ; do
       wrapProgram $out/bin/$p \
@@ -35,7 +39,7 @@ stdenv.mkDerivation rec {
       Code sizes are typically reduced by a factor of two to three when
       compared to an equivalent Java application.
     '';
-    homepage = http://www.scala-lang.org/;
+    homepage = https://www.scala-lang.org/;
     license = stdenv.lib.licenses.bsd3;
     platforms = stdenv.lib.platforms.all;
   };

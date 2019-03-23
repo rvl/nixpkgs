@@ -13,13 +13,19 @@ stdenv.mkDerivation {
     sha256 = "0ilm5s7ps9kg4f5hzgjhg0xhn6zg0v9i7jnd67zrx9h7wsaa9zhj";
   };
 
-  buildInputs = [pkgconfig gtk2 libpng];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ gtk2 libpng];
 
   hardeningDisable = [ "format" ];
 
-  meta = {
+  NIX_LDFLAGS = [
+    "-lm"
+  ];
+
+  meta = with stdenv.lib; {
     description = "A fast image viewer";
     homepage = http://gqview.sourceforge.net;
-    platforms = stdenv.lib.platforms.unix;
+    license = licenses.gpl2;
+    platforms = platforms.unix;
   };
 }

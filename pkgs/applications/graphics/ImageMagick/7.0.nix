@@ -1,19 +1,20 @@
-{ lib, stdenv, fetchurl, fetchpatch, pkgconfig, libtool
-, bzip2, zlib, libX11, libXext, libXt, fontconfig, freetype, ghostscript, libjpeg
-, lcms2, openexr, libpng, librsvg, libtiff, libxml2, openjpeg, libwebp
+{ lib, stdenv, fetchFromGitHub, pkgconfig, libtool
+, bzip2, zlib, libX11, libXext, libXt, fontconfig, freetype, ghostscript, libjpeg, djvulibre
+, lcms2, openexr, libpng, librsvg, libtiff, libxml2, openjpeg, libwebp, libheif
 , ApplicationServices
 }:
 
 let
   arch =
-    if stdenv.system == "i686-linux" then "i686"
-    else if stdenv.system == "x86_64-linux" || stdenv.system == "x86_64-darwin" then "x86-64"
-    else if stdenv.system == "armv7l-linux" then "armv7l"
+    if stdenv.hostPlatform.system == "i686-linux" then "i686"
+    else if stdenv.hostPlatform.system == "x86_64-linux" || stdenv.hostPlatform.system == "x86_64-darwin" then "x86-64"
+    else if stdenv.hostPlatform.system == "armv7l-linux" then "armv7l"
+    else if stdenv.hostPlatform.system == "aarch64-linux" then "aarch64"
     else throw "ImageMagick is not supported on this platform.";
 
   cfg = {
-    version = "7.0.4-0";
-    sha256 = "0hfkdvfl60f9ksh07c06cpq8ib05apczl767yyvc671gd90n11ds";
+    version = "7.0.8-22";
+    sha256 = "1ivljgf192xh7pq1apdic923pvcb3aq74mx8d4hi65hhc9748gv7";
     patches = [];
   };
 in
@@ -22,13 +23,10 @@ stdenv.mkDerivation rec {
   name = "imagemagick-${version}";
   inherit (cfg) version;
 
-  src = fetchurl {
-    urls = [
-      "mirror://imagemagick/releases/ImageMagick-${version}.tar.xz"
-      # the original source above removes tarballs quickly
-      "http://distfiles.macports.org/ImageMagick/ImageMagick-${version}.tar.xz"
-      "https://bintray.com/homebrew/mirror/download_file?file_path=imagemagick-${version}.tar.xz"
-    ];
+  src = fetchFromGitHub {
+    owner = "ImageMagick";
+    repo = "ImageMagick";
+    rev = cfg.version;
     inherit (cfg) sha256;
   };
 
@@ -47,7 +45,7 @@ stdenv.mkDerivation rec {
       [ "--with-gs-font-dir=${ghostscript}/share/ghostscript/fonts"
         "--with-gslib"
       ]
-    ++ lib.optionals (stdenv.cross.libc or null == "msvcrt")
+    ++ lib.optionals stdenv.hostPlatform.isMinGW
       [ "--enable-static" "--disable-shared" ] # due to libxml2 being without DLLs ATM
     ;
 
@@ -55,15 +53,15 @@ stdenv.mkDerivation rec {
 
   buildInputs =
     [ zlib fontconfig freetype ghostscript
-      libpng libtiff libxml2
+      libpng libtiff libxml2 libheif djvulibre
     ]
-    ++ lib.optionals (stdenv.cross.libc or null != "msvcrt")
+    ++ lib.optionals (!stdenv.hostPlatform.isMinGW)
       [ openexr librsvg openjpeg ]
     ++ lib.optional stdenv.isDarwin ApplicationServices;
 
   propagatedBuildInputs =
     [ bzip2 freetype libjpeg lcms2 ]
-    ++ lib.optionals (stdenv.cross.libc or null != "msvcrt")
+    ++ lib.optionals (!stdenv.hostPlatform.isMinGW)
       [ libX11 libXext libXt libwebp ]
     ;
 
@@ -85,6 +83,8 @@ stdenv.mkDerivation rec {
     homepage = http://www.imagemagick.org/;
     description = "A software suite to create, edit, compose, or convert bitmap images";
     platforms = platforms.linux ++ platforms.darwin;
-    maintainers = with maintainers; [ the-kenny wkennington ];
+    license = licenses.asl20;
+    broken = ghostscript != null; # https://github.com/NixOS/nixpkgs/issues/55118
+    maintainers = with maintainers; [ the-kenny ];
   };
 }

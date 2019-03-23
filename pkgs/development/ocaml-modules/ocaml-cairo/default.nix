@@ -1,8 +1,12 @@
-{stdenv, fetchurl, automake, ocaml, autoconf, gnum4, pkgconfig, freetype, lablgtk, unzip, cairo, findlib, gdk_pixbuf, glib, gtk2, pango }:
+{stdenv, fetchurl, automake, ocaml, autoconf, gnum4, pkgconfig, freetype, lablgtk, unzip, cairo, findlib, gdk_pixbuf, gtk2, pango }:
 
 let
   pname = "ocaml-cairo";
 in
+
+if stdenv.lib.versionAtLeast ocaml.version "4.06"
+then throw "${pname} is not available for OCaml ${ocaml.version}"
+else
 
 stdenv.mkDerivation rec {
   name = "${pname}-${version}";
@@ -15,7 +19,8 @@ stdenv.mkDerivation rec {
 
   patches = [ ./META.patch ];
 
-  buildInputs = [ ocaml automake gnum4 autoconf unzip pkgconfig
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ ocaml automake gnum4 autoconf unzip
                   findlib freetype lablgtk cairo gdk_pixbuf gtk2 pango ];
 
   createFindlibDestdir = true;

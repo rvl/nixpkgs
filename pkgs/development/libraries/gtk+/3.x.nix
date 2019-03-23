@@ -1,10 +1,11 @@
-{ stdenv, fetchurl, pkgconfig, gettext, perl
-, expat, glib, cairo, pango, gdk_pixbuf, atk, at_spi2_atk, gobjectIntrospection
-, xorg, epoxy, json_glib, libxkbcommon, gmp
-, waylandSupport ? stdenv.isLinux, wayland, wayland-protocols
+{ stdenv, fetchurl, fetchpatch, pkgconfig, gettext, perl, makeWrapper, shared-mime-info, isocodes
+, expat, glib, cairo, pango, gdk_pixbuf, atk, at-spi2-atk, gobject-introspection, fribidi
+, xorg, epoxy, json-glib, libxkbcommon, gmp, gnome3, autoreconfHook
+, x11Support ? stdenv.isLinux
+, waylandSupport ? stdenv.isLinux, mesa_noglu, wayland, wayland-protocols
 , xineramaSupport ? stdenv.isLinux
 , cupsSupport ? stdenv.isLinux, cups ? null
-, darwin
+, AppKit, Cocoa
 }:
 
 assert cupsSupport -> cups != null;
@@ -12,36 +13,50 @@ assert cupsSupport -> cups != null;
 with stdenv.lib;
 
 let
-  ver_maj = "3.22";
-  ver_min = "6";
-  version = "${ver_maj}.${ver_min}";
+  version = "3.24.5";
 in
 stdenv.mkDerivation rec {
   name = "gtk+3-${version}";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/gtk+/${ver_maj}/gtk+-${version}.tar.xz";
-    sha256 = "eba75a216a117f4391beb2971ba20ff8a1823f109893f0ab6c2eac2210ea172f";
+    url = "mirror://gnome/sources/gtk+/${stdenv.lib.versions.majorMinor version}/gtk+-${version}.tar.xz";
+    sha256 = "0bxhvnixc1hjxbzx063lghmix0wmv282khsqmckdxhrb606zpr8b";
   };
 
   outputs = [ "out" "dev" ];
   outputBin = "dev";
 
-  nativeBuildInputs = [ pkgconfig gettext gobjectIntrospection perl ];
+  nativeBuildInputs = [ pkgconfig gettext gobject-introspection perl makeWrapper autoreconfHook ];
 
-  patches = [ ./3.0-immodules.cache.patch ];
+  patches = [
+    ./3.0-immodules.cache.patch
+    (fetchpatch {
+      name = "Xft-setting-fallback-compute-DPI-properly.patch";
+      url = "https://bug757142.bugzilla-attachments.gnome.org/attachment.cgi?id=344123";
+      sha256 = "0g6fhqcv8spfy3mfmxpyji93k8d4p4q4fz1v9a1c1cgcwkz41d7p";
+    })
+    (fetchpatch {
+      name = "fix-fribidi-linking.patch";
+      url = https://github.com/gnome/gtk/compare/3.24.5..47e4a111c2666961ab47b6df48460d3c9075d92d.patch;
+      sha256 = "0ky4kmgcywg0qlwndn9aw083bkwnkr49bnlsz0ii93fxzvbiqglr";
+    })
+  ] ++ optionals stdenv.isDarwin [
+    # X11 module requires <gio/gdesktopappinfo.h> which is not installed on Darwin
+    # let’s drop that dependency in similar way to how other parts of the library do it
+    # e.g. https://gitlab.gnome.org/GNOME/gtk/blob/3.24.4/gtk/gtk-launch.c#L31-33
+    ./3.0-darwin-x11.patch
+  ];
 
-  buildInputs = [ libxkbcommon epoxy json_glib ];
+  buildInputs = [ libxkbcommon epoxy json-glib isocodes ]
+    ++ optional stdenv.isDarwin AppKit;
   propagatedBuildInputs = with xorg; with stdenv.lib;
-    [ expat glib cairo pango gdk_pixbuf atk at_spi2_atk
+    [ expat glib cairo pango gdk_pixbuf atk at-spi2-atk gnome3.gsettings-desktop-schemas fribidi
       libXrandr libXrender libXcomposite libXi libXcursor libSM libICE ]
-    ++ optionals waylandSupport [ wayland wayland-protocols ]
-    ++ optionals stdenv.isDarwin (with darwin.apple_sdk.frameworks; [ AppKit Cocoa ])
+    ++ optional stdenv.isDarwin Cocoa  # explicitly propagated, always needed
+    ++ optionals waylandSupport [ mesa_noglu wayland wayland-protocols ]
     ++ optional xineramaSupport libXinerama
     ++ optional cupsSupport cups;
   #TODO: colord?
-
-  NIX_LDFLAGS = optionalString stdenv.isDarwin "-lintl";
 
   # demos fail to install, no idea where's the problem
   preConfigure = "sed '/^SRC_SUBDIRS /s/demos//' -i Makefile.in";
@@ -52,18 +67,36 @@ stdenv.mkDerivation rec {
     "--disable-debug"
     "--disable-dependency-tracking"
     "--disable-glibtest"
-    "--with-gdktarget=quartz"
+  ] ++ optional (stdenv.isDarwin && !x11Support)
     "--enable-quartz-backend"
-  ] ++ optional stdenv.isLinux [
+    ++ optional x11Support [
     "--enable-x11-backend"
   ] ++ optional waylandSupport [
     "--enable-wayland-backend"
   ];
 
+  doCheck = false; # needs X11
+
   postInstall = optionalString (!stdenv.isDarwin) ''
     substituteInPlace "$out/lib/gtk-3.0/3.0.0/printbackends/libprintbackend-cups.la" \
       --replace '-L${gmp.dev}/lib' '-L${gmp.out}/lib'
+    # The updater is needed for nixos env and it's tiny.
+    moveToOutput bin/gtk-update-icon-cache "$out"
+    # Launcher
+    moveToOutput bin/gtk-launch "$out"
+
+    # TODO: patch glib directly
+    for f in $dev/bin/gtk-encode-symbolic-svg; do
+      wrapProgram $f --prefix XDG_DATA_DIRS : "${shared-mime-info}/share"
+    done
   '';
+
+  passthru = {
+    updateScript = gnome3.updateScript {
+      packageName = "gtk+";
+      attrPath = "gtk3";
+    };
+  };
 
   meta = with stdenv.lib; {
     description = "A multi-platform toolkit for creating graphical user interfaces";
@@ -79,11 +112,11 @@ stdenv.mkDerivation rec {
       royalties.
     '';
 
-    homepage = http://www.gtk.org/;
+    homepage = https://www.gtk.org/;
 
     license = licenses.lgpl2Plus;
 
-    maintainers = with maintainers; [ urkud raskin vcunat lethalman ];
+    maintainers = with maintainers; [ raskin vcunat lethalman ];
     platforms = platforms.all;
   };
 }

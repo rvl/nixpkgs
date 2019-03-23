@@ -1,38 +1,40 @@
-{ stdenv, fetchgit, cmake, boost, gmp, mpfr, libedit, python
-, texinfo, gnused }:
+{ stdenv, fetchFromGitHub, cmake, boost, gmp, mpfr, libedit, python
+, texinfo, gnused, usePython ? true }:
 
-let
-  version = "3.1.1";
-in
-
-stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   name = "ledger-${version}";
+  version = "3.1.2";
 
-  # NOTE: fetchgit because ledger has submodules not included in the
-  # default github tarball.
-  src = fetchgit {
-    url = "https://github.com/ledger/ledger.git";
-    rev = "refs/tags/v${version}";
-    sha256 = "1j4p7djkmdmd858hylrsc3inamh9z0vkfl98s9wiqfmrzw51pmxp";
+  src = fetchFromGitHub {
+    owner  = "ledger";
+    repo   = "ledger";
+    rev    = version;
+    sha256 = "0hwnipj2m9p95hhyv6kyq54m27g14r58gnsy2my883kxhpcyb2vc";
   };
 
-  buildInputs = [ cmake boost gmp mpfr libedit python texinfo gnused ];
+  buildInputs = [
+    (boost.override { enablePython = usePython; })
+    gmp mpfr libedit python texinfo gnused
+  ];
+
+  nativeBuildInputs = [ cmake ];
 
   enableParallelBuilding = true;
 
-  cmakeFlags = [ "-DCMAKE_INSTALL_LIBDIR=lib" ];
+  cmakeFlags = [
+    "-DCMAKE_INSTALL_LIBDIR=lib"
+    "-DBUILD_DOCS:BOOL=ON"
+    (stdenv.lib.optionalString usePython "-DUSE_PYTHON=true")
+   ];
 
-  # Skip byte-compiling of emacs-lisp files because this is currently
-  # broken in ledger...
-  postInstall = ''
-    mkdir -p $out/share/emacs/site-lisp/
-    cp -v "$src/lisp/"*.el $out/share/emacs/site-lisp/
+  postBuild = ''
+    make doc
   '';
 
-  meta = {
-    homepage = "http://ledger-cli.org/";
+  meta = with stdenv.lib; {
+    homepage = https://ledger-cli.org/;
     description = "A double-entry accounting system with a command-line reporting interface";
-    license = stdenv.lib.licenses.bsd3;
+    license = licenses.bsd3;
 
     longDescription = ''
       Ledger is a powerful, double-entry accounting system that is accessed
@@ -41,7 +43,7 @@ stdenv.mkDerivation {
       their data, there really is no alternative.
     '';
 
-    platforms = stdenv.lib.platforms.all;
-    maintainers = with stdenv.lib.maintainers; [ peti the-kenny jwiegley ];
+    platforms = platforms.all;
+    maintainers = with maintainers; [ the-kenny jwiegley ];
   };
 }

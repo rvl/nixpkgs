@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, autoconf, automake, libtool, gettext, pkgconfig, glib, readline, makeWrapper }:
+{ stdenv, fetchFromGitHub, autoconf, automake, libtool, pkgconfig, glib, readline, makeWrapper }:
 
 stdenv.mkDerivation rec {
   name = "neardal-0.7-post-git-20150930";
@@ -10,7 +10,8 @@ stdenv.mkDerivation rec {
     sha256 = "12qwg7qiw2wfpaxfg2fjkmj5lls0g33xp6w433g8bnkvwlq4s29g";
   };
 
-  buildInputs = [ autoconf automake libtool pkgconfig glib readline makeWrapper ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ autoconf automake libtool glib readline makeWrapper ];
 
   preConfigure = ''
     substituteInPlace "ncl/Makefile.am" --replace "noinst_PROGRAMS" "bin_PROGRAMS"
@@ -25,6 +26,6 @@ stdenv.mkDerivation rec {
     license = licenses.lgpl2;
     homepage = https://01.org/linux-nfc;
     maintainers = with maintainers; [ tstrobel ];
-    platforms = platforms.unix;
+    platforms = platforms.linux;
   };
 }

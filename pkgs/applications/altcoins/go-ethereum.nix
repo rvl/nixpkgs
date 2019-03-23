@@ -1,34 +1,28 @@
-{ stdenv, lib, go, fetchgit }:
+{ stdenv, buildGoPackage, fetchFromGitHub, libobjc, IOKit }:
 
-stdenv.mkDerivation rec {
+buildGoPackage rec {
   name = "go-ethereum-${version}";
-  version = "1.4.7";
-  rev = "refs/tags/v${version}";
+  version = "1.8.22";
   goPackagePath = "github.com/ethereum/go-ethereum";
 
-  buildInputs = [ go ];
+  # Fix for usb-related segmentation faults on darwin
+  propagatedBuildInputs =
+    stdenv.lib.optionals stdenv.isDarwin [ libobjc IOKit ];
 
-  src = fetchgit {
-    inherit rev;
-    url = "https://${goPackagePath}";
-    sha256 = "19q518kxkvrr44cvsph4wv3lr6ivqsckz1f22r62932s3sq6gyd8";
+  # Fixes Cgo related build failures (see https://github.com/NixOS/nixpkgs/issues/25959 )
+  hardeningDisable = [ "fortify" ];
+
+  src = fetchFromGitHub {
+    owner = "ethereum";
+    repo = "go-ethereum";
+    rev = "v${version}";
+    sha256 = "0ag9qxrf7n0qkccaf6v4jaysivpxvsy5zfzar3mcm65223pqy375";
   };
 
-  buildPhase = ''
-    export GOROOT=$(mktemp -d --suffix=-goroot)
-    ln -sv ${go}/share/go/* $GOROOT
-    ln -svf ${go}/bin $GOROOT
-    make all
-  '';
-
-  installPhase = ''
-    mkdir -p $out/bin
-    cp -v build/bin/* $out/bin
-  '';
-
-  meta = {
-    homepage = "https://ethereum.github.io/go-ethereum/";
+  meta = with stdenv.lib; {
+    homepage = https://ethereum.github.io/go-ethereum/;
     description = "Official golang implementation of the Ethereum protocol";
-    license = with lib.licenses; [ lgpl3 gpl3 ];
+    license = with licenses; [ lgpl3 gpl3 ];
+    maintainers = with maintainers; [ adisbladis asymmetric lionello ];
   };
 }

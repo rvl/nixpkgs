@@ -1,13 +1,13 @@
-{ stdenv, fetchurl, cmake }:
+{ stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
   name    = "${pname}-${version}";
-  version = "1.9";
+  version = "1.10";
   pname   = "libircclient";
 
   src = fetchurl {
     url    = "mirror://sourceforge/${pname}/${pname}/${version}/${name}.tar.gz";
-    sha256 = "0r60i76jh4drjh2jgp5sx71chagqllmkaq49zv67nrhqwvp9ghw1";
+    sha256 = "0b9wa0h3xc31wpqlvgxgnvqp5wgx3kwsf5s9432m5cj8ycx6zcmv";
   };
 
   outputs = [ "out" "dev" ];
@@ -26,6 +26,6 @@ stdenv.mkDerivation rec {
     homepage    = http://www.ulduzsoft.com/libircclient/;
     license     = licenses.lgpl3;
     maintainers = with maintainers; [ obadz ];
-    platforms   = platforms.all;
+    platforms   = platforms.linux;
   };
 }

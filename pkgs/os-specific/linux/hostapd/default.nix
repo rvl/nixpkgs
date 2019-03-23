@@ -1,25 +1,19 @@
-{ stdenv, fetchurl, fetchpatch, pkgconfig, libnl, openssl, sqlite ? null }:
+{ stdenv, fetchurl, pkgconfig, libnl, openssl, sqlite ? null }:
 
 with stdenv.lib;
 stdenv.mkDerivation rec {
   name = "hostapd-${version}";
-  version = "2.5";
+  version = "2.7";
 
   src = fetchurl {
-    url = "http://hostap.epitest.fi/releases/${name}.tar.gz";
-    sha256 = "0jn77r39ysshkzihv5rjbdajqazci59v2yab4rn05my09najs9wf";
+    url = "https://w1.fi/releases/${name}.tar.gz";
+    sha256 = "0hd181sghdk944hxd7d41s7zhqd4dmsbkxipjj27bgisrjixvc11";
   };
-
-  patches = [
-    (fetchpatch {
-      url = "https://raw.githubusercontent.com/voidlinux/void-packages/a7bcbc258ba9884bccde831c0ae2069cade99e41/srcpkgs/wpa_supplicant/patches/patch-src_crypto_tls_openssl_c";
-      sha256 = "1ifa2i54a7ijsha197dyldal3m4q5i05ih2sk15f5a5ybb6x7vmp";
-      addPrefixes = true;
-    })
-  ];
 
   nativeBuildInputs = [ pkgconfig ];
   buildInputs = [ libnl openssl sqlite ];
+
+  outputs = [ "out" "man" ];
 
   extraConfig = ''
     CONFIG_DRIVER_WIRED=y
@@ -62,13 +56,17 @@ stdenv.mkDerivation rec {
   '';
 
   preInstall = "mkdir -p $out/bin";
+  postInstall = ''
+    install -vD hostapd.8 -t $man/share/man/man8
+    install -vD hostapd_cli.1 -t $man/share/man/man1
+  '';
 
   meta = {
     homepage = http://hostap.epitest.fi;
     repositories.git = git://w1.fi/hostap.git;
     description = "A user space daemon for access point and authentication servers";
     license = licenses.gpl2;
-    maintainers = with maintainers; [ phreedom wkennington ];
+    maintainers = with maintainers; [ phreedom ];
     platforms = platforms.linux;
   };
 }

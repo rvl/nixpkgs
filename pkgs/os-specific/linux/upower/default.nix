@@ -1,20 +1,18 @@
-{ stdenv, fetchurl, pkgconfig, glib, dbus_glib
+{ stdenv, fetchurl, pkgconfig, dbus-glib
 , intltool, libxslt, docbook_xsl, udev, libgudev, libusb1
-, useSystemd ? true, systemd, gobjectIntrospection
+, useSystemd ? true, systemd, gobject-introspection
 }:
 
-assert stdenv.isLinux;
-
 stdenv.mkDerivation rec {
-  name = "upower-0.99.4";
+  name = "upower-0.99.9";
 
   src = fetchurl {
-    url = "http://upower.freedesktop.org/releases/${name}.tar.xz";
-    sha256 = "1c1ph1j1fnrf3vipxb7ncmdfc36dpvcvpsv8n8lmal7grjk2b8ww";
+    url = https://gitlab.freedesktop.org/upower/upower/uploads/2282c7c0e53fb31816b824c9d1f547e8/upower-0.99.9.tar.xz;
+    sha256 = "046ix7j7hmb7ycv8v54668kjsrgjhzwxn299c1d87vdnkd38kfh1";
   };
 
   buildInputs =
-    [ dbus_glib intltool libxslt docbook_xsl udev libgudev libusb1 gobjectIntrospection ]
+    [ dbus-glib intltool libxslt docbook_xsl udev libgudev libusb1 gobject-introspection ]
     ++ stdenv.lib.optional useSystemd systemd;
 
   nativeBuildInputs = [ pkgconfig ];
@@ -30,11 +28,14 @@ stdenv.mkDerivation rec {
 
   NIX_CFLAGS_LINK = "-lgcc_s";
 
+  doCheck = false; # fails with "env: './linux/integration-test': No such file or directory"
+
   installFlags = "historydir=$(TMPDIR)/foo";
 
   meta = {
-    homepage = http://upower.freedesktop.org/;
+    homepage = https://upower.freedesktop.org/;
     description = "A D-Bus service for power management";
     platforms = stdenv.lib.platforms.linux;
+    license = stdenv.lib.licenses.gpl2Plus;
   };
 }

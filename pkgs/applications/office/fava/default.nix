@@ -1,43 +1,37 @@
-{ stdenv, pkgs, fetchurl, python3Packages, fetchFromGitHub, fetchzip, python3, beancount }:
+{ stdenv, python3, beancount }:
 
-python3Packages.buildPythonApplication rec {
-  version = "1.2";
-  name = "fava-${version}";
+let
+  inherit (python3.pkgs) buildPythonApplication fetchPypi;
+in
+buildPythonApplication rec {
+  pname = "fava";
+  version = "1.10";
 
-  src = fetchurl {
-    url = "https://github.com/beancount/fava/archive/v${version}.tar.gz";
-    sha256 = "0sykx054w4cvr0pgbqph0lmkxffafl83k5ir252gl5znxgcvg6yw";
+  src = fetchPypi {
+    inherit pname version;
+    sha256 = "145995nzgr06qsn619zap0xqa8ckfrp5azga41smyszq97pd01sj";
   };
 
-  assets = fetchzip {
-    url = "https://github.com/beancount/fava/releases/download/v${version}/beancount-fava-${version}.tar.gz";
-    sha256 = "1lk6s3s6xvvwbcbkr1qpr9bqdgwspk3vms25zjd6xcs21s3hchmp";
-  };
+  doCheck = false;
 
-  buildInputs = with python3Packages; [ pytest_30 ];
-
-  checkPhase = ''
-    # pyexcel is optional
-    # the other 2 tests fail due non-unicode locales
-    PATH=$out/bin:$PATH pytest tests \
-      --ignore tests/test_util_excel.py \
-      --ignore tests/test_cli.py \
-      --ignore tests/test_translations.py \
-  '';
-
-  postInstall = ''
-    cp -r $assets/fava/static/gen $out/${python3.sitePackages}/fava/static
-  '';
-
-  propagatedBuildInputs = with python3Packages;
-    [ flask dateutil pygments wheel markdown2 flaskbabel tornado
-      click beancount ];
+  propagatedBuildInputs = with python3.pkgs;
+    [ 
+      Babel
+      cheroot
+      flaskbabel
+      flask
+      jinja2
+      beancount
+      click
+      markdown2
+      ply
+      simplejson
+    ];
 
   meta = {
-    homepage = https://github.com/aumayr/fava;
+    homepage = https://beancount.github.io/fava;
     description = "Web interface for beancount";
     license = stdenv.lib.licenses.mit;
     maintainers = with stdenv.lib.maintainers; [ matthiasbeyer ];
   };
 }
-

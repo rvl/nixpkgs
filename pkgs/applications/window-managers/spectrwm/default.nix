@@ -1,5 +1,4 @@
 { fetchurl
-, coreutils
 , libX11
 , libXrandr
 , libXcursor
@@ -36,7 +35,10 @@ stdenv.mkDerivation rec {
     xcbutilwm
   ];
 
-  sourceRoot = "spectrwm-SPECTRWM_2_7_2/linux";
+  sourceRoot = let
+    subdir = if stdenv.isDarwin then "osx" else "linux";
+  in "spectrwm-SPECTRWM_2_7_2/${subdir}";
+
   makeFlags="PREFIX=$(out)";
   installPhase = "PREFIX=$out make install";
 

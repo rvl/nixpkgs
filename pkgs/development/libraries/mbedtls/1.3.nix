@@ -1,11 +1,11 @@
 { stdenv, fetchurl, perl }:
 
 stdenv.mkDerivation rec {
-  name = "mbedtls-1.3.17";
+  name = "mbedtls-1.3.22";
 
   src = fetchurl {
     url = "https://tls.mbed.org/download/${name}-gpl.tgz";
-    sha256 = "10nviv3d8w6sp3kn3yzdpssvzqxdbr4kg38g7rg930q2hlzb9gpm";
+    sha256 = "0ms4s41z88mz7b6gsnp7jslms4v0115k7gw51i6kx6ng9am43l6y";
   };
 
   nativeBuildInputs = [ perl ];
@@ -29,6 +29,6 @@ stdenv.mkDerivation rec {
     description = "Portable cryptographic and SSL/TLS library, aka polarssl";
     license = licenses.gpl3;
     platforms = platforms.all;
-    maintainers = with maintainers; [ wkennington fpletz ];
+    maintainers = with maintainers; [ fpletz ];
   };
 }

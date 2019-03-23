@@ -1,81 +1,89 @@
-{ stdenv, fetchFromGitHub, pythonPackages, fetchurl }:
+{ stdenv, lib, fetchFromGitHub, python2 }:
 
 let
-
-  tornado_4_0_1 = pythonPackages.buildPythonPackage rec {
-    name = "tornado-${version}";
-    version = "4.0.1";
-
-    propagatedBuildInputs = with pythonPackages; [ backports_ssl_match_hostname_3_4_0_2 certifi ];
-
-    src = fetchurl {
-      url = "mirror://pypi/t/tornado/${name}.tar.gz";
-      sha256 = "00crp5vnasxg7qyjv89qgssb69vd7qr13jfghdryrcbnn9l8c1df";
-    };
-  };
-
-  sockjs-tornado = pythonPackages.buildPythonPackage rec {
-    name = "sockjs-tornado-${version}";
-    version = "1.0.3";
-
-    src = fetchurl {
-      url = "mirror://pypi/s/sockjs-tornado/${name}.tar.gz";
-      sha256 = "16cff40nniqsyvda1pb2j3b4zwmrw7y2g1vqq78lp20xpmhnwwkd";
+  mkOverride = attrname: version: sha256:
+    self: super: {
+      ${attrname} = super.${attrname}.overridePythonAttrs (oldAttrs: {
+        inherit version;
+        src = oldAttrs.src.override {
+          inherit version sha256;
+        };
+      });
     };
 
-    # This is needed for compatibility with OctoPrint
-    propagatedBuildInputs = [ tornado_4_0_1 ];
-
-    meta = with stdenv.lib; {
-      description = "SockJS python server implementation on top of Tornado framework";
-      homepage = "http://github.com/mrjoes/sockjs-tornado/";
-      license = licenses.mit;
-      platforms = platforms.all;
-      maintainers = with maintainers; [ abbradar ];
-    };
+  py = python2.override {
+    packageOverrides = lib.foldr lib.composeExtensions (self: super: { }) ([
+      (mkOverride "flask"       "0.10.1" "0wrkavjdjndknhp8ya8j850jq7a1cli4g5a93mg8nh1xz2gq50sc")
+      (mkOverride "flask_login" "0.2.11" "1rg3rsjs1gwi2pw6vr9jmhaqm9b3vc9c4hfcsvp4y8agbh7g3mc3")
+      (mkOverride "jinja2"      "2.8.1"  "14aqmhkc9rw5w0v311jhixdm6ym8vsm29dhyxyrjfqxljwx1yd1m")
+      (mkOverride "pylru"       "1.0.9"  "0b0pq0l7xv83dfsajsc49jcxzc99kb9jfx1a1dlx22hzcy962dvi")
+      (mkOverride "sarge"       "0.1.4"  "08s8896973bz1gg0pkr592w6g4p6v47bkfvws5i91p9xf8b35yar")
+      (mkOverride "tornado"     "4.5.3"  "02jzd23l4r6fswmwxaica9ldlyc2p6q8dk6dyff7j58fmdzf853d")
+    ]);
   };
 
-in pythonPackages.buildPythonApplication rec {
-  name = "OctoPrint-${version}";
-  version = "1.2.17";
-
-  src = fetchFromGitHub {
-    owner = "foosel";
-    repo = "OctoPrint";
-    rev = version;
-    sha256 = "1di2f5npwsfckx5p2fl23bl5zi75i0aksd9qy4sa3zmw672337fh";
-  };
-
-  # We need old Tornado
-  propagatedBuildInputs = with pythonPackages; [
-    awesome-slugify flask_assets rsa requests2 pkginfo watchdog
-    semantic-version flask_principal werkzeug flaskbabel tornado_4_0_1
-    psutil pyserial flask_login netaddr markdown sockjs-tornado
-    pylru pyyaml sarge feedparser netifaces
+  ignoreVersionConstraints = [
+    "Click"
+    "Flask-Assets"
+    "Flask-Babel"
+    "Flask-Principal"
+    "PyYAML"
+    "emoji"
+    "flask"
+    "future"
+    "futures"
+    "monotonic"
+    "pkginfo"
+    "psutil"
+    "pyserial"
+    "python-dateutil"
+    "requests"
+    "rsa"
+    "sarge"
+    "scandir"
+    "semantic_version"
+    "watchdog"
+    "websocket-client"
+    "werkzeug"
+    "wrapt"
   ];
 
-  # Jailbreak dependencies.
-  # Currently broken for new: tornado, pyserial, flask_login
+in py.pkgs.buildPythonApplication rec {
+  pname = "OctoPrint";
+  version = "1.3.10";
+
+  src = fetchFromGitHub {
+    owner  = "foosel";
+    repo   = "OctoPrint";
+    rev    = version;
+    sha256 = "1pvh7ay76zrvfzcsadh3sl48sgf3by9vpiaqlrkscsw02zirx9r7";
+  };
+
+  propagatedBuildInputs = with py.pkgs; [
+    awesome-slugify flask_assets rsa requests pkginfo watchdog
+    semantic-version flask_principal werkzeug flaskbabel tornado
+    psutil pyserial flask_login netaddr markdown sockjs-tornado
+    pylru pyyaml sarge feedparser netifaces click websocket_client
+    scandir chainmap future dateutil futures wrapt monotonic emoji
+    frozendict
+  ];
+
+  checkInputs = with py.pkgs; [ nose mock ddt ];
+
   postPatch = ''
-    sed -i \
-      -e 's,werkzeug>=[^"]*,werkzeug,g' \
-      -e 's,requests>=[^"]*,requests,g' \
-      -e 's,pkginfo>=[^"]*,pkginfo,g' \
-      -e 's,semantic_version>=[^"]*,semantic_version,g' \
-      -e 's,psutil>=[^"]*,psutil,g' \
-      -e 's,Flask-Babel>=[^"]*,Flask-Babel,g' \
-      -e 's,Flask-Principal>=[^"]*,Flask-Principal,g' \
-      -e 's,markdown>=[^"]*,markdown,g' \
-      -e 's,Flask-Assets>=[^"]*,Flask-Assets,g' \
-      -e 's,Flask-Login>=[^"]*,Flask-Login,g' \
-      -e 's,rsa>=[^"]*,rsa,g' \
-      -e 's,PyYAML>=[^"]*,PyYAML,g' \
-      -e 's,flask>=[^"]*,flask,g' \
+    sed -r -i \
+      ${lib.concatStringsSep "\n" (map (e:
+        ''-e 's@${e}[<>=]+.*@${e}",@g' \''
+      ) ignoreVersionConstraints)}
       setup.py
   '';
 
+  checkPhase = ''
+    HOME=$(mktemp -d) nosetests
+  '';
+
   meta = with stdenv.lib; {
-    homepage = "http://octoprint.org/";
+    homepage = https://octoprint.org/;
     description = "The snappy web interface for your 3D printer";
     license = licenses.agpl3;
     maintainers = with maintainers; [ abbradar ];

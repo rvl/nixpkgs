@@ -2,7 +2,7 @@
 , freetype, fribidi
 , libSM, libICE, libXt, libXaw, libXmu
 , libXext, libXft, libXpm, libXrandr
-, libXrender, xextproto, libXinerama }:
+, libXrender, xorgproto, libXinerama }:
 
 with stdenv.lib;
 stdenv.mkDerivation rec {
@@ -10,7 +10,9 @@ stdenv.mkDerivation rec {
   name = "oroborus-${version}";
   version = "2.0.20";
 
-  buildInputs = [ pkgconfig freetype fribidi libSM libICE libXt libXaw libXmu libXext libXft libXpm libXrandr libXrender xextproto libXinerama ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ freetype fribidi libSM libICE libXt libXaw libXmu libXext
+                  libXft libXpm libXrandr libXrender xorgproto libXinerama ];
 
   src = fetchurl {
     url = "http://ftp.debian.org/debian/pool/main/o/oroborus/oroborus_${version}.tar.gz";
@@ -19,7 +21,7 @@ stdenv.mkDerivation rec {
 
   meta = {
     description = "A really minimalistic X window manager";
-    homepage = http://www.oroborus.org/;
+    homepage = https://www.oroborus.org/;
     license = licenses.gpl2Plus;
     maintainers = [ maintainers.AndersonTorres ];
     platforms = platforms.linux;

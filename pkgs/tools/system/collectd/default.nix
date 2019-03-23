@@ -1,69 +1,103 @@
-{ stdenv, fetchurl
-# optional:
-, pkgconfig ? null  # most of the extra deps need pkgconfig to be found
-, curl ? null
-, iptables ? null
-, jdk ? null
-, libatasmart ? null
-, libcredis ? null
-, libdbi ? null
-, libgcrypt ? null
-, libmemcached ? null, cyrus_sasl ? null
-, libmodbus ? null
-, libnotify ? null, gdk_pixbuf ? null
-, liboping ? null
-, libpcap ? null
-, libsigrok ? null
-, libvirt ? null
-, libxml2 ? null
-, libtool ? null
-, lm_sensors ? null
-, lvm2 ? null
-, libmysql ? null
-, postgresql ? null
-, protobufc ? null
-, python ? null
-, rabbitmq-c ? null
-, riemann ? null
-, rrdtool ? null
-, udev ? null
-, varnish ? null
-, yajl ? null
-, net_snmp ? null
-, hiredis ? null
-, libmnl ? null
+{ stdenv, fetchurl, fetchpatch, darwin
+, autoreconfHook
+, pkgconfig
+, curl
+, iptables
+, jdk
+, libapparmor
+, libatasmart
+, libcap_ng
+, libcredis
+, libdbi
+, libgcrypt
+, libmemcached, cyrus_sasl
+, libmicrohttpd
+, libmodbus
+, libnotify, gdk_pixbuf
+, liboping
+, libpcap
+, libsigrok
+, libvirt
+, libxml2
+, libtool
+, lm_sensors
+, lvm2
+, mysql
+, numactl
+, postgresql
+, protobufc
+, python
+, rabbitmq-c
+, riemann_c_client
+, rrdtool
+, udev
+, varnish
+, yajl
+, net_snmp
+, hiredis
+, libmnl
+, mosquitto
+, rdkafka
+, mongoc
 }:
 stdenv.mkDerivation rec {
-  version = "5.6.0";
+  version = "5.8.1";
   name = "collectd-${version}";
 
   src = fetchurl {
-    url = "http://collectd.org/files/${name}.tar.bz2";
-    sha256 = "08w6fjzczi2psk7va0xkjh9pigpar6sbjx2a6ayq4dmc3zcvpzzh";
+    url = "https://collectd.org/files/${name}.tar.bz2";
+    sha256 = "1njk8hh56gb755xafsh7ahmqr9k2d4lam4ddj7s7fqz0gjigv5p7";
   };
 
-  buildInputs = [
-    pkgconfig curl iptables libatasmart libcredis libdbi libgcrypt libmemcached
-    cyrus_sasl libmodbus libnotify gdk_pixbuf liboping libpcap libsigrok libvirt
-    lm_sensors libxml2 lvm2 libmysql postgresql protobufc rabbitmq-c rrdtool
-    varnish yajl jdk libtool python udev net_snmp hiredis libmnl
-  ];
-
   patches = [
-    # Replace deprecated readdir_r() with readdir() to avoid a fatal warning.
-    ./readdir-fix.patch
+    (fetchpatch {
+      url = "https://github.com/rpv-tomsk/collectd/commit/d5a3c020d33cc33ee8049f54c7b4dffcd123bf83.patch";
+      sha256 = "1n65zw4d2k2bxapayaaw51ym7hy72a0cwi2abd8jgxcw3d0m5g15";
+    })
   ];
 
-  # for some reason libsigrok isn't auto-detected
-  configureFlags =
-    stdenv.lib.optional (libsigrok != null) "--with-libsigrok" ++
-    stdenv.lib.optional (python != null) "--with-python=${python}/bin/python";
+  nativeBuildInputs = [ pkgconfig autoreconfHook ];
+  buildInputs = [
+    curl libdbi libgcrypt libmemcached
+    cyrus_sasl libnotify gdk_pixbuf liboping libpcap libvirt
+    libxml2 postgresql protobufc rrdtool
+    varnish yajl jdk libtool python hiredis libmicrohttpd
+    riemann_c_client mosquitto rdkafka mongoc
+  ] ++ stdenv.lib.optionals (mysql != null) [ mysql.connector-c
+  ] ++ stdenv.lib.optionals stdenv.isLinux [
+    iptables libatasmart libcredis libmodbus libsigrok
+    lm_sensors lvm2 rabbitmq-c udev net_snmp libmnl
+    # those might be no longer required when https://github.com/NixOS/nixpkgs/pull/51767
+    # is merged
+    libapparmor numactl libcap_ng
+  ] ++ stdenv.lib.optionals stdenv.isDarwin [
+    darwin.apple_sdk.frameworks.IOKit
+    darwin.apple_sdk.frameworks.ApplicationServices
+  ];
+
+  configureFlags = [
+    "--localstatedir=/var"
+    "--disable-werror"
+  ];
+
+  # do not create directories in /var during installPhase
+  postConfigure = ''
+     substituteInPlace Makefile --replace '$(mkinstalldirs) $(DESTDIR)$(localstatedir)/' '#'
+  '';
+
+  postInstall = ''
+    if [ -d $out/share/collectd/java ]; then
+      mv $out/share/collectd/java $out/share/
+    fi
+  '';
+
+  enableParallelBuilding = true;
 
   meta = with stdenv.lib; {
     description = "Daemon which collects system performance statistics periodically";
-    homepage = http://collectd.org;
+    homepage = https://collectd.org;
     license = licenses.gpl2;
-    platforms = platforms.linux;
+    platforms = platforms.unix;
     maintainers = with maintainers; [ bjornfor fpletz ];
   };
 }

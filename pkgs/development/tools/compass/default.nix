@@ -1,12 +1,10 @@
-{ stdenv, lib, bundlerEnv, ruby }:
+{ lib, bundlerEnv, ruby }:
 
 bundlerEnv {
   name = "compass-1.0.3";
 
   inherit ruby;
-  gemfile = ./Gemfile;
-  lockfile = ./Gemfile.lock;
-  gemset = ./gemset.nix;
+  gemdir = ./.;
 
   meta = with lib; {
     description = "Stylesheet Authoring Environment that makes your website design simpler to implement and easier to maintain";

@@ -1,41 +1,30 @@
-{stdenv, fetchurl, which, automake, autoconf, pkgconfig, curl, libtool, vala_0_23, python, intltool, fuse, ccnet}:
+{stdenv, fetchFromGitHub, which, autoreconfHook, pkgconfig, curl, vala, python, intltool, fuse, ccnet}:
 
-stdenv.mkDerivation rec
-{
-  version = "5.0.7";
+stdenv.mkDerivation rec {
+  version = "6.2.11";
   name = "seafile-shared-${version}";
 
-  src = fetchurl
-  {
-    url = "https://github.com/haiwen/seafile/archive/v${version}.tar.gz";
-    sha256 = "ec166c86a41e7ab3b1ae97a56326ab4a2b1ec38686486b956c3d153b8023c670";
+  src = fetchFromGitHub {
+    owner = "haiwen";
+    repo = "seafile";
+    rev = "v${version}";
+    sha256 = "16d4m5n5zhip13l6pv951lm081pnwxpiqcm7j4gxqm1ian48m787";
   };
 
-  buildInputs = [ which automake autoconf pkgconfig libtool vala_0_23 python intltool fuse ];
+  nativeBuildInputs = [ pkgconfig which autoreconfHook vala intltool ];
+  buildInputs = [ python fuse ];
   propagatedBuildInputs = [ ccnet curl ];
 
-  preConfigure = ''
-  sed -ie 's|/bin/bash|/bin/sh|g' ./autogen.sh
-  ./autogen.sh
-  '';
+  configureFlags = [
+    "--disable-server"
+    "--disable-console"
+  ];
 
-  configureFlags = "--disable-server --disable-console";
-
-  buildPhase = "make -j1";
-
-  postInstall = ''
-  # Remove seafile binary
-  rm -rf "$out/bin/seafile"
-  # Remove cli client binary
-  rm -rf "$out/bin/seaf-cli"
-  '';
-
-  meta =
-  {
-    homepage = "https://github.com/haiwen/seafile";
+  meta = with stdenv.lib; {
+    homepage = https://github.com/haiwen/seafile;
     description = "Shared components of Seafile: seafile-daemon, libseafile, libseafile python bindings, manuals, and icons";
-    license = stdenv.lib.licenses.gpl3;
-    platforms = stdenv.lib.platforms.linux;
-    maintainers = [ stdenv.lib.maintainers.calrama ];
+    license = licenses.gpl3;
+    platforms = platforms.linux;
+    maintainers = [ ];
   };
 }

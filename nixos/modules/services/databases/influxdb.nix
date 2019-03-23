@@ -68,9 +68,9 @@ let
 
     collectd = [{
       enabled = false;
-      typesdb = "${pkgs.collectd}/share/collectd/types.db";
+      typesdb = "${pkgs.collectd-data}/share/collectd/types.db";
       database = "collectd_db";
-      port = 25826;
+      bind-address = ":25826";
     }];
 
     opentsdb = [{
@@ -98,6 +98,7 @@ let
 
   configFile = pkgs.runCommand "config.toml" {
     buildInputs = [ pkgs.remarshal ];
+    preferLocalBuild = true;
   } ''
     remarshal -if json -of toml \
       < ${pkgs.writeText "config.json" (builtins.toJSON configOptions)} \
@@ -149,7 +150,6 @@ in
         type = types.attrs;
       };
     };
-
   };
 
 
@@ -171,20 +171,25 @@ in
         mkdir -m 0770 -p ${cfg.dataDir}
         if [ "$(id -u)" = 0 ]; then chown -R ${cfg.user}:${cfg.group} ${cfg.dataDir}; fi
       '';
-      postStart = mkBefore ''
-        until ${pkgs.curl.bin}/bin/curl -s -o /dev/null 'http://127.0.0.1${toString configOptions.http.bind-address}'/ping; do
-          sleep 1;
-        done
-      '';
+      postStart =
+        let
+          scheme = if configOptions.http.https-enabled then "-k https" else "http";
+          bindAddr = (ba: if hasPrefix ":" ba then "127.0.0.1${ba}" else "${ba}")(toString configOptions.http.bind-address);
+        in
+        mkBefore ''
+          until ${pkgs.curl.bin}/bin/curl -s -o /dev/null ${scheme}://${bindAddr}/ping; do
+            sleep 1;
+          done
+        '';
     };
 
-    users.extraUsers = optional (cfg.user == "influxdb") {
+    users.users = optional (cfg.user == "influxdb") {
       name = "influxdb";
       uid = config.ids.uids.influxdb;
       description = "Influxdb daemon user";
     };
 
-    users.extraGroups = optional (cfg.group == "influxdb") {
+    users.groups = optional (cfg.group == "influxdb") {
       name = "influxdb";
       gid = config.ids.gids.influxdb;
     };

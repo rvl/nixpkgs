@@ -4,7 +4,7 @@
 */
 { stdenv, lib, fetchurl, runCommand, writeText, buildEnv
 , callPackage, ghostscriptX, harfbuzz, poppler_min
-, makeWrapper, perl, python, ruby
+, makeWrapper, python, ruby, perl
 , useFixedHashes ? true
 , recurseIntoAttrs
 }:
@@ -20,24 +20,22 @@ let
 
   # map: name -> fixed-output hash
   # sha1 in base32 was chosen as a compromise between security and length
-  # warning: the following generator command takes lots of resources
-  # nix-build ../../../../.. -Q -A texlive.scheme-full.pkgs | ./fixHashes.sh > ./fixedHashes-new.nix
-  # mv ./fixedHashes{-new,}.nix
   fixedHashes = lib.optionalAttrs useFixedHashes (import ./fixedHashes.nix);
 
   # function for creating a working environment from a set of TL packages
   combine = import ./combine.nix {
-    inherit bin combinePkgs buildEnv fastUnique lib makeWrapper writeText
-      perl stdenv python ruby;
+    inherit bin combinePkgs buildEnv lib makeWrapper writeText
+      stdenv python ruby perl;
+    ghostscript = ghostscriptX; # could be without X, probably, but we use X above
   };
 
   # the set of TeX Live packages, collections, and schemes; using upstream naming
   tl = let
-    /* # beware: the URL below changes contents continuously
-      curl http://mirror.ctan.org/tex-archive/systems/texlive/tlnet/tlpkg/texlive.tlpdb.xz \
-        | xzcat | uniq -u | sed -rn -f ./tl2nix.sed > ./pkgs.nix */
-    orig = import ./pkgs.nix tl; # XXX XXX XXX FIXME: the file is probably too big now XXX XXX XXX XXX XXX XXX
-    clean = orig // {
+    orig = import ./pkgs.nix tl;
+    removeSelfDep = lib.mapAttrs
+      (n: p: if p ? deps then p // { deps = lib.filterAttrs (dn: _: n != dn) p.deps; }
+                         else p);
+    clean = removeSelfDep (orig // {
       # overrides of texlive.tlpdb
 
       dvidvi = orig.dvidvi // {
@@ -53,22 +51,16 @@ let
 
       # remove dependency-heavy packages from the basic collections
       collection-basic = orig.collection-basic // {
-        deps = removeAttrs orig.collection-basic.deps [ "luatex" "metafont" "xdvi" ];
-      };
-      latex = orig.latex // {
-        deps = removeAttrs orig.latex.deps [ "luatex" ];
+        deps = removeAttrs orig.collection-basic.deps [ "metafont" "xdvi" ];
       };
       # add them elsewhere so that collections cover all packages
-      collection-luatex = orig.collection-luatex // {
-        deps = orig.collection-luatex.deps // { inherit (tl) luatex; };
-      };
       collection-metapost = orig.collection-metapost // {
         deps = orig.collection-metapost.deps // { inherit (tl) metafont; };
       };
-      collection-genericextra = orig.collection-genericextra // {
-        deps = orig.collection-genericextra.deps // { inherit (tl) xdvi; };
+      collection-plaingeneric = orig.collection-plaingeneric // {
+        deps = orig.collection-plaingeneric.deps // { inherit (tl) xdvi; };
       };
-    }; # overrides
+    }); # overrides
 
     # tl =
     in lib.mapAttrs flatDeps clean;
@@ -107,13 +99,20 @@ let
       tlName = urlName + "-${version}";
       fixedHash = fixedHashes.${tlName} or null; # be graceful about missing hashes
 
-      url = args.url or "${urlPrefix}/${urlName}.tar.xz";
-      urlPrefix = args.urlPrefix or
-        http://lipa.ms.mff.cuni.cz/~cunav5am/nix/texlive-2016;
-      # XXX XXX XXX FIXME: mirror the snapshot XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
-      #  ("${mirror}/pub/tex/historic/systems/texlive/${bin.texliveYear}/tlnet-final/archive");
-      #mirror = "http://ftp.math.utah.edu";
-      src = fetchurl { inherit url sha512; };
+      urls = args.urls or (if args ? url then [ args.url ] else
+              map (up: "${up}/${urlName}.tar.xz") urlPrefixes
+            );
+
+      # Upstream refuses to distribute stable tarballs,
+      # so we host snapshots on IPFS or on our own servers.
+      # Common packages should get served from the binary cache anyway.
+      # See discussions, e.g. https://github.com/NixOS/nixpkgs/issues/24683
+      urlPrefixes = args.urlPrefixes or [
+        http://ftp.math.utah.edu/pub/tex/historic/systems/texlive/2018/tlnet-final/archive
+        ftp://tug.org/texlive/historic/2018/tlnet-final/archive
+      ];
+
+      src = fetchurl { inherit urls sha512; };
 
       passthru = {
         inherit pname tlType version;
@@ -127,7 +126,7 @@ let
     in if sha512 == "" then
       # hash stripped from pkgs.nix to save space -> fetch&unpack in a single step
       fetchurl {
-        inherit url;
+        inherit urls;
         sha1 = if fixedHash == null then throw "TeX Live package ${tlName} is missing hash!"
           else fixedHash;
         name = tlName;
@@ -135,7 +134,7 @@ let
         downloadToTemp = true;
         postFetch = ''mkdir "$out";'' + unpackCmd "$downloadedFile";
         # TODO: perhaps override preferHashedMirrors and allowSubstitutes
-      }
+     }
         // passthru
 
     else runCommand "texlive-${tlName}"
@@ -157,12 +156,6 @@ let
   combinePkgs = pkgSet: lib.concatLists # uniqueness is handled in `combine`
     (lib.mapAttrsToList (_n: a: a.pkgs) pkgSet);
 
-  # TODO: replace by buitin once it exists
-  fastUnique = comparator: list: with lib;
-    let un_adj = l: if length l < 2 then l
-      else optional (head l != elemAt l 1) (head l) ++ un_adj (tail l);
-    in un_adj (lib.sort comparator list);
-
 in
   tl // {
     inherit bin combine;
@@ -177,17 +170,16 @@ in
             platforms = lib.platforms.all;
             hydraPlatforms = lib.optionals
               (lib.elem pname ["scheme-small" "scheme-basic"]) platforms;
-            maintainers = [ lib.maintainers.vcunat ];
+            maintainers = with lib.maintainers;  [ vcunat veprbl ];
           }
           (combine {
             ${pname} = attrs;
             extraName = "combined" + lib.removePrefix "scheme" pname;
           })
         )
-        { inherit (tl) scheme-full
-            scheme-tetex scheme-medium scheme-small scheme-basic scheme-minimal
-            scheme-context scheme-gust scheme-xml;
+        { inherit (tl)
+            scheme-basic scheme-context scheme-full scheme-gust
+            scheme-medium scheme-minimal scheme-small scheme-tetex;
         }
     );
   }
-

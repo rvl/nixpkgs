@@ -32,16 +32,14 @@
 #   `meta` with `platforms` and `homepage` set to something you are
 #   unlikely to want to override for most packages
 
-{ overrides
-
-, lib, newScope, stdenv, fetchurl, fetchgit, fetchFromGitHub, fetchhg, runCommand
+{ lib, newScope, stdenv, fetchurl, fetchgit, fetchFromGitHub, fetchhg, fetchpatch, runCommand, writeText
 
 , emacs, texinfo, lndir, makeWrapper
 , trivialBuild
 , melpaBuild
 
 , external
-}@args:
+}:
 
 with lib.licenses;
 
@@ -52,16 +50,14 @@ let
   };
 
   melpaStablePackages = import ../applications/editors/emacs-modes/melpa-stable-packages.nix {
-    inherit lib;
+    inherit external;
   };
 
   melpaPackages = import ../applications/editors/emacs-modes/melpa-packages.nix {
-    inherit lib;
+    inherit external lib;
   };
 
-  orgPackages = import ../applications/editors/emacs-modes/org-packages.nix {
-    inherit fetchurl lib stdenv texinfo;
-  };
+  orgPackages = import ../applications/editors/emacs-modes/org-packages.nix { };
 
   emacsWithPackages = import ../build-support/emacs/wrapper.nix {
     inherit lib lndir makeWrapper stdenv runCommand;
@@ -75,28 +71,23 @@ let
 
   ## START HERE
 
-  tablist = melpaBuild rec {
-    pname = "tablist";
-    inherit (pdf-tools) src version;
-    fileSpecs = [ "lisp/tablist.el" "lisp/tablist-filter.el" ];
-    meta = {
-      description = "Extended tabulated-list-mode";
-      license = gpl3;
-    };
-  };
-
   pdf-tools = melpaBuild rec {
     pname = "pdf-tools";
-    version = "0.70";
+    version = "0.90";
     src = fetchFromGitHub {
       owner = "politza";
       repo = "pdf-tools";
       rev = "v${version}";
-      sha256 = "19sy49r3ijh36m7hl4vspw5c4i8pnfqdn4ldm2sqchxigkw56ayl";
+      sha256 = "0iv2g5kd14zk3r5dzdw7b7hk4b5w7qpbilcqkja46jgxbb6xnpl9";
     };
-    buildInputs = with external; [ autoconf automake libpng zlib poppler pkgconfig ];
+    nativeBuildInputs = [ external.pkgconfig ];
+    buildInputs = with external; [ autoconf automake libpng zlib poppler ];
     preBuild = "make server/epdfinfo";
-    fileSpecs = [ "lisp/pdf-*.el" "server/epdfinfo" ];
+    recipe = writeText "recipe" ''
+      (pdf-tools
+       :repo "politza/pdf-tools" :fetcher github
+       :files ("lisp/pdf-*.el" "server/epdfinfo"))
+    '';
     packageRequires = [ tablist let-alist ];
     meta = {
       description = "Emacs support library for PDF files";
@@ -115,7 +106,12 @@ let
     };
     buildInputs = [ external.libffi ];
     preBuild = "make";
-    files = [ "ffi-glue" "ffi.el" ];
+    recipe = writeText "recipe" ''
+      (elisp-ffi
+      :repo "skeeto/elisp-ffi"
+      :fetcher github
+      :files ("ffi-glue" "ffi.el"))
+    '';
     meta = {
       description = "Emacs Lisp Foreign Function Interface";
       longDescription = ''
@@ -151,6 +147,32 @@ let
     };
   };
 
+  emacsql-sqlite = melpaBuild rec {
+    pname = "emacsql-sqlite";
+    ename = "emacsql-sqlite";
+    version = "20180128.1252";
+    src = fetchFromGitHub {
+      owner = "skeeto";
+      repo = "emacsql";
+      rev = "62d39157370219a1680265fa593f90ccd51457da";
+      sha256 = "0ghl3g8n8wlw8rnmgbivlrm99wcwn93bv8flyalzs0z9j7p7fdq9";
+    };
+    recipe = fetchurl {
+      url = "https://raw.githubusercontent.com/milkypostman/melpa/3cfa28c7314fa57fa9a3aaaadf9ef83f8ae541a9/recipes/emacsql-sqlite";
+      sha256 = "1y81nabzzb9f7b8azb9giy23ckywcbrrg4b88gw5qyjizbb3h70x";
+      name = "recipe";
+    };
+    preBuild = ''
+      cd sqlite
+      make
+    '';
+    packageRequires = [ emacs emacsql ];
+    meta = {
+      homepage = "https://melpa.org/#/emacsql-sqlite";
+      license = lib.licenses.free;
+    };
+  };
+
   elpy = melpaBuild rec {
     pname   = "elpy";
     version = external.elpy.version;
@@ -160,12 +182,15 @@ let
       rev    = "39ea47c73f040ce8dcc1c2d2639ebc0eb57ab8c8";
       sha256 = "0q3av1qv4m6aj4bil608f688hjpr5px8zqnnrdqx784nz98rpjrs";
     };
+    recipe = writeText "recipe" ''
+      (elpy :repo "jorgenschaefer/elpy" :fetcher github)
+    '';
 
     patchPhase = ''
       for file in elpy.el elpy-pkg.el; do
         substituteInPlace $file \
             --replace "company \"0.8.2\"" "company \"${company.version}\"" \
-            --replace "find-file-in-project \"3.3\"" "find-file-in-project \"${find-file-in-project.version}\"" \
+            --replace "find-file-in-project \"3.3\"" "find-file-in-project \"${(melpaPackages self).find-file-in-project.version}\"" \
             --replace "highlight-indentation \"0.5.0\"" "highlight-indentation \"${highlight-indentation.version}\"" \
             --replace "pyvenv \"1.3\"" "pyvenv \"${pyvenv.version}\"" \
             --replace "yasnippet \"0.8.0\"" "yasnippet \"${yasnippet.version}\""
@@ -189,6 +214,8 @@ let
     };
   };
 
+  emacs-libvterm = callPackage ../applications/editors/emacs-modes/emacs-libvterm { };
+
   evil-jumper = melpaBuild rec {
     pname   = "evil-jumper";
     version = "20151017";
@@ -198,6 +225,9 @@ let
       rev    = "fcadf2d93aaea3ba88a2ae63a860b9c1f0568167";
       sha256 = "0axx6cc9z9c1wh7qgm6ya54dsp3bn82bnb0cwj1rpv509qqmwgsj";
     };
+    recipe = writeText "recipe" ''
+      (evil-jumper :repo "bling/evil-jumper" :fetcher github)
+    '';
     packageRequires = [ evil ];
     meta = {
       description = "Jump across buffer boundaries and revive dead buffers if necessary";
@@ -205,25 +235,12 @@ let
     };
   };
 
-  find-file-in-project = melpaBuild rec {
-    pname = "find-file-in-project";
-    version = "3.5";
-    src = fetchFromGitHub {
-      owner  = "technomancy";
-      repo   = pname;
-      rev    = "53a8d8174f915d9dcf5ac6954b1c0cae61266177";
-      sha256 = "0wky8vqg08iw34prbz04bqmhfhj82y93swb8zkz6la2vf9da0gmd";
-    };
-    meta = {
-      description = "Quick access to project files in Emacs";
-      longDescription = ''
-        Find files in a project quickly.
-        This program provides a couple methods for quickly finding any file in a
-        given project. It depends on GNU find.
-      '';
-      license = gpl3Plus;
-    };
-  };
+  ess-R-object-popup =
+    callPackage ../applications/editors/emacs-modes/ess-R-object-popup { };
+
+  filesets-plus = callPackage ../applications/editors/emacs-modes/filesets-plus { };
+
+  font-lock-plus = callPackage ../applications/editors/emacs-modes/font-lock-plus { };
 
   ghc-mod = melpaBuild rec {
     pname = "ghc";
@@ -231,6 +248,9 @@ let
     src = external.ghc-mod.src;
     packageRequires = [ haskell-mode ];
     propagatedUserEnvPkgs = [ external.ghc-mod ];
+    recipe = writeText "recipe" ''
+      (ghc-mod :repo "DanielG/ghc-mod" :fetcher github :files ("elisp/*.el"))
+    '';
     fileSpecs = [ "elisp/*.el" ];
     meta = {
       description = "An extension of haskell-mode that provides completion of symbols and documentation browsing";
@@ -247,6 +267,11 @@ let
       rev = "d8d168148c187ed19350bb7a1a190217c2915a63";
       sha256 = "09b7bg2s9aa4s8f2kdqs4xps3jxkq5wsvbi87ih8b6id38blhf78";
     };
+    recipe = writeText "recipe" ''
+      (haskell-unicode-input-method
+       :repo "roelvandijk/emacs-haskell-unicode-input-method"
+       :fetcher github)
+    '';
     packageRequires = [];
     meta = {
       homepage = "https://melpa.org/#haskell-unicode-input-method/";
@@ -254,25 +279,29 @@ let
     };
   };
 
-  hindent = melpaBuild rec {
-    pname = "hindent";
-    version = external.hindent.version;
-    src = external.hindent.src;
-    packageRequires = [ haskell-mode ];
-    propagatedUserEnvPkgs = [ external.hindent ];
-    fileSpecs = [ "elisp/*.el" ];
-    meta = {
-      description = "Indent haskell code using the \"hindent\" program";
-      license = bsd3;
-    };
-  };
+  hexrgb = callPackage ../applications/editors/emacs-modes/hexrgb { };
+
+  header2 = callPackage ../applications/editors/emacs-modes/header2 { };
+
+  helm-words = callPackage ../applications/editors/emacs-modes/helm-words { };
+
+  icicles = callPackage ../applications/editors/emacs-modes/icicles { };
+
+  redshank = callPackage ../applications/editors/emacs-modes/redshank { };
 
   rtags = melpaBuild rec {
     pname = "rtags";
-    version = "2.0"; # really, it's some arbitrary git hash
+    version = "2.12";
     src = external.rtags.src;
+
+    configurePhase = ":";
+
     propagatedUserEnvPkgs = [ external.rtags ];
-    fileSpecs = [ "src/*.el" ];
+    recipe = writeText "recipe" ''
+      (rtags
+       :repo "andersbakken/rtags" :fetcher github
+       :files ("src/*.el"))
+    '';
     inherit (external.rtags) meta;
   };
 
@@ -280,19 +309,26 @@ let
     pname   = "lcs";
     version = circe.version;
     src     = circe.src;
-    fileSpecs = [ "lcs.el" ];
+    recipe  = writeText "recipe" ''
+      (lcs :repo "jorgenschaefer/circe" :fetcher github :files ("lcs.el"))
+    '';
     meta = {
       description = "Longest Common Sequence (LCS) library for Emacs";
       license = gpl3Plus;
     };
   };
 
+  lib-requires =
+    callPackage ../applications/editors/emacs-modes/lib-requires { };
+
   lui = melpaBuild rec {
     pname   = "lui";
     version = circe.version;
     src     = circe.src;
     packageRequires = [ tracking ];
-    fileSpecs = [ "lui*.el" ];
+    recipe  = writeText "recipe" ''
+      (lcs :repo "jorgenschaefer/circe" :fetcher github :files ("lui*.el"))
+    '';
     meta = {
       description = "User interface library for Emacs";
       license = gpl3Plus;
@@ -303,61 +339,52 @@ let
     inherit lib;
   };
 
+  org-mac-link =
+    callPackage ../applications/editors/emacs-modes/org-mac-link { };
+
+  perl-completion =
+    callPackage ../applications/editors/emacs-modes/perl-completion { };
+
+  railgun = callPackage ../applications/editors/emacs-modes/railgun { };
+
+  gn = callPackage ../applications/editors/emacs-modes/gn { };
+
   shorten = melpaBuild rec {
     pname   = "shorten";
     version = circe.version;
     src     = circe.src;
-    fileSpecs = [ "shorten.el" ];
+    recipe  = writeText "recipe" ''
+      (shorten :repo "jorgenschaefer/circe" :fetcher github :files ("shorten.el"))
+    '';
     meta = {
       description = "String shortening to unique prefix library for Emacs";
       license = gpl3Plus;
     };
   };
 
-  structured-haskell-mode = melpaBuild rec {
-    pname = "shm";
-    version = external.structured-haskell-mode.version;
-    src = external.structured-haskell-mode.src;
-    packageRequires = [ haskell-mode ];
-    fileSpecs = [ "elisp/*.el" ];
-    propagatedUserEnvPkgs = [ external.structured-haskell-mode ];
+  stgit = callPackage ../applications/editors/emacs-modes/stgit { };
 
-    meta = {
-      description = "Structured editing Emacs mode for Haskell";
-      license = bsd3;
-      platforms = external.structured-haskell-mode.meta.platforms;
-    };
-  };
+  structured-haskell-mode = self.shm;
+  shm = (melpaPackages self).shm.overrideAttrs (attrs: {
+    propagatedUserEnvPkgs = [ external.structured-haskell-mode ];
+  });
+
+  thingatpt-plus = callPackage ../applications/editors/emacs-modes/thingatpt-plus { };
 
   tramp = callPackage ../applications/editors/emacs-modes/tramp { };
 
-  weechat = melpaBuild rec {
-    pname   = "weechat.el";
-    version = "0.2.2";
-    src = fetchFromGitHub {
-      owner  = "the-kenny";
-      repo   = pname;
-      rev    = version;
-      sha256 = "0f90m2s40jish4wjwfpmbgw024r7n2l5b9q9wr6rd3vdcwks3mcl";
-    };
-    postPatch = lib.optionalString (!stdenv.isLinux) ''
-      rm weechat-sauron.el weechat-secrets.el
-    '';
-    packageRequires = [ s ];
-    meta = {
-      description = "A weechat IRC client frontend for Emacs";
-      license = gpl3Plus;
-    };
-  };
+  yaoddmuse = callPackage ../applications/editors/emacs-modes/yaoddmuse { };
+
+  zeitgeist = callPackage ../applications/editors/emacs-modes/zeitgeist { };
 
   };
 
 in
   lib.makeScope newScope (self:
     {}
-    // melpaPackages self
     // elpaPackages self
     // melpaStablePackages self
+    // melpaPackages self
     // orgPackages self
     // packagesFun self
   )

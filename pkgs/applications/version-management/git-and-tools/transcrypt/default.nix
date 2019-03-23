@@ -2,13 +2,13 @@
 
 stdenv.mkDerivation rec {
   name = "transcrypt-${version}";
-  version = "1.0.1";
+  version = "1.1.0";
 
   src = fetchFromGitHub {
     owner = "elasticdog";
     repo = "transcrypt";
     rev = "v${version}";
-    sha256 = "12n8714my9i93lysqa3dj1z5xgi10iv5y1mnsqki9zn5av3lgqkq";
+    sha256 = "1dkr69plk16wllk5bzlkchrzw63pk239dgbjhrb3mb61i065jdam";
   };
 
   buildInputs = [ git makeWrapper openssl ];

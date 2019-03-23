@@ -9,7 +9,7 @@
 { stdenv, fetchurl, unzip, glib, libSM, libICE, gtk2, libXext, libXft
 , fontconfig, libXrender, libXfixes, libX11, libXi, libXrandr, libXcursor
 , freetype, libXinerama, libxcb, zlib, pciutils
-, makeDesktopItem, xkeyboardconfig
+, makeDesktopItem, xkeyboardconfig, runtimeShell
 }:
 
 let
@@ -21,28 +21,26 @@ let
 
 in
 
-assert stdenv.system == "i686-linux" || stdenv.system == "x86_64-linux";
-
 stdenv.mkDerivation rec {
   pname = "saleae-logic";
   version = "1.2.10";
   name = "${pname}-${version}";
 
   src =
-    if stdenv.system == "i686-linux" then
+    if stdenv.hostPlatform.system == "i686-linux" then
       fetchurl {
         name = "saleae-logic-${version}-32bit.zip";
         url = "http://downloads.saleae.com/logic/${version}/Logic%20${version}%20(32-bit).zip";
         sha256 = "1dyrj07cgj2fvwi1sk97vady9ri8f8n7mxy9zyzmw9isngs7bmll";
       }
-    else if stdenv.system == "x86_64-linux" then
+    else if stdenv.hostPlatform.system == "x86_64-linux" then
       fetchurl {
         name = "saleae-logic-${version}-64bit.zip";
         url = "http://downloads.saleae.com/logic/${version}/Logic%20${version}%20(64-bit).zip";
         sha256 = "1skx2pfnic7pyss7c69qb7kg2xvflpxf112xkf9awk516dw1w4h7";
       }
     else
-      abort "Saleae Logic software requires i686-linux or x86_64-linux";
+      throw "Saleae Logic software requires i686-linux or x86_64-linux";
 
   desktopItem = makeDesktopItem {
     name = "saleae-logic";
@@ -72,7 +70,7 @@ stdenv.mkDerivation rec {
     # Make wrapper script that uses the LD_PRELOAD library
     mkdir -p "$out/bin"
     cat > "$out/bin/saleae-logic" << EOF
-    #!${stdenv.shell}
+    #!${runtimeShell}
     export LD_PRELOAD="$out/lib/preload.so"
     export QT_XKB_CONFIG_ROOT="${xkeyboardconfig}/share/X11/xkb"
     export PATH="${pciutils}/bin:\$PATH"
@@ -93,7 +91,7 @@ stdenv.mkDerivation rec {
     description = "Software for Saleae logic analyzers";
     homepage = http://www.saleae.com/;
     license = licenses.unfree;
-    platforms = platforms.linux;
+    platforms = [ "x86_64-linux" "i686-linux" ];
     maintainers = [ maintainers.bjornfor ];
   };
 }

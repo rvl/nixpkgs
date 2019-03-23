@@ -33,6 +33,7 @@
 , libXxf86vm
 , libdrm
 , libffi
+, libglvnd
 , libpng
 , libvdpau
 , libxcb
@@ -60,38 +61,38 @@
 
 let
   arch =
-    if      stdenv.system == "x86_64-linux" then
+    if stdenv.hostPlatform.system == "x86_64-linux" then
       "x86_64"
-    else if stdenv.system == "i686-linux"   then
+    else if stdenv.hostPlatform.system == "i686-linux"   then
       "i386"
     else throw "Flash Player is not supported on this platform";
   lib_suffix =
-      if stdenv.system == "x86_64-linux" then
+      if stdenv.hostPlatform.system == "x86_64-linux" then
       "64"
     else
       "";
 in
 stdenv.mkDerivation rec {
   name = "flashplayer-${version}";
-  version = "24.0.0.194";
+  version = "32.0.0.156";
 
   src = fetchurl {
     url =
       if debug then
-        "https://fpdownload.macromedia.com/pub/flashplayer/updaters/24/flash_player_npapi_linux_debug.${arch}.tar.gz"
+        "https://fpdownload.macromedia.com/pub/flashplayer/updaters/32/flash_player_npapi_linux_debug.${arch}.tar.gz"
       else
         "https://fpdownload.adobe.com/get/flashplayer/pdc/${version}/flash_player_npapi_linux.${arch}.tar.gz";
     sha256 =
       if debug then
         if arch == "x86_64" then
-          "197s3ksx6h3dkfx8q7v9c8mf8ai9s1jpqnaczjdkmzcyp5jd29w9"
+          "0h16vdar4p8zj6w57ihll71xjr9sy7hdiq4qwvvqndah5c4ym8xl"
         else
-          "0ll0ddss3gkzngmm96pyvnf4a6mf8axraxlqpjdl63ghrndd1gkc"
+          "06l59zid6n4b606254r937cvk95pyymlczadh4cpl6l4xncspdy6"
       else
         if arch == "x86_64" then
-          "0bri8kjqy9g929ix4qx4whmxz5rzbgjff253kvs6dlr8vyglz0gx"
+          "0b3qssn1fgm2v715l6nksqmwly7j9asgqh9yqjhpp7jsb84bvzk4"
         else
-          "1lrfwwhl18411bk9qsizhch8n3ilcvhmj4i7sak5zjv5r6mwnqgl";
+          "03qdwrlvs4090s9b9fn2l6g3wsbi6q81jf59s1s5gh7qhi4i0lhy";
   };
 
   nativeBuildInputs = [ unzip ];
@@ -132,8 +133,8 @@ stdenv.mkDerivation rec {
       alsaLib atk bzip2 cairo curl expat fontconfig freetype gdk_pixbuf glib
       glibc graphite2 gtk2 harfbuzz libICE libSM libX11 libXau libXcomposite
       libXcursor libXdamage libXdmcp libXext libXfixes libXi libXinerama
-      libXrandr libXrender libXt libXxf86vm libdrm libffi libpng libvdpau
-      libxcb libxshmfence nspr nss pango pcre pixman zlib
+      libXrandr libXrender libXt libXxf86vm libdrm libffi libglvnd libpng
+      libvdpau libxcb libxshmfence nspr nss pango pcre pixman zlib
     ];
 
   meta = {

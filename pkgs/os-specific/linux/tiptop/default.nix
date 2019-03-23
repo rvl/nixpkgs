@@ -2,17 +2,16 @@
 
 stdenv.mkDerivation rec {
   name = "tiptop-${version}";
-  version = "2.3";
+  version = "2.3.1";
 
   src = fetchurl {
     url = "${meta.homepage}/releases/${name}.tar.gz";
-    sha256 = "1jhqmcgx664ygayw471cg05bxc4ikxn35ccyiswymjhanicfj1rz";
+    sha256 = "10j1138y3cj3hsmfz4w0bmk90523b0prqwi9nhb4z8xvjnf49i2i";
   };
 
   patches = [(fetchpatch {
     name = "reproducibility.patch";
-    url = "http://anonscm.debian.org/cgit/collab-maint/tiptop.git/plain/debian/"
-      + "patches/0001-fix-reproducibility-of-build-process.patch?id=c777d0d5803";
+    url = "https://salsa.debian.org/debian/tiptop/raw/debian/2.3.1-1/debian/patches/0001-fix-reproducibility-of-build-process.patch";
     sha256 = "116l7n3nl9lj691i7j8x0d0za1i6zpqgghw5d70qfpb17c04cblp";
   })];
 

@@ -1,62 +1,47 @@
-{ stdenv, fetchFromGitHub, cmake, pkgconfig, wrapGAppsHook
-, glib, gtk3, gettext, libxkbfile, libgnome_keyring, libX11
+{ stdenv, fetchFromGitLab, cmake, ninja, pkgconfig, wrapGAppsHook
+, glib, gtk3, gettext, libxkbfile, libX11
 , freerdp, libssh, libgcrypt, gnutls, makeDesktopItem
-, pcre, webkitgtk, libdbusmenu-gtk3, libappindicator-gtk3
+, pcre, libdbusmenu-gtk3, libappindicator-gtk3
 , libvncserver, libpthreadstubs, libXdmcp, libxkbcommon
-, libsecret, spice_protocol, spice_gtk, epoxy, at_spi2_core
-, openssl, gsettings_desktop_schemas
+, libsecret, libsoup, spice-protocol, spice-gtk, epoxy, at-spi2-core
+, openssl, gsettings-desktop-schemas, json-glib
 # The themes here are soft dependencies; only icons are missing without them.
-, hicolor_icon_theme, adwaita-icon-theme
+, hicolor-icon-theme, gnome3
 }:
 
-let
-  version = "1.2.0-rcgit.15";
+with stdenv.lib;
 
-  desktopItem = makeDesktopItem {
-    name = "remmina";
-    desktopName = "Remmina";
-    genericName = "Remmina Remote Desktop Client";
-    exec = "remmina";
-    icon = "remmina";
-    comment = "Connect to remote desktops";
-    categories = "GTK;GNOME;X-GNOME-NetworkSettings;Network;";
-  };
+stdenv.mkDerivation rec {
+  pname = "remmina";
+  version = "1.3.3";
 
-  # Latest release of remmina refers to thing that aren't yet in
-  # a FreeRDP release so we need to build one from git source
-  # See also https://github.com/FreeRDP/Remmina/pull/731
-  # Remove when FreeRDP release catches up with this commit
-  freerdp_git = stdenv.lib.overrideDerivation freerdp (args: {
-    name = "freerdp-git-2016-09-30";
-    src = fetchFromGitHub {
-      owner  = "FreeRDP";
-      repo   = "FreeRDP";
-      rev    = "dbb353db92e7a5cb0be3c73aa950fb1113e627ec";
-      sha256 = "1nhm4v6z9var9hasp4bkmhvlrksbdizx95swx19shizfc82s9g4y";
-    };
-  });
-
-in
-
-stdenv.mkDerivation {
-  name = "remmina-${version}";
-
-  src = fetchFromGitHub {
-    owner  = "FreeRDP";
+  src = fetchFromGitLab {
+    owner  = "Remmina";
     repo   = "Remmina";
     rev    = "v${version}";
-    sha256 = "07lj6a7x9cqcff18pwfkx8c8iml015zp6sq29dfcxpfg4ai578h0";
+    sha256 = "09mizr9igf22kk26rdx5masai8ghd2nbqryvswkybvia2s6lccrs";
   };
 
-  buildInputs = [ cmake pkgconfig wrapGAppsHook gsettings_desktop_schemas
-                  glib gtk3 gettext libxkbfile libgnome_keyring libX11
-                  freerdp_git libssh libgcrypt gnutls
-                  pcre webkitgtk libdbusmenu-gtk3 libappindicator-gtk3
-                  libvncserver libpthreadstubs libXdmcp libxkbcommon
-                  libsecret spice_protocol spice_gtk epoxy at_spi2_core
-                  openssl hicolor_icon_theme adwaita-icon-theme ];
+  nativeBuildInputs = [ cmake ninja pkgconfig wrapGAppsHook ];
+  buildInputs = [
+    gsettings-desktop-schemas
+    glib gtk3 gettext libxkbfile libX11
+    freerdp libssh libgcrypt gnutls
+    pcre libdbusmenu-gtk3 libappindicator-gtk3
+    libvncserver libpthreadstubs libXdmcp libxkbcommon
+    libsecret libsoup spice-protocol spice-gtk epoxy at-spi2-core
+    openssl hicolor-icon-theme gnome3.adwaita-icon-theme json-glib
+  ];
 
-  cmakeFlags = "-DWITH_VTE=OFF -DWITH_TELEPATHY=OFF -DWITH_AVAHI=OFF -DWINPR_INCLUDE_DIR=${freerdp_git}/include/winpr2";
+  cmakeFlags = [
+    "-DWITH_VTE=OFF"
+    "-DWITH_TELEPATHY=OFF"
+    "-DWITH_AVAHI=OFF"
+    "-DFREERDP_LIBRARY=${freerdp}/lib/libfreerdp2.so"
+    "-DFREERDP_CLIENT_LIBRARY=${freerdp}/lib/libfreerdp-client2.so"
+    "-DFREERDP_WINPR_LIBRARY=${freerdp}/lib/libwinpr2.so"
+    "-DWINPR_INCLUDE_DIR=${freerdp}/include/winpr2"
+  ];
 
   preFixup = ''
     gappsWrapperArgs+=(
@@ -64,16 +49,11 @@ stdenv.mkDerivation {
     )
   '';
 
-  postInstall = ''
-    mkdir -pv $out/share/applications
-    cp ${desktopItem}/share/applications/* $out/share/applications
-  '';
-
-  meta = with stdenv.lib; {
-    license = stdenv.lib.licenses.gpl2;
-    homepage = "http://remmina.sourceforge.net/";
+  meta = {
+    license = licenses.gpl2;
+    homepage = https://gitlab.com/Remmina/Remmina;
     description = "Remote desktop client written in GTK+";
-    maintainers = [];
+    maintainers = with maintainers; [ melsigl ryantm ];
     platforms = platforms.linux;
   };
 }

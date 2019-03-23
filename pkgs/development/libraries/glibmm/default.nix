@@ -1,29 +1,36 @@
-{ stdenv, fetchurl, pkgconfig, gnum4, glib, libsigcxx }:
+{ stdenv, fetchurl, pkgconfig, gnum4, glib, libsigcxx, gnome3, darwin }:
 
-let
-  ver_maj = "2.50";
-  ver_min = "0";
-in
 stdenv.mkDerivation rec {
-  name = "glibmm-${ver_maj}.${ver_min}";
+  pname = "glibmm";
+  version = "2.58.0";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/glibmm/${ver_maj}/${name}.tar.xz";
-    sha256 = "df726e3c6ef42b7621474b03b644a2e40ec4eef94a1c5a932c1e740a78f95e94";
+    url = "mirror://gnome/sources/${pname}/${stdenv.lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
+    sha256 = "0idnaii4h3mdym2a55gkavipyxigwvbgfmzmwql85s4rgciqjhfk";
   };
 
   outputs = [ "out" "dev" ];
 
   nativeBuildInputs = [ pkgconfig gnum4 ];
+  buildInputs = stdenv.lib.optionals stdenv.isDarwin (with darwin.apple_sdk.frameworks; [
+    Cocoa
+  ]);
   propagatedBuildInputs = [ glib libsigcxx ];
 
   enableParallelBuilding = true;
-  #doCheck = true; # some tests need network
+
+  doCheck = false; # fails. one test needs the net, another /etc/fstab
+
+  passthru = {
+    updateScript = gnome3.updateScript {
+      packageName = pname;
+    };
+  };
 
   meta = with stdenv.lib; {
     description = "C++ interface to the GLib library";
 
-    homepage = http://gtkmm.org/;
+    homepage = https://gtkmm.org/;
 
     license = licenses.lgpl2Plus;
 

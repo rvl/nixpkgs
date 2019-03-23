@@ -2,23 +2,26 @@
 
 stdenv.mkDerivation rec {
   name = "silver-searcher-${version}";
-  version = "1.0.2";
+  version = "2.2.0";
 
   src = fetchFromGitHub {
     owner = "ggreer";
     repo = "the_silver_searcher";
     rev = "${version}";
-    sha256 = "1c504x62yxf4b5k8ixvr97g97nd4kff32flxdjnvxvcrrnany8zx";
+    sha256 = "0cyazh7a66pgcabijd27xnk1alhsccywivv6yihw378dqxb22i1p";
   };
+
+  patches = [ ./bash-completion.patch ];
 
   NIX_LDFLAGS = stdenv.lib.optionalString stdenv.isLinux "-lgcc_s";
 
-  buildInputs = [ autoreconfHook pkgconfig pcre zlib lzma ];
+  nativeBuildInputs = [ autoreconfHook pkgconfig ];
+  buildInputs = [ pcre zlib lzma ];
 
   meta = with stdenv.lib; {
     homepage = https://github.com/ggreer/the_silver_searcher/;
     description = "A code-searching tool similar to ack, but faster";
-    maintainers = with maintainers; [ madjar jgeerds ];
+    maintainers = with maintainers; [ madjar ];
     platforms = platforms.all;
     license = licenses.asl20;
   };

@@ -1,5 +1,5 @@
-{ stdenv, fetchurl, fetchgit, fetchNuGet
-, autoconf, automake, pkgconfig, shared_mime_info, intltool
+{ stdenv, fetchurl
+, autoconf, automake, pkgconfig, shared-mime-info, intltool
 , glib, mono, gtk-sharp-2_0, gnome2, gnome-sharp, unzip
 , dotnetPackages
 }:
@@ -10,12 +10,12 @@ stdenv.mkDerivation rec {
   name = "monodevelop-${version}";
 
   src = fetchurl {
-    url = "http://download.mono-project.com/sources/monodevelop/${name}.tar.bz2";
+    url = "https://download.mono-project.com/sources/monodevelop/${name}.tar.bz2";
     sha256 = "0bim4bfv3zwijafl9g0cx3159zq43dlcv74mnyrda41j4p52w5ji";
   };
 
   nunit2510 = fetchurl {
-    url = "http://launchpad.net/nunitv2/2.5/2.5.10/+download/NUnit-2.5.10.11092.zip";
+    url = "https://launchpad.net/nunitv2/2.5/2.5.10/+download/NUnit-2.5.10.11092.zip";
     sha256 = "0k5h5bz1p2v3d0w0hpkpbpvdkcszgp8sr9ik498r1bs72w5qlwnc";
   };
 
@@ -34,10 +34,10 @@ stdenv.mkDerivation rec {
   patchFlags = [ "-p2" ];
   patches = [ ./git-revert-12d610fb3f6dce121df538e36f21d8c2eeb0a6e3.patch ];
 
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs = [
-    autoconf automake pkgconfig shared_mime_info intltool
+    autoconf automake shared-mime-info intltool
     mono gtk-sharp-2_0 gnome-sharp unzip
-    pkgconfig
     dotnetPackages.NUnit
     dotnetPackages.NUnitRunners
     dotnetPackages.Nuget
@@ -76,5 +76,6 @@ stdenv.mkDerivation rec {
   meta = with stdenv.lib; {
     platforms = platforms.linux;
     maintainers = with maintainers; [ obadz ];
+    broken = true; # 2018-09-21, build has failed since 2018-03-08
   };
 }

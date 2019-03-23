@@ -2,7 +2,7 @@
 
 let
 
-  common = { versionMajor, versionMinor, sha256 } @ args: stdenv.mkDerivation (rec {
+  common = { versionMajor, versionMinor, sha256 }: stdenv.mkDerivation (rec {
     name = "apache-tomcat-${version}";
     version = "${versionMajor}.${versionMinor}";
 
@@ -30,34 +30,27 @@ let
   });
 
 in {
-
-  tomcat6 = common {
-    versionMajor = "6";
-    versionMinor = "0.48";
-    sha256 = "1w4jf28g8p25fmijixw6b02iqlagy2rvr57y3n90hvz341kb0bbc";
-  };
-
   tomcat7 = common {
     versionMajor = "7";
-    versionMinor = "0.73";
-    sha256 = "11gaiy56q7pik06sdypr80sl3g6k41s171wqqwlhxffmsxm4v08f";
+    versionMinor = "0.92";
+    sha256 = "0j015mf15drl92kvgyi1ppzjziw0k1rwvfnih8r20h92ylk8mznk";
   };
 
   tomcat8 = common {
     versionMajor = "8";
-    versionMinor = "0.39";
-    sha256 = "16hyypdawby66qa8y66sfprcf78wjy319a0gsi4jgfqfywcsm4s0";
+    versionMinor = "0.53";
+    sha256 = "1ymp5n6xjqzpqjjlwql195v8r5fsmry7nfax46bafkjw8b24g80r";
   };
 
   tomcat85 = common {
     versionMajor = "8";
-    versionMinor = "5.9";
-    sha256 = "1dy8bf18jwyi6p7ayb96gbhd4iyfq4d37s3qxnlll8vklfx388np";
+    versionMinor = "5.35";
+    sha256 = "0n6agr2wn8m5mv0asz73hy2194n9rk7mh5wsp2pz7aq0andbhh5s";
   };
 
-  tomcatUnstable = common {
+  tomcat9 = common {
     versionMajor = "9";
-    versionMinor = "0.0.M15";
-    sha256 = "1spbq5vh2dplp83ki3fbbwl0klxq36s4rwkpcjdnwjxjymg9k432";
+    versionMinor = "0.13";
+    sha256 = "1rsrnmkkrbzrj56jk2wh8hrr79kfkk3fz1j0abk3midn1jnbgxxq";
   };
 }

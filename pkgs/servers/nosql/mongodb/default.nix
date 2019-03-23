@@ -1,5 +1,5 @@
 { stdenv, fetchurl, fetchpatch, scons, boost, gperftools, pcre-cpp, snappy
-, zlib, libyamlcpp, sasl, openssl, libpcap, wiredtiger, Security
+, zlib, libyamlcpp, sasl, openssl, libpcap, Security
 }:
 
 # Note:
@@ -7,7 +7,7 @@
 
 with stdenv.lib;
 
-let version = "3.2.9";
+let version = "3.4.10";
     system-libraries = [
       "pcre"
       #"asio" -- XXX use package?
@@ -20,44 +20,22 @@ let version = "3.2.9";
       "yaml"
     ] ++ optionals stdenv.isLinux [ "tcmalloc" ];
 
-    buildInputs = [
-      sasl boost gperftools pcre-cpp snappy
-      zlib libyamlcpp sasl openssl.dev openssl.out libpcap
-    ] ++ stdenv.lib.optionals stdenv.isDarwin [ Security ];
-
-    other-args = concatStringsSep " " ([
-      "--ssl"
-      #"--rocksdb" # Don't have this packaged yet
-      "--wiredtiger=${if stdenv.is64bit then "on" else "off"}"
-      "--js-engine=mozjs"
-      "--use-sasl-client"
-      "--disable-warnings-as-errors"
-      "VARIANT_DIR=nixos" # Needed so we don't produce argument lists that are too long for gcc / ld
-      "CC=$CC"
-      "CXX=$CXX"
-      "CCFLAGS=\"${concatStringsSep " " (map (input: "-I${input}/include") buildInputs)}\""
-      "LINKFLAGS=\"${concatStringsSep " " (map (input: "-L${input}/lib") buildInputs)}\""
-    ] ++ map (lib: "--use-system-${lib}") system-libraries);
-
 in stdenv.mkDerivation rec {
   name = "mongodb-${version}";
 
   src = fetchurl {
-    url = "http://downloads.mongodb.org/src/mongodb-src-r${version}.tar.gz";
-    sha256 = "06q6j2bjy31pjwqws53wdpmn2x8w2hafzsnv1s3wx15pc9vq3y15";
+    url = "https://fastdl.mongodb.org/src/mongodb-src-r${version}.tar.gz";
+    sha256 = "1wz2mhl9z0b1bdkg6m8v8mvw9k60mdv5ybq554xn3yjj9z500f24";
   };
 
   nativeBuildInputs = [ scons ];
-  inherit buildInputs;
+  buildInputs = [
+    sasl boost gperftools pcre-cpp snappy
+    zlib libyamlcpp sasl openssl.dev openssl.out libpcap
+  ] ++ stdenv.lib.optionals stdenv.isDarwin [ Security ];
 
   patches =
     [
-      # When not building with the system valgrind, the build should use the
-      # vendored header file - regardless of whether or not we're using the system
-      # tcmalloc - so we need to lift the include path manipulation out of the
-      # conditional.
-      ./valgrind-include.patch
-
       # MongoDB keeps track of its build parameters, which tricks nix into
       # keeping dependencies to build inputs in the final output.
       # We remove the build flags from buildInfo data.
@@ -87,14 +65,28 @@ in stdenv.mkDerivation rec {
       --replace 'engine("wiredTiger")' 'engine("mmapv1")'
   '';
 
-  buildPhase = ''
-    scons -j $NIX_BUILD_CORES core --release ${other-args}
+  NIX_CFLAGS_COMPILE = stdenv.lib.optional stdenv.cc.isClang "-Wno-unused-command-line-argument";
+
+  sconsFlags = [
+    "--release"
+    "--ssl"
+    #"--rocksdb" # Don't have this packaged yet
+    "--wiredtiger=${if stdenv.is64bit then "on" else "off"}"
+    "--js-engine=mozjs"
+    "--use-sasl-client"
+    "--disable-warnings-as-errors"
+    "VARIANT_DIR=nixos" # Needed so we don't produce argument lists that are too long for gcc / ld
+  ] ++ map (lib: "--use-system-${lib}") system-libraries;
+
+  preBuild = ''
+    sconsFlags+=" CC=$CC"
+    sconsFlags+=" CXX=$CXX"
   '';
 
-  installPhase = ''
+  preInstall = ''
     mkdir -p $out/lib
-    scons -j $NIX_BUILD_CORES install --release --prefix=$out ${other-args}
   '';
+  prefixKey = "--prefix=";
 
   enableParallelBuilding = true;
 
@@ -105,7 +97,7 @@ in stdenv.mkDerivation rec {
     homepage = http://www.mongodb.org;
     license = licenses.agpl3;
 
-    maintainers = with maintainers; [ bluescreen303 offline wkennington cstrahan ];
+    maintainers = with maintainers; [ bluescreen303 offline cstrahan ];
     platforms = platforms.unix;
   };
 }

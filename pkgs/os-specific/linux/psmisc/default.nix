@@ -1,23 +1,34 @@
-{stdenv, fetchurl, ncurses}:
-
-assert stdenv.isLinux;
+{stdenv, fetchFromGitLab, autoconf, automake, gettext, ncurses}:
 
 stdenv.mkDerivation rec {
-  name = "psmisc-22.21";
+  pname = "psmisc";
+  version = "23.2";
+  name = "${pname}-${version}";
 
-  src = fetchurl {
-    url = "mirror://sourceforge/psmisc/${name}.tar.gz";
-    sha256 = "0nhlm1vrrwn4a845p6y4nnnb4liq70n74zbdd5dq844jc6nkqclp";
+  src = fetchFromGitLab {
+    owner = pname;
+    repo = pname;
+    rev = "v${version}";
+    sha256 = "0d90wmibxpkl0d7sdibvvkwpyxyg6m6ksh5gwrjh15vf1swvd5i1";
   };
 
-  buildInputs = [ncurses];
+  nativeBuildInputs = [ autoconf automake gettext ];
+  buildInputs = [ ncurses ];
 
-  # From upstream, will be in next release.
-  patches = [ ./0001-Typo-in-fuser-makes-M-on-all-the-time.patch ];
+  preConfigure = stdenv.lib.optionalString (stdenv.buildPlatform != stdenv.hostPlatform) ''
+    # Goes past the rpl_malloc linking failure
+    export ac_cv_func_malloc_0_nonnull=yes
+    export ac_cv_func_realloc_0_nonnull=yes
+  '' + ''
+    echo $version > .tarball-version
+    ./autogen.sh
+  '';
 
-  meta = {
-    homepage = http://psmisc.sourceforge.net/;
+  meta = with stdenv.lib; {
+    homepage = https://gitlab.com/psmisc/psmisc;
     description = "A set of small useful utilities that use the proc filesystem (such as fuser, killall and pstree)";
-    platforms = stdenv.lib.platforms.linux;
+    platforms = platforms.linux;
+    license = licenses.gpl2Plus;
+    maintainers = with maintainers; [ ryantm ];
   };
 }

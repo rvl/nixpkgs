@@ -1,36 +1,29 @@
-{ stdenv, fetchurl, ocaml, findlib, ocamlbuild, opam }:
+{ stdenv, fetchurl, ocaml, findlib, ocamlbuild, topkg, uchar, uutf, uunf }:
 
 let
-  inherit (stdenv.lib) getVersion versionAtLeast;
-
   pname = "uucp";
-  version = "1.1.0";
+  version = "11.0.0";
   webpage = "http://erratique.ch/software/${pname}";
 in
 
-assert versionAtLeast (getVersion ocaml) "4.00";
+assert stdenv.lib.versionAtLeast ocaml.version "4.01";
 
 stdenv.mkDerivation {
 
-  name = "ocaml-${pname}-${version}";
+  name = "ocaml${ocaml.version}-${pname}-${version}";
 
   src = fetchurl {
     url = "${webpage}/releases/${pname}-${version}.tbz";
-    sha256 = "1vm5f2ppdrnk19j0ppjiqz56qf5bzyk26gs0lz071s7iblk459jz";
+    sha256 = "0pidg2pmqsifmk4xx9cc5p5jprhg26xb68g1xddjm7sjzbdzhlm4";
   };
 
-  buildInputs = [ ocaml findlib ocamlbuild opam ];
+  buildInputs = [ ocaml findlib ocamlbuild topkg uutf uunf ];
 
-  createFindlibDestdir = true;
+  propagatedBuildInputs = [ uchar ];
 
-  unpackCmd = "tar xjf $src";
+  buildPhase = "${topkg.buildPhase} --with-cmdliner false";
 
-  buildPhase = "ocaml pkg/build.ml native=true native-dynlink=true";
-
-  installPhase = ''
-    opam-installer --script --prefix=$out ${pname}.install | sh
-    ln -s $out/lib/${pname} $out/lib/ocaml/${getVersion ocaml}/site-lib/${pname}
-  '';
+  inherit (topkg) installPhase;
 
   meta = with stdenv.lib; {
     description = "An OCaml library providing efficient access to a selection of character properties of the Unicode character database";

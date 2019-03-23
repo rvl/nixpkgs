@@ -6,7 +6,7 @@ stdenv.mkDerivation rec {
   pname = "qt-gstreamer";
 
   src = fetchurl {
-    url = "http://gstreamer.freedesktop.org/src/${pname}/${name}.tar.xz";
+    url = "https://gstreamer.freedesktop.org/src/${pname}/${name}.tar.xz";
     sha256 = "9f3b492b74cad9be918e4c4db96df48dab9c012f2ae5667f438b64a4d92e8fd4";
   };
 
@@ -25,7 +25,8 @@ stdenv.mkDerivation rec {
 
   cmakeFlags = "-DUSE_QT_PLUGIN_DIR=OFF -DUSE_GST_PLUGIN_DIR=OFF";
 
-  meta = {
-    platforms = stdenv.lib.platforms.linux;
+  meta = with stdenv.lib; {
+    platforms = platforms.linux;
+    license = licenses.lgpl21;
   };
 }

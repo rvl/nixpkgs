@@ -1,25 +1,31 @@
-{stdenv, fetchgit, flex, bison, cmake, git, zlib}:
+{stdenv, fetchFromGitHub, flex, bison, cmake, git, zlib}:
 
 stdenv.mkDerivation rec {
 
-  version = "2016-05-19";
+  version = "2018-08-15";
   name = "pbrt-v3-${version}";
-  src = fetchgit {
-    url = "https://github.com/mmp/pbrt-v3.git";
-    rev = "638249e5cf4596e129695c8df8525d43f11573ff";
-    sha256 = "10ykqrg4zcfb4sfsg3z793c6vld6b6g8bzfyk7ya3yvvc9sdlr5g";
+
+  src = fetchFromGitHub {
+    rev = "86b5821308088deea70b207bc8c22219d0103d65";
+    owner  = "mmp";
+    repo   = "pbrt-v3";
+    sha256 = "0f7ivsczba6zfk5f0bba1js6dcwf6w6jrkiby147qp1sx5k35cv8";
+    fetchSubmodules = true;
   };
 
-  fetchSubmodules = true;
+  patches = [
+    # https://github.com/mmp/pbrt-v3/issues/196
+    ./openexr-cmake-3.12.patch
+  ];
 
   buildInputs = [ git flex bison cmake zlib ];
 
-  meta = {
-    homepage = "http://pbrt.org";
+  meta = with stdenv.lib; {
+    homepage = http://pbrt.org;
     description = "The renderer described in the third edition of the book 'Physically Based Rendering: From Theory To Implementation'";
-    platforms = stdenv.lib.platforms.linux ;
-    license = stdenv.lib.licenses.bsd3;
-    maintainers = [ stdenv.lib.maintainers.juliendehos ];
+    platforms = platforms.linux ;
+    license = licenses.bsd2;
+    maintainers = [ maintainers.juliendehos ];
     priority = 10;
   };
 }

@@ -13,10 +13,10 @@ stdenv.mkDerivation {
 
   buildInputs = [ openssl ];
 
-  configureFlags = "--with-ssl=${openssl.dev}";
+  configureFlags = [ "--with-ssl=${openssl.dev}" ];
 
   meta = {
-    homepage = "http://www.fetchmail.info/";
+    homepage = http://www.fetchmail.info/;
     description = "A full-featured remote-mail retrieval and forwarding utility";
     longDescription = ''
       A full-featured, robust, well-documented remote-mail retrieval and
@@ -29,5 +29,6 @@ stdenv.mkDerivation {
 
     platforms = stdenv.lib.platforms.unix;
     maintainers = [ stdenv.lib.maintainers.peti ];
+    license = stdenv.lib.licenses.gpl2Plus;
   };
 }

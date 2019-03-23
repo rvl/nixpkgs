@@ -8,23 +8,16 @@ import ./make-test.nix ({ pkgs, ... }:
 
   nodes =
     { web =
-        { config, pkgs, ... }:
+        { pkgs, ... }:
         {
-          services.mysql.enable = true;
-          services.mysql.package = pkgs.mysql;
-          services.mysql.initialScript = pkgs.writeText "start.sql" ''
-            CREATE DATABASE wordpress;
-	    CREATE USER 'wordpress'@'localhost' IDENTIFIED BY 'wordpress';
-            GRANT ALL on wordpress.* TO 'wordpress'@'localhost';
-          '';
-
+          services.mysql = {
+            enable = true;
+            package = pkgs.mysql;
+          };
           services.httpd = {
             enable = true;
             logPerVirtualHost = true;
             adminAddr="js@lastlog.de";
-            extraModules = [
-              { name = "php7"; path = "${pkgs.php}/modules/libphp7.so"; }
-            ];
 
             virtualHosts = [
               {
@@ -34,7 +27,7 @@ import ./make-test.nix ({ pkgs, ... }:
                     {
                       serviceType = "wordpress";
                       dbPassword = "wordpress";
-                      wordpressUploads = "/data/uploads";
+                      dbHost = "127.0.0.1";
                       languages = [ "de_DE" "en_GB" ];
                     }
                   ];
@@ -45,7 +38,7 @@ import ./make-test.nix ({ pkgs, ... }:
     };
 
   testScript =
-    { nodes, ... }:
+    { ... }:
     ''
       startAll;
 

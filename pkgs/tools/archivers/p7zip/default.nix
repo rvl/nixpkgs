@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, fetchpatch }:
+{ stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
   name = "p7zip-${version}";
@@ -10,11 +10,21 @@ stdenv.mkDerivation rec {
   };
 
   patches = [
-    (fetchpatch {
-      url = "https://sources.debian.net/data/main/p/p7zip/16.02+dfsg-2/debian/patches/12-CVE-2016-9296.patch";
-      sha256 = "1i7099h27gmb9dv0lb7jnqfm504gs1c3129r6kvi94yb2gzrzk41";
-    })
+    ./12-CVE-2016-9296.patch
+    ./13-CVE-2017-17969.patch
   ];
+
+  # Default makefile is full of impurities on Darwin. The patch doesn't hurt Linux so I'm leaving it unconditional
+  postPatch = ''
+    sed -i '/CC=\/usr/d' makefile.macosx_llvm_64bits
+
+    # I think this is a typo and should be CXX? Either way let's kill it
+    sed -i '/XX=\/usr/d' makefile.macosx_llvm_64bits
+  '' + stdenv.lib.optionalString (stdenv.buildPlatform != stdenv.hostPlatform) ''
+    substituteInPlace makefile.machine \
+      --replace 'CC=gcc'  'CC=${stdenv.cc.targetPrefix}gcc' \
+      --replace 'CXX=g++' 'CXX=${stdenv.cc.targetPrefix}g++'
+  '';
 
   preConfigure = ''
     makeFlagsArray=(DEST_HOME=$out)
@@ -33,5 +43,6 @@ stdenv.mkDerivation rec {
     # license = stdenv.lib.licenses.lgpl21Plus; + "unRAR restriction"
     platforms = stdenv.lib.platforms.unix;
     maintainers = [ stdenv.lib.maintainers.raskin ];
+    license = stdenv.lib.licenses.lgpl2Plus;
   };
 }

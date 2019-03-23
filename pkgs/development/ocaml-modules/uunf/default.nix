@@ -1,33 +1,25 @@
-{ stdenv, fetchurl, ocaml, findlib, ocamlbuild, opam }:
+{ stdenv, fetchurl, ocaml, findlib, ocamlbuild, topkg, uchar, uutf, cmdliner }:
 let
   pname = "uunf";
   webpage = "http://erratique.ch/software/${pname}";
 in
 
-assert stdenv.lib.versionAtLeast ocaml.version "3.12";
+assert stdenv.lib.versionAtLeast ocaml.version "4.01";
 
 stdenv.mkDerivation rec {
   name = "ocaml-${pname}-${version}";
-  version = "0.9.3";
+  version = "11.0.0";
 
   src = fetchurl {
     url = "${webpage}/releases/${pname}-${version}.tbz";
-    sha256 = "16cgjy1m0m61srv1pmlc3gr0y40kd4724clvpagdnz68raz4zmn0";
+    sha256 = "1j0v3dg19sq13fmbx4kzy3n1hjiv7hkm1ysxyrdva430jvqw23df";
   };
 
-  buildInputs = [ ocaml findlib ocamlbuild opam ];
+  buildInputs = [ ocaml findlib ocamlbuild topkg uutf cmdliner ];
 
-  createFindlibDestdir = true;
+  propagatedBuildInputs = [ uchar ];
 
-  unpackCmd = "tar xjf $src";
-
-  buildPhase = "./pkg/build true false";
-
-  installPhase = ''
-    opam-installer --script --prefix=$out ${pname}.install > install.sh
-    sh install.sh
-    ln -s $out/lib/${pname} $out/lib/ocaml/${ocaml.version}/site-lib/
-  '';
+  inherit (topkg) buildPhase installPhase;
 
   meta = with stdenv.lib; {
     description = "An OCaml module for normalizing Unicode text";
@@ -35,5 +27,6 @@ stdenv.mkDerivation rec {
     platforms = ocaml.meta.platforms or [];
     license = licenses.bsd3;
     maintainers = [ maintainers.vbgl ];
+    broken = stdenv.isAarch64;
   };
 }

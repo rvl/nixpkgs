@@ -1,4 +1,4 @@
-{ fetchFromGitHub, stdenv, ncurses, autoreconfHook, SDL2, SDL2_mixer }:
+{ fetchFromGitHub, stdenv, autoreconfHook, libiconv, ncurses, SDL2, SDL2_mixer }:
 
 stdenv.mkDerivation rec {
   version = "2016-07-06";
@@ -11,7 +11,10 @@ stdenv.mkDerivation rec {
     sha256 = "0mcldn8ivlfyjfx22ygzcbbw3bzl0j6vi3g6jyj8jmcrni61mgmb";
   };
 
-  buildInputs = [ ncurses autoreconfHook SDL2 SDL2_mixer ];
+  nativeBuildInputs = [ autoreconfHook ];
+  buildInputs = [ libiconv ncurses SDL2 SDL2_mixer ];
+
+  enableParallelBuilding = true;
 
   meta = with stdenv.lib; {
     description = "A humorous politically themed ncurses game";

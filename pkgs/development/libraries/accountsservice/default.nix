@@ -1,21 +1,26 @@
 { stdenv, fetchurl, pkgconfig, glib, intltool, makeWrapper, shadow
-, libtool, gobjectIntrospection, polkit, systemd, coreutils }:
+, gobject-introspection, polkit, systemd, coreutils, meson, dbus
+, ninja, python3 }:
 
 stdenv.mkDerivation rec {
   name = "accountsservice-${version}";
-  version = "0.6.43";
+  version = "0.6.54";
 
   src = fetchurl {
-    url = "http://www.freedesktop.org/software/accountsservice/accountsservice-${version}.tar.xz";
-    sha256 = "1k6n9079001sgcwlkq0bz6mkn4m8y4dwf6hs1qm85swcld5ajfzd";
+    url = "https://www.freedesktop.org/software/accountsservice/accountsservice-${version}.tar.xz";
+    sha256 = "1b115n0a4yfa06kgxc69qfc1rc0w4frgs3id3029czkrhhn0ds96";
   };
 
-  buildInputs = [ pkgconfig glib intltool libtool makeWrapper
-                  gobjectIntrospection polkit systemd ];
+  nativeBuildInputs = [ pkgconfig makeWrapper meson ninja python3 ];
 
-  configureFlags = [ "--with-systemdsystemunitdir=$(out)/etc/systemd/system"
-                     "--localstatedir=/var" ];
+  buildInputs = [ glib intltool gobject-introspection polkit systemd dbus ];
+
+  mesonFlags = [ "-Dsystemdsystemunitdir=etc/systemd/system"
+                 "-Dlocalstatedir=/var" ];
   prePatch = ''
+    chmod +x meson_post_install.py
+    patchShebangs meson_post_install.py
+
     substituteInPlace src/daemon.c --replace '"/usr/sbin/useradd"' '"${shadow}/bin/useradd"' \
                                    --replace '"/usr/sbin/userdel"' '"${shadow}/bin/userdel"'
     substituteInPlace src/user.c   --replace '"/usr/sbin/usermod"' '"${shadow}/bin/usermod"' \
@@ -37,7 +42,7 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "D-Bus interface for user account query and manipulation";
-    homepage = http://www.freedesktop.org/wiki/Software/AccountsService;
+    homepage = https://www.freedesktop.org/wiki/Software/AccountsService;
     license = licenses.gpl3;
     maintainers = with maintainers; [ pSub ];
     platforms = with platforms; linux;

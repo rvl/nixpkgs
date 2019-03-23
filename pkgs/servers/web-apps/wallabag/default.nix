@@ -2,27 +2,22 @@
 
 stdenv.mkDerivation rec {
   name = "wallabag-${version}";
-  version = "2.1.4";
+  version = "2.3.6";
 
   # remember to rm -r var/cache/* after a rebuild or unexpected errors will occur
 
   src = fetchurl {
-    url = "https://framabag.org/wallabag-release-${version}.tar.gz";
-    sha256 = "0s4p9jls7jqq9jbcac21ibz9k5yxx0ifv2yhxlkia5kw9md20r7b";
+    url = "https://static.wallabag.org/releases/wallabag-release-${version}.tar.gz";
+    sha256 = "0m0dy3r94ks5pfxyb9vbgrsm0vrwdl3jd5wqwg4f5vd107lq90q1";
   };
 
-  outputs = [ "out" "doc" ];
+  outputs = [ "out" ];
 
-  patchPhase = ''
-    rm Makefile # use the "shared hosting" package with bundled dependencies
-    substituteInPlace app/AppKernel.php \
-      --replace "__DIR__" "getenv('WALLABAG_DATA')"
-    substituteInPlace var/bootstrap.php.cache \
-      --replace "\$this->rootDir = \$this->getRootDir()" "\$this->rootDir = getenv('WALLABAG_DATA')"
-  ''; # exposes $WALLABAG_DATA
+  patches = [ ./wallabag-data.patch ]; # exposes $WALLABAG_DATA
+
+  dontBuild = true;
 
   installPhase = ''
-    mv docs $doc/
     mkdir $out/
     cp -R * $out/
   '';
@@ -32,11 +27,12 @@ stdenv.mkDerivation rec {
     longDescription = ''
       wallabag is a self hostable application for saving web pages.
 
-      To use, point the environment variable $WALLABAG_DATA to a directory called `app` that contains the folder `config` with wallabag's configuration files. These need to be updated every package upgrade. In `app`'s parent folder, a directory called `var` containing wallabag's data will be created.
+      Point the environment variable $WALLABAG_DATA to a data directory that contains the folder `app/config` which must be a clone of wallabag's configuration files with your customized `parameters.yml`. These need to be updated every package upgrade.
       After a package upgrade, empty the `var/cache` folder.
     '';
     license = licenses.mit;
     homepage = http://wallabag.org;
+    maintainers = with maintainers; [ schneefux ];
     platforms = platforms.all;
   };
 }

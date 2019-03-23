@@ -1,15 +1,12 @@
-{ stdenv, fetchurl, pkgconfig, gtk3, glibmm, cairomm, pangomm, atkmm, epoxy }:
+{ stdenv, fetchurl, pkgconfig, gtk3, glibmm, cairomm, pangomm, atkmm, epoxy, gnome3 }:
 
-let
-  ver_maj = "3.22";
-  ver_min = "0";
-in
 stdenv.mkDerivation rec {
-  name = "gtkmm-${ver_maj}.${ver_min}";
+  pname = "gtkmm";
+  version = "3.24.0";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/gtkmm/${ver_maj}/${name}.tar.xz";
-    sha256 = "05da4d4b628fb20c8384630ddf478a3b5562952b2d6181fe28d58f6cbc0514f5";
+    url = "mirror://gnome/sources/${pname}/${stdenv.lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
+    sha256 = "0hxaq4x9jqj8vvnv3sb6nwapz83v8lclbm887qqci0g50llcjpyg";
   };
 
   outputs = [ "out" "dev" ];
@@ -24,6 +21,13 @@ stdenv.mkDerivation rec {
   # https://bugzilla.gnome.org/show_bug.cgi?id=764521
   doCheck = false;
 
+  passthru = {
+    updateScript = gnome3.updateScript {
+      packageName = pname;
+      attrPath = "${pname}3";
+    };
+  };
+
   meta = with stdenv.lib; {
     description = "C++ interface to the GTK+ graphical user interface library";
 
@@ -37,7 +41,7 @@ stdenv.mkDerivation rec {
       tutorial.
     '';
 
-    homepage = http://gtkmm.org/;
+    homepage = https://gtkmm.org/;
 
     license = licenses.lgpl2Plus;
 

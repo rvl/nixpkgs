@@ -12,7 +12,8 @@ in stdenv.mkDerivation rec {
     sha256 = "0b0rvgg3xsbbg2fdrpz0ywsy9rcahlyfskndaagd3yzm83gi6bhk";
   };
 
-  buildInputs = [ pkgconfig mono newtonsoft-json ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ mono newtonsoft-json ];
 
   sourceRoot = "svn-r1217/clients/cs";
 
@@ -33,6 +34,8 @@ in stdenv.mkDerivation rec {
       The Google Data APIs provide a simple protocol for reading and writing
       data on the web.
     '';
+
+    license = licenses.asl20;
     platforms = platforms.linux;
   };
 }

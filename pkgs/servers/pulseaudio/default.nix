@@ -1,12 +1,9 @@
 { lib, stdenv, fetchurl, pkgconfig, intltool, autoreconfHook
-, json_c, libsndfile, libtool
-, xorg, libcap, alsaLib, glib
+, libsndfile, libtool, makeWrapper
+, xorg, libcap, alsaLib, glib, gnome3
 , avahi, libjack2, libasyncns, lirc, dbus
 , sbc, bluez5, udev, openssl, fftwFloat
-, speexdsp, systemd, webrtc-audio-processing, gconf ? null
-
-# Database selection
-, tdb ? null, gdbm ? null
+, speexdsp, systemd, webrtc-audio-processing
 
 , x11Support ? false
 
@@ -20,8 +17,6 @@
 
 , airtunesSupport ? false
 
-, gconfSupport ? false
-
 , bluetoothSupport ? false
 
 , remoteControlSupport ? false
@@ -30,29 +25,30 @@
 
 , # Whether to build only the library.
   libOnly ? false
+
+, CoreServices, AudioUnit, Cocoa
 }:
 
 stdenv.mkDerivation rec {
   name = "${if libOnly then "lib" else ""}pulseaudio-${version}";
-  version = "9.0";
+  version = "12.2";
 
   src = fetchurl {
     url = "http://freedesktop.org/software/pulseaudio/releases/pulseaudio-${version}.tar.xz";
-    sha256 = "11j682g2mn723sz3bh4i44ggq29z053zcggy0glzn63zh9mxdly3";
+    sha256 = "0ma0p8iry7fil7qb4pm2nx2pm65kq9hk9xc4r5wkf14nqbzni5l0";
   };
-
-  patches = [ ./caps-fix.patch ];
 
   outputs = [ "out" "dev" ];
 
-  nativeBuildInputs = [ pkgconfig intltool autoreconfHook ];
+  nativeBuildInputs = [ pkgconfig intltool autoreconfHook makeWrapper ];
 
   propagatedBuildInputs =
     lib.optionals stdenv.isLinux [ libcap ];
 
   buildInputs =
-    [ json_c libsndfile speexdsp fftwFloat ]
+    [ libtool libsndfile speexdsp fftwFloat ]
     ++ lib.optionals stdenv.isLinux [ glib dbus ]
+    ++ lib.optionals stdenv.isDarwin [ CoreServices AudioUnit Cocoa ]
     ++ lib.optionals (!libOnly) (
       [ libasyncns webrtc-audio-processing ]
       ++ lib.optional jackaudioSupport libjack2
@@ -60,7 +56,6 @@ stdenv.mkDerivation rec {
       ++ lib.optional useSystemd systemd
       ++ lib.optionals stdenv.isLinux [ alsaLib udev ]
       ++ lib.optional airtunesSupport openssl
-      ++ lib.optional gconfSupport gconf
       ++ lib.optionals bluetoothSupport [ bluez5 sbc ]
       ++ lib.optional remoteControlSupport lirc
       ++ lib.optional zeroconfSupport  avahi
@@ -116,11 +111,17 @@ stdenv.mkDerivation rec {
   ''
     + ''moveToOutput lib/cmake "$dev" '';
 
+  preFixup = lib.optionalString stdenv.isLinux ''
+    wrapProgram $out/libexec/pulse/gsettings-helper \
+     --prefix XDG_DATA_DIRS : "$out/share/gsettings-schemas/${name}" \
+     --prefix GIO_EXTRA_MODULES : "${lib.getLib gnome3.dconf}/lib/gio/modules"
+  '';
+
   meta = {
     description = "Sound server for POSIX and Win32 systems";
     homepage    = http://www.pulseaudio.org/;
-    licenses    = lib.licenses.lgpl2Plus;
-    maintainers = with lib.maintainers; [ lovek323 wkennington ];
+    license     = lib.licenses.lgpl2Plus;
+    maintainers = with lib.maintainers; [ lovek323 ];
     platforms   = lib.platforms.unix;
 
     longDescription = ''

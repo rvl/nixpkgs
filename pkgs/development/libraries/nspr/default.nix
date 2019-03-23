@@ -1,14 +1,15 @@
 { stdenv, fetchurl
-, CoreServices ? null }:
+, CoreServices ? null
+, buildPackages }:
 
-let version = "4.13.1"; in
+let version = "4.20"; in
 
 stdenv.mkDerivation {
   name = "nspr-${version}";
 
   src = fetchurl {
     url = "mirror://mozilla/nspr/releases/v${version}/src/nspr-${version}.tar.gz";
-    sha256 = "5e4c1751339a76e7c772c0c04747488d7f8c98980b434dc846977e43117833ab";
+    sha256 = "0vjms4j75zvv5b2siyafg7hh924ysx2cwjad8spzp7x87n8n929c";
   };
 
   outputs = [ "out" "dev" ];
@@ -16,8 +17,13 @@ stdenv.mkDerivation {
 
   preConfigure = ''
     cd nspr
+  '' + stdenv.lib.optionalString stdenv.isDarwin ''
+    substituteInPlace configure --replace '@executable_path/' "$out/lib/"
+    substituteInPlace configure.in --replace '@executable_path/' "$out/lib/"
   '';
 
+  HOST_CC = "cc";
+  depsBuildBuild = [ buildPackages.stdenv.cc ];
   configureFlags = [
     "--enable-optimize"
     "--disable-debug"
@@ -32,9 +38,10 @@ stdenv.mkDerivation {
 
   enableParallelBuilding = true;
 
-  meta = {
+  meta = with stdenv.lib; {
     homepage = http://www.mozilla.org/projects/nspr/;
     description = "Netscape Portable Runtime, a platform-neutral API for system-level and libc-like functions";
-    platforms = stdenv.lib.platforms.all;
+    platforms = platforms.all;
+    license = licenses.mpl20;
   };
 }

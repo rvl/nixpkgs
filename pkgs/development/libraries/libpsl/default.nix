@@ -1,31 +1,31 @@
-{ stdenv, fetchFromGitHub, autoreconfHook, docbook_xsl, gtk_doc, icu
-, libxslt, pkgconfig, python }:
+{ stdenv, fetchFromGitHub, autoreconfHook, docbook_xsl, docbook_xml_dtd_43, gtk-doc, icu
+, libxslt, pkgconfig, python3 }:
 
 let
 
-  listVersion = "2016-06-30";
+  listVersion = "2017-02-03";
   listSources = fetchFromGitHub {
-    sha256 = "1fx7g36dcckckz860f0ady8lsg3m6a5c9pgb39a3dn28xfvd21jw";
-    rev = "aa87d27940595ed4a61e726c7dd06860d87fabb6";
+    sha256 = "0fhc86pjv50hxj3xf9r4mh0zzvdzqp5lac20caaxq1hlvdzavaa3";
+    rev = "37e30d13801eaad3383b122c11d8091c7ac21040";
     repo = "list";
     owner = "publicsuffix";
   };
 
-  libVersion = "0.15.0";
+  libVersion = "0.20.2";
 
 in stdenv.mkDerivation rec {
   name = "libpsl-${version}";
   version = "${libVersion}-list-${listVersion}";
 
   src = fetchFromGitHub {
-    sha256 = "1n8vg8pslpgin84ygb0s0nqfljml32l5bv5fyc8ysnpbdsj6gxkb";
+    sha256 = "0ijingxpnvl5xnna32j93ijagvjsvw2lhj71q39hz9xhzjzrda9b";
     rev = "libpsl-${libVersion}";
     repo = "libpsl";
     owner = "rockdaboot";
   };
 
   buildInputs = [ icu libxslt ];
-  nativeBuildInputs = [ autoreconfHook docbook_xsl gtk_doc pkgconfig python ];
+  nativeBuildInputs = [ autoreconfHook docbook_xsl docbook_xml_dtd_43 gtk-doc pkgconfig python3 ];
 
   postPatch = ''
     substituteInPlace src/psl.c --replace bits/stat.h sys/stat.h
@@ -33,7 +33,6 @@ in stdenv.mkDerivation rec {
   '';
 
   preAutoreconf = ''
-    mkdir m4
     gtkdocize
   '';
 
@@ -64,6 +63,5 @@ in stdenv.mkDerivation rec {
     homepage = http://rockdaboot.github.io/libpsl/;
     license = licenses.mit;
     platforms = with platforms; linux ++ darwin;
-    maintainers = with maintainers; [ nckx ];
   };
 }

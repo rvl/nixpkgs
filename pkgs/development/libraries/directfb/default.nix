@@ -16,13 +16,13 @@ stdenv.mkDerivation {
     inherit (s) url sha256;
   };
 
-  nativeBuildInputs = [ perl ];
+  nativeBuildInputs = [ perl pkgconfig ];
 
-  buildInputs = [ pkgconfig zlib libjpeg freetype giflib libpng ]
+  buildInputs = [ zlib libjpeg freetype giflib libpng ]
     ++ stdenv.lib.optional enableSDL SDL
     ++ stdenv.lib.optionals enableX11 (with xorg; [
-      xproto libX11 libXext #xextproto
-      #renderproto libXrender
+      xorgproto libX11 libXext
+      libXrender
     ]);
 
   NIX_LDFLAGS="-lgcc_s";

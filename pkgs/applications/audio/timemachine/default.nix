@@ -12,11 +12,16 @@ stdenv.mkDerivation rec {
     sha256 = "0w5alysixnvlkfl79wf7vs5wsw2vgxl3gqxxcm0zbmhjdpmjpcal";
   };
 
-    buildInputs = [ autoconf automake pkgconfig gtk2 libjack2
+  nativeBuildInputs = [ pkgconfig ];
+    buildInputs = [ autoconf automake gtk2 libjack2
       libsndfile
     ];
 
   preConfigure = "./autogen.sh";
+
+  NIX_LDFLAGS =  [
+    "-lm"
+  ];
 
   meta = {
     description = "JACK audio recorder";

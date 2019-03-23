@@ -21,21 +21,25 @@ stdenv.mkDerivation rec {
 
   postCheck = "cat test/test.log";
 
-  buildInputs = [ ]
-    ++ stdenv.lib.optional docSupport doxygen;
+  buildInputs = stdenv.lib.optional docSupport doxygen;
 
   propagatedBuildInputs = [ libpng ];
 
-  makeFlags = [ "PREFIX=\${out}" ]
-    ++ stdenv.lib.optional docSupport "docs";
+  preConfigure = stdenv.lib.optionalString stdenv.isDarwin ''
+    substituteInPlace error.hpp --replace "#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE" "#if (__clang__ || _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE"
+  '' + ''
+    sed "s|\(PNGPP := .\)|PREFIX := ''${out}\n\\1|" -i Makefile
+  '';
+
+  makeFlags = stdenv.lib.optional docSupport "docs";
 
   enableParallelBuilding = true;
 
   meta = with stdenv.lib; {
-    homepage = http://www.nongnu.org/pngpp/;
+    homepage = https://www.nongnu.org/pngpp/;
     description = "C++ wrapper for libpng library";
     license = licenses.bsd3;
-    platforms = platforms.linux;
+    platforms = platforms.unix;
     maintainers = [ maintainers.ramkromberg ];
   };
 }

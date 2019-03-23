@@ -7,24 +7,23 @@ with lib;
 let
 
   cfg  = config.programs.ssh;
-  cfgd = config.services.openssh;
 
   askPassword = cfg.askPassword;
 
   askPasswordWrapper = pkgs.writeScript "ssh-askpass-wrapper"
     ''
-      #! ${pkgs.stdenv.shell} -e
+      #! ${pkgs.runtimeShell} -e
       export DISPLAY="$(systemctl --user show-environment | ${pkgs.gnused}/bin/sed 's/^DISPLAY=\(.*\)/\1/; t; d')"
       exec ${askPassword}
     '';
 
   knownHosts = map (h: getAttr h cfg.knownHosts) (attrNames cfg.knownHosts);
 
-  knownHostsText = flip (concatMapStringsSep "\n") knownHosts
+  knownHostsText = (flip (concatMapStringsSep "\n") knownHosts
     (h: assert h.hostNames != [];
       concatStringsSep "," h.hostNames + " "
       + (if h.publicKey != null then h.publicKey else readFile h.publicKeyFile)
-    );
+    )) + "\n";
 
 in
 {
@@ -62,11 +61,35 @@ in
         '';
       };
 
+      # Allow DSA keys for now. (These were deprecated in OpenSSH 7.0.)
+      pubkeyAcceptedKeyTypes = mkOption {
+        type = types.listOf types.str;
+        default = [
+          "+ssh-dss"
+        ];
+        example = [ "ssh-ed25519" "ssh-rsa" ];
+        description = ''
+          Specifies the key types that will be used for public key authentication.
+        '';
+      };
+
+      hostKeyAlgorithms = mkOption {
+        type = types.listOf types.str;
+        default = [
+          "+ssh-dss"
+        ];
+        example = [ "ssh-ed25519" "ssh-rsa" ];
+        description = ''
+          Specifies the host key algorithms that the client wants to use in order of preference.
+        '';
+      };
+
       extraConfig = mkOption {
         type = types.lines;
         default = "";
         description = ''
-          Extra configuration text appended to <filename>ssh_config</filename>.
+          Extra configuration text prepended to <filename>ssh_config</filename>. Other generated
+          options will be added after a <code>Host *</code> pattern.
           See <citerefentry><refentrytitle>ssh_config</refentrytitle><manvolnum>5</manvolnum></citerefentry>
           for help.
         '';
@@ -74,7 +97,7 @@ in
 
       startAgent = mkOption {
         type = types.bool;
-        default = true;
+        default = false;
         description = ''
           Whether to start the OpenSSH agent when you log in.  The OpenSSH agent
           remembers private keys for you so that you don't have to type in
@@ -145,16 +168,16 @@ in
           The set of system-wide known SSH hosts.
         '';
         example = literalExample ''
-          [
-            {
+          {
+            myhost = {
               hostNames = [ "myhost" "myhost.mydomain.com" "10.10.1.4" ];
-              publicKeyFile = "./pubkeys/myhost_ssh_host_dsa_key.pub";
-            }
-            {
+              publicKeyFile = ./pubkeys/myhost_ssh_host_dsa_key.pub;
+            };
+            myhost2 = {
               hostNames = [ "myhost2" ];
-              publicKeyFile = "./pubkeys/myhost2_ssh_host_dsa_key.pub";
-            }
-          ]
+              publicKeyFile = ./pubkeys/myhost2_ssh_host_dsa_key.pub;
+            };
+          }
         '';
       };
 
@@ -181,6 +204,11 @@ in
     # generation in the sshd service.
     environment.etc."ssh/ssh_config".text =
       ''
+        # Custom options from `extraConfig`, to override generated options
+        ${cfg.extraConfig}
+
+        # Generated options from other settings
+        Host *
         AddressFamily ${if config.networking.enableIPv6 then "any" else "inet"}
 
         ${optionalString cfg.setXAuthLocation ''
@@ -189,19 +217,15 @@ in
 
         ForwardX11 ${if cfg.forwardX11 then "yes" else "no"}
 
-        # Allow DSA keys for now. (These were deprecated in OpenSSH 7.0.)
-        PubkeyAcceptedKeyTypes +ssh-dss
-        HostKeyAlgorithms +ssh-dss
-
-        ${cfg.extraConfig}
+        ${optionalString (cfg.pubkeyAcceptedKeyTypes != []) "PubkeyAcceptedKeyTypes ${concatStringsSep "," cfg.pubkeyAcceptedKeyTypes}"}
+        ${optionalString (cfg.hostKeyAlgorithms != []) "HostKeyAlgorithms ${concatStringsSep "," cfg.hostKeyAlgorithms}"}
       '';
 
     environment.etc."ssh/ssh_known_hosts".text = knownHostsText;
 
     # FIXME: this should really be socket-activated for über-awesomeness.
-    systemd.user.services.ssh-agent =
-      { enable = cfg.startAgent;
-        description = "SSH Agent";
+    systemd.user.services.ssh-agent = mkIf cfg.startAgent
+      { description = "SSH Agent";
         wantedBy = [ "default.target" ];
         serviceConfig =
           { ExecStartPre = "${pkgs.coreutils}/bin/rm -f %t/ssh-agent";

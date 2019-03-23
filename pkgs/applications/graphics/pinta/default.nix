@@ -56,9 +56,9 @@ buildDotnetPackage rec {
     '';
 
   makeWrapperArgs = [
-    ''--prefix MONO_GAC_PREFIX ':' "${gtksharp}"''
-    ''--prefix LD_LIBRARY_PATH ':' "${gtksharp}/lib"''
-    ''--prefix LD_LIBRARY_PATH ':' "${gtksharp.gtk.out}/lib"''
+    ''--prefix MONO_GAC_PREFIX : ${gtksharp}''
+    ''--prefix LD_LIBRARY_PATH : ${gtksharp}/lib''
+    ''--prefix LD_LIBRARY_PATH : ${gtksharp.gtk.out}/lib''
   ];
 
   postInstall = ''
@@ -77,7 +77,7 @@ buildDotnetPackage rec {
     homepage = http://www.pinta-project.com/;
     description = "Drawing/editing program modeled after Paint.NET";
     license = stdenv.lib.licenses.mit;
-    maintainers = with stdenv.lib.maintainers; [ viric ];
+    maintainers = with stdenv.lib.maintainers; [ ];
     platforms = with stdenv.lib.platforms; linux;
   };
 }

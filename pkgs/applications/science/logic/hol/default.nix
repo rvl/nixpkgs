@@ -15,7 +15,7 @@ in
 
 let
   polymlEnableShared = with pkgs; lib.overrideDerivation polyml (attrs: {
-    configureFlags = "--enable-shared";
+    configureFlags = [ "--enable-shared" ];
   });
 in
 
@@ -79,9 +79,10 @@ stdenv.mkDerivation {
       implementing combinations of deduction, execution and property
       checking.
     '';
-    homepage = "http://hol.sourceforge.net/";
+    homepage = http://hol.sourceforge.net/;
     license = licenses.bsd3;
     maintainers = with maintainers; [ mudri ];
     platforms = with platforms; linux;
+    broken = true;
   };
 }

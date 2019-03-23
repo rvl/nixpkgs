@@ -2,13 +2,13 @@
 
 stdenv.mkDerivation rec {
   name = "nvme-cli-${version}";
-  version = "0.9";
+  version = "1.7";
 
   src = fetchFromGitHub {
     owner = "linux-nvme";
     repo = "nvme-cli";
     rev = "v${version}";
-    sha256 = "16n0gg1zx4fgadcq94kx6bgysqw60jvybjwynk7mj3fzdbvzrqyh";
+    sha256 = "1wwr31s337km3v528hvsq72j2ph17fir0j3rr622z74k68pzdh1x";
   };
 
   makeFlags = [ "DESTDIR=$(out)" "PREFIX=" ];
@@ -16,8 +16,8 @@ stdenv.mkDerivation rec {
   meta = with lib; {
     inherit (src.meta) homepage;
     description = "NVM-Express user space tooling for Linux";
-    license = licenses.gpl2;
+    license = licenses.gpl2Plus;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ tavyc ];
+    maintainers = with maintainers; [ primeos tavyc ];
   };
 }

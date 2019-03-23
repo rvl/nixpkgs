@@ -51,7 +51,7 @@ in
         Enable support for SANE scanners.
 
         <note><para>
-          Users in the "scanner" group will gain access to the scanner.
+          Users in the "scanner" group will gain access to the scanner, or the "lp" group if it's also a printer.
         </para></note>
       '';
     };
@@ -124,7 +124,7 @@ in
       environment.sessionVariables = env;
       services.udev.packages = backends;
 
-      users.extraGroups."scanner".gid = config.ids.gids.scanner;
+      users.groups."scanner".gid = config.ids.gids.scanner;
     })
 
     (mkIf config.services.saned.enable {
@@ -152,7 +152,7 @@ in
         };
       };
 
-      users.extraUsers."scanner" = {
+      users.users."scanner" = {
         uid = config.ids.uids.scanner;
         group = "scanner";
       };

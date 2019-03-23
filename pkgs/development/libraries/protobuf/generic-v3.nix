@@ -1,16 +1,17 @@
 { stdenv
 , fetchFromGitHub
-, autoreconfHook, zlib, gmock
+, autoreconfHook, zlib, gmock, which, buildPackages
 , version, sha256
 , ...
 }:
 
-stdenv.mkDerivation rec {
+let
+mkProtobufDerivation = buildProtobuf: stdenv: stdenv.mkDerivation rec {
   name = "protobuf-${version}";
 
   # make sure you test also -A pythonPackages.protobuf
   src = fetchFromGitHub {
-    owner = "google";
+    owner = "protocolbuffers";
     repo = "protobuf";
     rev = "v${version}";
     inherit sha256;
@@ -28,11 +29,20 @@ stdenv.mkDerivation rec {
       --replace 'tmpnam(b)' '"'$TMPDIR'/foo"'
   '';
 
-  buildInputs = [ autoreconfHook zlib ];
+  nativeBuildInputs = [ autoreconfHook buildPackages.which buildPackages.stdenv.cc buildProtobuf ];
+
+  buildInputs = [ zlib ];
+  configureFlags = if buildProtobuf == null then [] else [ "--with-protoc=${buildProtobuf}/bin/protoc" ];
 
   enableParallelBuilding = true;
 
   doCheck = true;
+
+  dontDisableStatic = true;
+
+  NIX_CFLAGS_COMPILE = with stdenv.lib;
+    # gcc before 6 doesn't know this option
+    optionalString (hasPrefix "gcc-6" stdenv.cc.cc.name) "-Wno-error=misleading-indentation";
 
   meta = {
     description = "Google's data interchange format";
@@ -47,4 +57,7 @@ stdenv.mkDerivation rec {
   };
 
   passthru.version = version;
-}
+};
+in mkProtobufDerivation(if (stdenv.buildPlatform != stdenv.hostPlatform)
+                        then (mkProtobufDerivation null buildPackages.stdenv)
+                        else null) stdenv

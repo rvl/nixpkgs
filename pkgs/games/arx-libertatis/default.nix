@@ -1,22 +1,35 @@
-{ stdenv, fetchgit, cmake, zlib, boost,
-  openal, glm, freetype, mesa, glew, SDL2,
-  dejavu_fonts, inkscape, optipng, imagemagick }:
+{ stdenv, fetchFromGitHub, cmake, zlib, boost
+, openal, glm, freetype, libGLU, SDL2, epoxy
+, dejavu_fonts, inkscape, optipng, imagemagick
+, withCrashReporter ? !stdenv.isDarwin
+,   qt5  ? null
+,   curl ? null
+,   gdb  ? null
+}:
+
+with stdenv.lib;
 
 stdenv.mkDerivation rec {
   name = "arx-libertatis-${version}";
-  version = "2016-07-27";
+  version = "2019-02-16";
 
-  src = fetchgit {
-    url = "https://github.com/arx/ArxLibertatis";
-    rev = "e3aa6353f90886e7e9db2f4350ad9a232dd01c1e";
-    sha256 = "1hkkf0z607z8wxdikxq1ji120b3w7pxixq9qapdj1p54dzgbhgza";
+  src = fetchFromGitHub {
+    owner  = "arx";
+    repo   = "ArxLibertatis";
+    rev    = "fbce6ccbc7f58583f33f29b838c38ef527edc267";
+    sha256 = "0qrygp09dqhpb5q6a1zl6l03qh9bi7xcahd8hy9177z1cix3k0kz";
   };
 
-  buildInputs = [
-    cmake zlib boost openal glm
-    freetype mesa glew SDL2 inkscape
-    optipng imagemagick
+
+  nativeBuildInputs = [
+    cmake inkscape imagemagick optipng
   ];
+
+  buildInputs = [
+    zlib boost openal glm
+    freetype libGLU SDL2 epoxy
+  ] ++ optionals withCrashReporter [ qt5.qtbase curl ]
+    ++ optionals stdenv.isLinux    [ gdb ];
 
   cmakeFlags = [
     "-DDATA_DIR_PREFIXES=$out/share"
@@ -32,13 +45,13 @@ stdenv.mkDerivation rec {
       $out/share/games/arx/misc/dejavusansmono.ttf
   '';
   
-  meta = with stdenv.lib; {
+  meta = {
     description = ''
       A cross-platform, open source port of Arx Fatalis, a 2002
       first-person role-playing game / dungeon crawler
       developed by Arkane Studios.
     '';
-    homepage = "http://arx-libertatis.org/";
+    homepage = http://arx-libertatis.org/;
     license = licenses.gpl3;
     maintainers = with maintainers; [ rnhmjoj ];
     platforms = platforms.linux;

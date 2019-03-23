@@ -1,12 +1,11 @@
-{ stdenv, fetchurl, ncurses, pcre }:
+{ stdenv, fetchurl, ncurses, pcre, fetchpatch }:
 
 let
-
-  version = "5.3.1";
+  version = "5.7.1";
 
   documentation = fetchurl {
-    url = "mirror://sourceforge/zsh/zsh-${version}-doc.tar.gz";
-    sha256 = "0hbqn1zg3x5i9klqfzhizk88jzy8pkg65r9k41b3cn42lg3ncsy1";
+    url = "mirror://sourceforge/zsh/zsh-${version}-doc.tar.xz";
+    sha256 = "1d1r88n1gfdavx4zy3svl1gljrvzim17jb2r834hafg2a016flrh";
   };
 
 in
@@ -15,21 +14,23 @@ stdenv.mkDerivation {
   name = "zsh-${version}";
 
   src = fetchurl {
-    url = "mirror://sourceforge/zsh/zsh-${version}.tar.gz";
-    sha256 = "03h42gjqx7yb7qggi7ha0ndsggnnav1qm9vx737jwmiwzy8ab51x";
+    url = "mirror://sourceforge/zsh/zsh-${version}.tar.xz";
+    sha256 = "1s3yww0mzgvpc48kp0x868mm3gbna42sbgzya0nknj0x5hn2jq3j";
   };
 
   buildInputs = [ ncurses pcre ];
 
-  preConfigure = ''
-    configureFlags="--enable-maildir-support --enable-multibyte --enable-zprofile=$out/etc/zprofile --with-tcsetpgrp --enable-pcre"
-  '';
+  configureFlags = [
+    "--enable-maildir-support"
+    "--enable-multibyte"
+    "--with-tcsetpgrp"
+    "--enable-pcre"
+    "--enable-zprofile=${placeholder "out"}/etc/zprofile"
+  ];
 
   # the zsh/zpty module is not available on hydra
   # so skip groups Y Z
-  checkFlagsArray = ''
-    (TESTNUM=A TESTNUM=B TESTNUM=C TESTNUM=D TESTNUM=E TESTNUM=V TESTNUM=W)
-  '';
+  checkFlags = map (T: "TESTNUM=${T}") (stdenv.lib.stringToCharacters "ABCDEVW");
 
   # XXX: think/discuss about this, also with respect to nixos vs nix-on-X
   postInstall = ''
@@ -76,8 +77,8 @@ EOF
       a host of other features.
     '';
     license = "MIT-like";
-    homepage = "http://www.zsh.org/";
-    maintainers = with stdenv.lib.maintainers; [ chaoflow pSub ];
+    homepage = http://www.zsh.org/;
+    maintainers = with stdenv.lib.maintainers; [ pSub ];
     platforms = stdenv.lib.platforms.unix;
   };
 

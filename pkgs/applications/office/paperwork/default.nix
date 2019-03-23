@@ -1,24 +1,18 @@
-{ lib, python3Packages, fetchFromGitHub, gtk3, cairo
+{ lib, python3Packages, fetchFromGitLab, gtk3, cairo
 , aspellDicts, buildEnv
-, gnome3, hicolor_icon_theme
-, xvfb_run, dbus
+, gnome3, hicolor-icon-theme, librsvg
+, xvfb_run, dbus, libnotify
 }:
 
 python3Packages.buildPythonApplication rec {
-  name = "paperwork-${version}";
-  # Don't forget to also update paperwork-backend when updating this!
-  version = "1.0.6.1";
+  inherit (python3Packages.paperwork-backend) version src;
+  pname = "paperwork";
 
-  src = fetchFromGitHub {
-    repo = "paperwork";
-    owner = "jflesch";
-    rev = version;
-    sha256 = "1v1lxyi4crdik4jlwjds9n6lzw4m4l4f9n5azlinv8wb477qpv6h";
-  };
+  sourceRoot = "source/paperwork-gtk";
 
   # Patch out a few paths that assume that we're using the FHS:
   postPatch = ''
-    themeDir="$(echo "${gnome3.defaultIconTheme}/share/icons/"*)"
+    themeDir="$(echo "${gnome3.adwaita-icon-theme}/share/icons/"*)"
     sed -i -e "s,/usr/share/icons/gnome,$themeDir," src/paperwork/deps.py
 
     sed -i -e 's,sys\.prefix,"",g' \
@@ -31,7 +25,7 @@ python3Packages.buildPythonApplication rec {
     }' src/paperwork/frontend/util/__init__.py
 
     sed -i -e '/^LOCALE_PATHS = \[/,/^\]$/ {
-      c LOCALE_PATHS = ["'"$out/share/locale"'"]
+      c LOCALE_PATHS = ["'"$out/share"'"]
     }' src/paperwork/paperwork.py
 
     sed -i -e 's/"icon"/"icon-name"/g' \
@@ -39,6 +33,12 @@ python3Packages.buildPythonApplication rec {
 
     sed -i -e 's/"logo"/"logo-icon-name"/g' \
       src/paperwork/frontend/aboutdialog/aboutdialog.glade
+
+    cat - ../AUTHORS.py > src/paperwork/_version.py <<EOF
+    # -*- coding: utf-8 -*-
+    version = "${version}"
+    authors_code=""
+    EOF
   '';
 
   ASPELL_CONF = "dict-dir ${buildEnv {
@@ -46,8 +46,10 @@ python3Packages.buildPythonApplication rec {
     paths = lib.collect lib.isDerivation aspellDicts;
   }}/lib/aspell";
 
-  checkInputs = [ xvfb_run dbus.daemon ];
-  buildInputs = [ gnome3.defaultIconTheme hicolor_icon_theme ];
+  checkInputs = [ xvfb_run dbus.daemon ] ++ (with python3Packages; [ paperwork-backend ]);
+  buildInputs = [
+    gnome3.adwaita-icon-theme hicolor-icon-theme libnotify librsvg
+  ];
 
   # A few parts of chkdeps need to have a display and a dbus session, so we not
   # only need to run a virtual X server + dbus but also have a large enough
@@ -59,18 +61,19 @@ python3Packages.buildPythonApplication rec {
   '';
 
   propagatedBuildInputs = with python3Packages; [
-    paperwork-backend pypillowfight gtk3 cairo
+    paperwork-backend pypillowfight gtk3 cairo pyxdg dateutil
   ];
 
   makeWrapperArgs = [
     "--set GI_TYPELIB_PATH \"$GI_TYPELIB_PATH\""
+    "--set GDK_PIXBUF_MODULE_FILE \"$GDK_PIXBUF_MODULE_FILE\""
     "--prefix XDG_DATA_DIRS : \"$out/share\""
     "--suffix XDG_DATA_DIRS : \"$XDG_ICON_DIRS:$GSETTINGS_SCHEMAS_PATH\""
   ];
 
   meta = {
     description = "A personal document manager for scanned documents";
-    homepage = "https://github.com/jflesch/paperwork";
+    homepage = https://openpaper.work/;
     license = lib.licenses.gpl3Plus;
     maintainers = [ lib.maintainers.aszlig ];
     platforms = lib.platforms.linux;

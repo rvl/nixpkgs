@@ -1,7 +1,7 @@
 { stdenv, lib, fetchurl, makeWrapper
 , gawk, gnused, gnugrep, coreutils, which
-, perl, NetSMTP
-, withMySQL ? false, zlib, libmysql
+, perlPackages
+, withMySQL ? false, zlib, mysql57
 , withPgSQL ? false, postgresql
 , withSQLite ? false, sqlite
 , withDB ? false, db
@@ -25,8 +25,8 @@ in stdenv.mkDerivation rec {
     sha256 = "1acklnxn1wvc7abn31l3qdj8q6k13s51k5gv86vka7q20jb5cxmf";
   };
 
-  buildInputs = [ perl ]
-                ++ lib.optionals withMySQL [ zlib libmysql ]
+  buildInputs = [ perlPackages.perl ]
+                ++ lib.optionals withMySQL [ zlib mysql57.connector-c ]
                 ++ lib.optional withPgSQL postgresql
                 ++ lib.optional withSQLite sqlite
                 ++ lib.optional withDB db;
@@ -49,7 +49,7 @@ in stdenv.mkDerivation rec {
     "--enable-preferences-extension"
     "--enable-long-usernames"
     "--enable-external-lookup"
-  ] ++ lib.optional withMySQL "--with-mysql-includes=${lib.getDev libmysql}/include/mysql"
+  ] ++ lib.optional withMySQL "--with-mysql-includes=${mysql57.connector-c}/include/mysql"
     ++ lib.optional withPgSQL "--with-pgsql-libraries=${postgresql.lib}/lib";
 
   # Lots of things are hardwired to paths like sysconfdir. That's why we install with both "prefix" and "DESTDIR"
@@ -62,7 +62,7 @@ in stdenv.mkDerivation rec {
     rm -rf $out/var
 
     wrapProgram $out/bin/dspam_notify \
-      --set PERL5LIB "${lib.makePerlPath [ NetSMTP ]}"
+      --set PERL5LIB "${perlPackages.makePerlPath [ perlPackages.libnet ]}"
 
     # Install SQL scripts
     mkdir -p $out/share/dspam/sql
@@ -99,7 +99,7 @@ in stdenv.mkDerivation rec {
   '';
 
   meta = with lib; {
-    homepage = "http://nuclearelephant.com/";
+    homepage = http://nuclearelephant.com/;
     description = "Community Driven Antispam Filter";
     license = licenses.agpl3;
     platforms = platforms.linux;

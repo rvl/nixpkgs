@@ -1,4 +1,4 @@
-{ stdenv, callPackage, lib, wineUnstable, libtxc_dxtn_Name }:
+{ stdenv, callPackage, wineUnstable, libtxc_dxtn_Name }:
 
 with callPackage ./util.nix {};
 
@@ -18,7 +18,7 @@ stdenv.lib.overrideDerivation wineUnstable (self: {
     chmod +w patches
     cd patches
     patchShebangs gitapply.sh
-    ./patchinstall.sh DESTDIR="$TMP/$sourceRoot" --all
+    ./patchinstall.sh DESTDIR="$PWD/.." --all
     cd ..
   '';
 })

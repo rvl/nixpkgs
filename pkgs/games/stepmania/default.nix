@@ -1,24 +1,24 @@
-{ stdenv, lib, fetchpatch, fetchFromGitHub, cmake, nasm
+{ stdenv, lib, fetchFromGitHub, cmake, nasm
 , gtk2, glib, ffmpeg, alsaLib, libmad, libogg, libvorbis
-, glew, libpulseaudio
+, glew, libpulseaudio, udev
 }:
 
 stdenv.mkDerivation rec {
   name = "stepmania-${version}";
-  version = "5.0.10";
+  version = "5.1.0-b2";
 
   src = fetchFromGitHub {
     owner = "stepmania";
     repo  = "stepmania";
     rev   = "v${version}";
-    sha256 = "174gzvk42gwm56hpkz51csad9xi4dg466xv0mf1z39xd7mqd5j5w";
+    sha256 = "0a7y9l7xm510vgnpmj1is7p9m6d6yd0fcaxrjcickz295k5w3rdn";
   };
 
   nativeBuildInputs = [ cmake nasm ];
 
   buildInputs = [
     gtk2 glib ffmpeg alsaLib libmad libogg libvorbis
-    glew libpulseaudio
+    glew libpulseaudio udev
   ];
 
   cmakeFlags = [
@@ -27,26 +27,18 @@ stdenv.mkDerivation rec {
     "-DGTK2_GLIBCONFIG_INCLUDE_DIR=${glib.out}/lib/glib-2.0/include"
   ];
 
-  patches = [
-    # Fix compilation on i686
-    (fetchpatch {
-      url = "https://github.com/stepmania/stepmania/commit/f1e114aa03c90884946427bb43a75badec21f163.patch";
-      sha256 = "1cm14w92dilqvlyqfffiihf09ra97hxzgfal5gx08brc3j1yyzdw";
-    })
-  ];
-
   postInstall = ''
     mkdir -p $out/bin
-    ln -s $out/stepmania-5.0/stepmania $out/bin/stepmania
+    ln -s $out/stepmania-5.1/stepmania $out/bin/stepmania
   '';
 
   enableParallelBuilding = true;
 
   meta = with lib; {
-    homepage = "http://www.stepmania.com/";
+    homepage = http://www.stepmania.com/;
     description = "Free dance and rhythm game for Windows, Mac, and Linux";
     platforms = platforms.linux;
     license = licenses.mit; # expat version
-    maintainers = [ maintainers.mornfall ];
+    maintainers = [ ];
   };
 }

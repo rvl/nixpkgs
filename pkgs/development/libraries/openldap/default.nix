@@ -1,11 +1,11 @@
 { stdenv, fetchurl, openssl, cyrus_sasl, db, groff, libtool }:
 
 stdenv.mkDerivation rec {
-  name = "openldap-2.4.44";
+  name = "openldap-2.4.46";
 
   src = fetchurl {
-    url = "http://www.openldap.org/software/download/OpenLDAP/openldap-release/${name}.tgz";
-    sha256 = "0044p20hx07fwgw2mbwj1fkx04615hhs1qyx4mawj2bhqvrnppnp";
+    url = "https://www.openldap.org/software/download/OpenLDAP/openldap-release/${name}.tgz";
+    sha256 = "0bab1km8f2nan1x0zgwliknbxg0zlf2pafxrr867kblrdfwdr44s";
   };
 
   # TODO: separate "out" and "bin"
@@ -13,18 +13,31 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
-  buildInputs = [ openssl cyrus_sasl db groff libtool ];
+  nativeBuildInputs = [ groff ];
 
-  configureFlags =
-    [ "--enable-overlays"
-      "--disable-dependency-tracking"   # speeds up one-time build
-      "--enable-modules"
-      "--sysconfdir=/etc"
-    ] ++ stdenv.lib.optional (openssl == null) "--without-tls"
-      ++ stdenv.lib.optional (cyrus_sasl == null) "--without-cyrus-sasl"
-      ++ stdenv.lib.optional stdenv.isFreeBSD "--with-pic";
+  buildInputs = [ openssl cyrus_sasl db libtool ];
 
-  installFlags = [ "sysconfdir=$(out)/etc" ];
+  # Disable install stripping as it breaks cross-compiling.
+  # We strip binaries anyway in fixupPhase.
+  makeFlags= [ "STRIP=" ];
+
+  configureFlags = [
+    "--enable-overlays"
+    "--disable-dependency-tracking"   # speeds up one-time build
+    "--enable-modules"
+    "--sysconfdir=/etc"
+    "--localstatedir=/var"
+    "--enable-crypt"
+  ] ++ stdenv.lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
+    "--with-yielding_select=yes"
+    "ac_cv_func_memcmp_working=yes"
+  ] ++ stdenv.lib.optional (openssl == null) "--without-tls"
+    ++ stdenv.lib.optional (cyrus_sasl == null) "--without-cyrus-sasl"
+    ++ stdenv.lib.optional stdenv.isFreeBSD "--with-pic";
+
+  doCheck = false; # needs a running LDAP server
+
+  installFlags = [ "sysconfdir=$(out)/etc" "localstatedir=$(out)/var" ];
 
   # 1. Fixup broken libtool
   # 2. Libraries left in the build location confuse `patchelf --shrink-rpath`
@@ -47,7 +60,8 @@ stdenv.mkDerivation rec {
   meta = with stdenv.lib; {
     homepage    = http://www.openldap.org/;
     description = "An open source implementation of the Lightweight Directory Access Protocol";
-    maintainers = with maintainers; [ lovek323 mornfall ];
+    license = licenses.openldap;
+    maintainers = with maintainers; [ lovek323 ];
     platforms   = platforms.unix;
   };
 }

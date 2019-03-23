@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, makeWrapper, xkbcomp, xorgserver, getopt, xkeyboard_config
+{ stdenv, fetchurl, makeWrapper, xorgserver, getopt
 , xauth, utillinux, which, fontsConf, gawk, coreutils }:
 let
   xvfb_run = fetchurl {
@@ -12,15 +12,16 @@ stdenv.mkDerivation {
   buildCommand = ''
     mkdir -p $out/bin
     cp ${xvfb_run} $out/bin/xvfb-run
-    sed -i 's|XVFBARGS="|XVFBARGS="-xkbdir ${xkeyboard_config}/etc/X11/xkb |' $out/bin/xvfb-run
 
     chmod a+x $out/bin/xvfb-run
+    patchShebangs $out/bin/xvfb-run
     wrapProgram $out/bin/xvfb-run \
       --set FONTCONFIG_FILE "${fontsConf}" \
       --prefix PATH : ${stdenv.lib.makeBinPath [ getopt xorgserver xauth which utillinux gawk coreutils ]}
   '';
 
-  meta = {
-    platforms = stdenv.lib.platforms.linux;
+  meta = with stdenv.lib; {
+    platforms = platforms.linux;
+    license = licenses.gpl2;
   };
 }

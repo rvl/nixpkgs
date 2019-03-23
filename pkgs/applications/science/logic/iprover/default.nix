@@ -1,15 +1,15 @@
-{ stdenv, fetchurl, ocaml, eprover }:
+{ stdenv, fetchurl, ocaml, eprover, zlib }:
 
 stdenv.mkDerivation rec {
   name = "iprover-${version}";
-  version = "0.8.1";
+  version = "2018_Jul_24_11h";
 
   src = fetchurl {
-    url = "http://iprover.googlecode.com/files/iprover_v${version}.tar.gz";
-    sha256 = "15qn523w4l296np5rnkwi50a5x2xqz0kaza7bsh9bkazph7jma7w";
+    url = "http://www.cs.man.ac.uk/~korovink/iprover/iprover_${version}.tar.gz";
+    sha256 = "1iqim11flzm56aaysasl5whajcv1gq31hkidaqfr8ww7kwl1h06p";
   };
 
-  buildInputs = [ ocaml eprover ];
+  buildInputs = [ ocaml eprover zlib ];
 
   preConfigure = ''patchShebangs .'';
 
@@ -19,18 +19,15 @@ stdenv.mkDerivation rec {
 
     mkdir -p "$out/share/${name}"
     cp *.p "$out/share/${name}"
-    echo -e "#! /bin/sh\\n$out/bin/iproveropt --clausifier \"${eprover}/bin/eprover\" --clausifier_options \" --tstp-format --silent --cnf \" \"\$@\"" > "$out"/bin/iprover
+    echo -e "#! ${stdenv.shell}\\n$out/bin/iproveropt --clausifier \"${eprover}/bin/eprover\" --clausifier_options \" --tstp-format --silent --cnf \" \"\$@\"" > "$out"/bin/iprover
     chmod a+x  "$out"/bin/iprover
   '';
 
   meta = with stdenv.lib; {
     description = "An automated first-order logic theorem prover";
-    maintainers = with maintainers;
-    [
-      raskin
-    ];
+    homepage = http://www.cs.man.ac.uk/~korovink/iprover/;
+    maintainers = with maintainers; [ raskin gebner ];
     platforms = platforms.linux;
     license = licenses.gpl3;
-    downloadPage = "http://code.google.com/p/iprover/downloads/list";
   };
 }

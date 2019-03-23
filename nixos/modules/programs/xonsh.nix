@@ -6,8 +6,6 @@ with lib;
 
 let
 
-  cfge = config.environment;
-
   cfg = config.programs.xonsh;
 
 in
@@ -21,7 +19,7 @@ in
       enable = mkOption {
         default = false;
         description = ''
-          Whether to configure xnosh as an interactive shell.
+          Whether to configure xonsh as an interactive shell.
         '';
         type = types.bool;
       };

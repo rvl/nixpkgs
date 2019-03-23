@@ -2,7 +2,7 @@
 utillinux, pythonPackages, libnotify }:
 
 stdenv.mkDerivation {
-  name = "clerk-unstable-2016-10-14";
+  name = "clerk-2016-10-14";
 
   src = fetchFromGitHub {
     owner = "carnager";
@@ -13,13 +13,11 @@ stdenv.mkDerivation {
 
   buildInputs = [ makeWrapper pythonPackages.mpd2 ];
 
-  buildPhase = ''
-    echo skipping build phase...
-  '';
+  dontBuild = true;
 
   installPhase = ''
     DESTDIR=$out PREFIX=/ make install
-    wrapProgram $out/bin/clerk $out/bin/clerk \
+    wrapProgram $out/bin/clerk \
       --prefix PATH : "${stdenv.lib.makeBinPath [ rofi mpc_cli perl utillinux libnotify ]}"
   '';
 

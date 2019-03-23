@@ -1,19 +1,19 @@
-{ stdenv, fetchFromGitHub, pythonPackages }:
+{ stdenv, fetchFromGitHub, python3Packages }:
 
-pythonPackages.buildPythonApplication rec {
-  name = "awslogs-${version}";
-  version = "0.7";
+python3Packages.buildPythonApplication rec {
+  pname = "awslogs";
+  version = "0.11.0";
 
   src = fetchFromGitHub {
     owner = "jorgebastida";
     repo = "awslogs";
     rev = "${version}";
-    sha256 = "0dqf26h595l1fcnagxi8zsdarsxg3smsihxaqrvnki8fshhfdqsm";
+    sha256 = "0vdpld7r7y78x1lcd5z3qsx047dwichxb8f3447yzl75fnsm75dc";
   };
 
   doCheck = false;
 
-  propagatedBuildInputs = with pythonPackages; [
+  propagatedBuildInputs = with python3Packages; [
     boto3 termcolor dateutil docutils
   ];
 

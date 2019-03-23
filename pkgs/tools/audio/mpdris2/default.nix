@@ -3,17 +3,23 @@
 }:
 
 stdenv.mkDerivation rec {
-  name = "mpDris2";
-  version = "0.6";
+  pname = "mpDris2";
+  name = "${pname}-${version}";
+  version = "0.8";
 
   src = fetchurl {
-    url = "https://github.com/eonpatapon/${name}/archive/${version}.tar.gz";
-    sha256 = "0zdmamj2ldhr6y3s464w8y2x3yizda784jnlrg3j3myfabssisvz";
+    url = "https://github.com/eonpatapon/${pname}/archive/${version}.tar.gz";
+    sha256 = "14a3va3929qaq1sp9hs9w4bs6lykdvshkbc58kbsc5nzvlgmrcdn";
   };
 
-  buildInputs = [ intltool autoreconfHook pythonPackages.wrapPython ];
-  propagatedBuildInputs = with pythonPackages; [ python pygtk dbus-python ];
-  pythonPath = with pythonPackages; [ mpd pygtk dbus-python notify ];
+  preConfigure = ''
+    intltoolize -f
+  '';
+
+  nativeBuildInputs = [ autoreconfHook ];
+  buildInputs = [ intltool pythonPackages.wrapPython ];
+  propagatedBuildInputs = with pythonPackages; [ python pygtk dbus-python  ];
+  pythonPath = with pythonPackages; [ mpd pygtk dbus-python notify mutagen ];
   postInstall = "wrapPythonPrograms";
 
   meta = with stdenv.lib; {

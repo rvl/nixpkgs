@@ -1,47 +1,49 @@
-{ stdenv, fetchurl, pkgconfig, glib, sqlite, gnome3, vala_0_23
-, intltool, libtool, dbus_libs, telepathy_glib
-, gtk3, json_glib, librdf_raptor2, dbus_glib
+{ stdenv, fetchFromGitLab, pkgconfig, glib, sqlite, gobject-introspection, vala
+, autoconf, automake, libtool, gettext, dbus, telepathy-glib
+, gtk3, json-glib, librdf_raptor2, dbus-glib
 , pythonSupport ? true, python2Packages
 }:
 
 stdenv.mkDerivation rec {
-  version = "0.9.15";
-  name = "zeitgeist-${version}";
+  pname = "zeitgeist";
+  version = "1.0.2";
 
-  src = fetchurl {
-    url = "https://github.com/seiflotfy/zeitgeist/archive/v${version}.tar.gz";
-    sha256 = "07pnc7kmjpd0ncm32z6s3ny5p4zl52v9lld0n0f8sp6cw87k12p0";
+  outputs = [ "out" "lib" "dev" "man" ] ++ stdenv.lib.optional pythonSupport "py";
+
+  src = fetchFromGitLab {
+    domain = "gitlab.freedesktop.org";
+    owner = pname;
+    repo = pname;
+    rev = "v${version}";
+    sha256 = "0ig3d3j1n0ghaxsgfww6g2hhcdwx8cljwwfmp9jk1nrvkxd6rnmv";
   };
 
-  NIX_CFLAGS_COMPILE = "-I${glib.dev}/include/gio-unix-2.0";
+  preConfigure = "NOCONFIGURE=1 ./autogen.sh";
 
-  configureScript = "./autogen.sh";
+  configureFlags = [ "--with-session-bus-services-dir=${placeholder ''out''}/share/dbus-1/services" ];
 
-  configureFlags = [ "--with-session-bus-services-dir=$(out)/share/dbus-1/services" ];
+  nativeBuildInputs = [
+    autoconf automake libtool pkgconfig gettext gobject-introspection vala python2Packages.python
+  ];
+  buildInputs = [
+    glib sqlite dbus telepathy-glib dbus-glib
+    gtk3 json-glib librdf_raptor2 python2Packages.rdflib
+  ];
 
-  buildInputs = [ pkgconfig glib sqlite gnome3.gnome_common intltool
-                  libtool dbus_libs telepathy_glib vala_0_23 dbus_glib
-                  gtk3 json_glib librdf_raptor2 python2Packages.rdflib ];
-
-  prePatch = "patchShebangs .";
-
-  patches = [ ./dbus_glib.patch ];
-
-  patchFlags = [ "-p0" ];
+  postPatch = ''
+    patchShebangs data/ontology2code
+  '';
 
   enableParallelBuilding = true;
 
-  postFixup = ''
-  '' + stdenv.lib.optionalString pythonSupport ''
+  postFixup = stdenv.lib.optionalString pythonSupport ''
     moveToOutput lib/${python2Packages.python.libPrefix} "$py"
   '';
 
-  outputs = [ "out" ] ++ stdenv.lib.optional pythonSupport "py";
-
   meta = with stdenv.lib; {
     description = "A service which logs the users's activities and events";
-    homepage = https://launchpad.net/zeitgeist;
-    maintainers = with maintainers; [ lethalman ];
+    homepage = https://zeitgeist.freedesktop.org/;
+    maintainers = with maintainers; [ lethalman worldofpeace ];
     license = licenses.gpl2;
     platforms = platforms.linux;
   };

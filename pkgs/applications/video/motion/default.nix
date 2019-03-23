@@ -1,20 +1,25 @@
-{ stdenv, fetchFromGitHub, autoreconfHook, pkgconfig, libjpeg, ffmpeg }:
+{ stdenv, fetchFromGitHub, autoreconfHook, pkgconfig
+, ffmpeg, libjpeg, libmicrohttpd }:
 
 stdenv.mkDerivation rec {
   name = "motion-${version}";
-  version = "4.0.1";
+  version = "4.2.2";
+
   src = fetchFromGitHub {
-    owner = "Motion-Project";
-    repo = "motion";
-    rev = "release-${version}";
-    sha256 = "172bn2ny5r9fcb4kn9bjq3znpgl8ai84w4b99vhk5jggp2haa3bb";
+    owner  = "Motion-Project";
+    repo   = "motion";
+    rev    = "release-${version}";
+    sha256 = "05c1gx75xy2hw49x6vkydvwxbr80kipsc3nr906k3hq8735svx6f";
   };
+
   nativeBuildInputs = [ autoreconfHook pkgconfig ];
-  buildInputs = [ libjpeg ffmpeg ];
+
+  buildInputs = [ ffmpeg libjpeg libmicrohttpd ];
+
   meta = with stdenv.lib; {
-    homepage = http://www.lavrsen.dk/foswiki/bin/view/Motion/WebHome;
     description = "Monitors the video signal from cameras";
+    homepage = https://motion-project.github.io/;
     license = licenses.gpl2Plus;
-    maintainers = [ maintainers.puffnfresh ];
+    maintainers = with maintainers; [ puffnfresh veprbl ];
   };
 }

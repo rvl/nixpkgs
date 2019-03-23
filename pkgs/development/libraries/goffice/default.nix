@@ -1,24 +1,33 @@
-{ fetchurl, stdenv, pkgconfig, intltool, glib, gtk3
-, libgsf, libxml2, libxslt, cairo, pango, librsvg, libspectre }:
+{ fetchurl, stdenv, pkgconfig, intltool, glib, gtk3, lasem
+, libgsf, libxml2, libxslt, cairo, pango, librsvg, gnome3 }:
 
 stdenv.mkDerivation rec {
-  name = "goffice-0.10.32";
+  pname = "goffice";
+  version = "0.10.44";
+
+  outputs = [ "out" "dev" "devdoc" ];
 
   src = fetchurl {
-    url = "mirror://gnome/sources/goffice/0.10/${name}.tar.xz";
-    sha256 = "02b37da9f54fb92725b973875d1d2da49b54f6486eb03648fd1ea58e4a297ac3";
+    url = "mirror://gnome/sources/${pname}/${stdenv.lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
+    sha256 = "1fd7cm6j0g0mqgpqs4y22b4gd2ll4mcyvg4d0q22d5ndjapl4q3d";
   };
 
   nativeBuildInputs = [ pkgconfig intltool ];
 
-  propagatedBuildInputs = [ # ToDo lasem library for MathML, opt. introspection?
-    glib gtk3 libxml2 cairo pango libgsf
+  propagatedBuildInputs = [
+    glib gtk3 libxml2 cairo pango libgsf lasem
   ];
 
   buildInputs = [ libxslt librsvg ];
 
   enableParallelBuilding = true;
   doCheck = true;
+
+  passthru = {
+    updateScript = gnome3.updateScript {
+      packageName = pname;
+    };
+  };
 
   meta = {
     description = "A Glib/GTK+ set of document centric objects and utilities";
@@ -31,6 +40,6 @@ stdenv.mkDerivation rec {
 
     license = stdenv.lib.licenses.gpl2Plus;
 
-    platforms = stdenv.lib.platforms.gnu;
+    platforms = stdenv.lib.platforms.unix;
   };
 }

@@ -6,13 +6,17 @@ with lib;
 
 let
   cfg = config.services.buildbot-master;
+
+  python = cfg.package.pythonModule;
+
   escapeStr = s: escape ["'"] s;
-  masterCfg = pkgs.writeText "master.cfg" ''
+
+  defaultMasterCfg = pkgs.writeText "master.cfg" ''
     from buildbot.plugins import *
     factory = util.BuildFactory()
     c = BuildmasterConfig = dict(
      workers       = [${concatStringsSep "," cfg.workers}],
-     protocols     = { 'pb': {'port': ${cfg.bpPort} } },
+     protocols     = { 'pb': {'port': ${toString cfg.bpPort} } },
      title         = '${escapeStr cfg.title}',
      titleURL      = '${escapeStr cfg.titleUrl}',
      buildbotURL   = '${escapeStr cfg.buildbotUrl}',
@@ -29,7 +33,26 @@ let
     ${cfg.extraConfig}
   '';
 
-  configFile = if cfg.masterCfg == null then masterCfg else cfg.masterCfg;
+  tacFile = pkgs.writeText "buildbot-master.tac" ''
+    import os
+
+    from twisted.application import service
+    from buildbot.master import BuildMaster
+
+    basedir = '${cfg.buildbotDir}'
+
+    configfile = '${cfg.masterCfg}'
+
+    # Default umask for server
+    umask = None
+
+    # note: this line is matched against to check that this is a buildmaster
+    # directory; do not edit it.
+    application = service.Application('buildmaster')
+
+    m = BuildMaster(basedir, configfile, umask)
+    m.setServiceParent(application)
+  '';
 
 in {
   options = {
@@ -63,19 +86,14 @@ in {
       extraConfig = mkOption {
         type = types.str;
         description = "Extra configuration to append to master.cfg";
-        default = "";
+        default = "c['buildbotNetUsageData'] = None";
       };
 
       masterCfg = mkOption {
-        type = with types; nullOr path;
-        description = ''
-          Optionally pass path to raw master.cfg file.
-          Other options in this configuration will be ignored.
-        '';
-        default = null;
-        example = literalExample ''
-          pkgs.writeText "master.cfg" "BuildmasterConfig = c = {}"
-        '';
+        type = types.path;
+        description = "Optionally pass master.cfg path. Other options in this configuration will be ignored.";
+        default = defaultMasterCfg;
+        example = "/etc/nixos/buildbot/master.cfg";
       };
 
       schedulers = mkOption {
@@ -91,17 +109,14 @@ in {
         type = types.listOf types.str;
         description = "List of Builders.";
         default = [
-          "util.BuilderConfig(name='runtests',workernames=['default-worker'],factory=factory)"
+          "util.BuilderConfig(name='runtests',workernames=['example-worker'],factory=factory)"
         ];
       };
 
       workers = mkOption {
         type = types.listOf types.str;
         description = "List of Workers.";
-        default = [
-          "worker.Worker('default-worker', 'password')"
-        ];
-        example = [ "worker.LocalWorker('default-worker')" ];
+        default = [ "worker.Worker('example-worker', 'pass')" ];
       };
 
       status = mkOption {
@@ -124,7 +139,7 @@ in {
 
       extraGroups = mkOption {
         type = types.listOf types.str;
-        default = [ "nixbld" ];
+        default = [];
         description = "List of extra groups that the buildbot user should be a part of.";
       };
 
@@ -141,9 +156,8 @@ in {
       };
 
       bpPort = mkOption {
-        default = "9989";
-        type = types.string;
-        example = "tcp:10000:interface=127.0.0.1";
+        default = 9989;
+        type = types.int;
         description = "Port where the master will listen to Buildbot Worker.";
       };
 
@@ -185,31 +199,36 @@ in {
 
       package = mkOption {
         type = types.package;
-        default = pkgs.buildbot-ui;
-        description = ''
-          Package to use for buildbot.
-          <literal>buildbot-full</literal> is required in order to use local workers.
-        '';
-        example = pkgs.buildbot-full;
+        default = pkgs.pythonPackages.buildbot-full;
+        defaultText = "pkgs.pythonPackages.buildbot-full";
+        description = "Package to use for buildbot.";
+        example = literalExample "pkgs.python3Packages.buildbot-full";
       };
 
       packages = mkOption {
-        default = [ ];
-        example = [ pkgs.git ];
+        default = [ pkgs.git ];
+        example = literalExample "[ pkgs.git ]";
         type = types.listOf types.package;
         description = "Packages to add to PATH for the buildbot process.";
+      };
+
+      pythonPackages = mkOption {
+        default = pythonPackages: with pythonPackages; [ ];
+        defaultText = "pythonPackages: with pythonPackages; [ ]";
+        description = "Packages to add the to the PYTHONPATH of the buildbot process.";
+        example = literalExample "pythonPackages: with pythonPackages; [ requests ]";
       };
     };
   };
 
   config = mkIf cfg.enable {
-    users.extraGroups = optional (cfg.group == "buildbot") {
+    users.groups = optional (cfg.group == "buildbot") {
       name = "buildbot";
     };
 
-    users.extraUsers = optional (cfg.user == "buildbot") {
+    users.users = optional (cfg.user == "buildbot") {
       name = "buildbot";
-      description = "buildbot user";
+      description = "Buildbot User.";
       isNormalUser = true;
       createHome = true;
       home = cfg.home;
@@ -219,32 +238,30 @@ in {
     };
 
     systemd.services.buildbot-master = {
-      description = "Buildbot Continuous Integration Server";
-      after = [ "network.target" ];
+      description = "Buildbot Continuous Integration Server.";
+      after = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
-      path = cfg.packages;
+      path = cfg.packages ++ cfg.pythonPackages python.pkgs;
+      environment.PYTHONPATH = "${python.withPackages (self: cfg.pythonPackages self ++ [ cfg.package ])}/${python.sitePackages}";
+
+      preStart = ''
+        mkdir -vp "${cfg.buildbotDir}"
+        # Link the tac file so buildbot command line tools recognize the directory
+        ln -sf "${tacFile}" "${cfg.buildbotDir}/buildbot.tac"
+        ${cfg.package}/bin/buildbot create-master --db "${cfg.dbUrl}" "${cfg.buildbotDir}"
+        rm -f buildbot.tac.new master.cfg.sample
+      '';
 
       serviceConfig = {
-        Type = "forking";
+        Type = "simple";
         User = cfg.user;
         Group = cfg.group;
         WorkingDirectory = cfg.home;
-        ExecStart = "${cfg.package}/bin/buildbot start ${cfg.buildbotDir}";
+        # NOTE: call twistd directly with stdout logging for systemd
+        ExecStart = "${python.pkgs.twisted}/bin/twistd -o --nodaemon --pidfile= --logfile - --python ${tacFile}";
       };
-
-      preStart = ''
-        mkdir -vp ${cfg.buildbotDir}
-        chown -c ${cfg.user}:${cfg.group} ${cfg.buildbotDir}
-        ln -sf ${configFile} ${cfg.buildbotDir}/master.cfg
-        ${cfg.package}/bin/buildbot create-master ${cfg.buildbotDir}
-      '';
-
-      postStart = ''
-        until [[ $(${pkgs.curl}/bin/curl -s --head -w '\n%{http_code}' http://localhost:${toString cfg.port} | tail -n1) =~ ^(200|403)$ ]]; do
-          sleep 1
-        done
-      '';
     };
   };
 
+  meta.maintainers = with lib.maintainers; [ nand0p mic92 ];
 }

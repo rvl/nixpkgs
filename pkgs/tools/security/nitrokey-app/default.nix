@@ -1,28 +1,44 @@
-{ stdenv, cmake, fetchFromGitHub, libusb1, pkgconfig, qt5 }:
+{ stdenv, makeWrapper, bash-completion, cmake, fetchFromGitHub, hidapi, libusb1, pkgconfig
+, qtbase, qttranslations, qtsvg }:
 
 stdenv.mkDerivation rec {
-  name = "nitrokey-app";
-  version = "0.5.1";
+  name = "nitrokey-app-${version}";
+  version = "1.3.2";
 
   src = fetchFromGitHub {
     owner = "Nitrokey";
     repo = "nitrokey-app";
     rev = "v${version}";
-    sha256 = "0acb2502r3wa0mry6h8sz1k16zaa4bgnhxwxqd1vd1y42xc6g9bw";
+    sha256 = "193kzlz3qn9il56h78faiqkgv749hdils1nn1iw6g3wphgx5fjs2";
+    fetchSubmodules = true;
   };
 
+  postPatch = ''
+    substituteInPlace libnitrokey/CMakeLists.txt \
+      --replace '/data/41-nitrokey.rules' '/libnitrokey/data/41-nitrokey.rules'
+  '';
+
   buildInputs = [
-    cmake
+    bash-completion
+    hidapi
     libusb1
+    qtbase
+    qttranslations
+    qtsvg
+  ];
+  nativeBuildInputs = [
+    cmake
     pkgconfig
-    qt5.qtbase
+    makeWrapper
   ];
-  patches = [
-     ./FixInstallDestination.patch
-     ./HeaderPath.patch
-  ];
-  cmakeFlags = "-DHAVE_LIBAPPINDICATOR=NO";
-  meta = {
+  cmakeFlags = "-DCMAKE_BUILD_TYPE=Release";
+
+  postFixup = ''
+    wrapProgram $out/bin/nitrokey-app \
+      --prefix QT_PLUGIN_PATH : "${qtbase}/${qtbase.qtPluginPrefix}"
+  '';
+
+  meta = with stdenv.lib; {
     description      = "Provides extra functionality for the Nitrokey Pro and Storage";
     longDescription  = ''
        The nitrokey-app provides a QT system tray widget with wich you can
@@ -31,7 +47,7 @@ stdenv.mkDerivation rec {
     '';
     homepage         = https://github.com/Nitrokey/nitrokey-app;
     repositories.git = https://github.com/Nitrokey/nitrokey-app.git;
-    license          = stdenv.lib.licenses.gpl3;
-    maintainer       = stdenv.lib.maintainers.kaiha;
+    license          = licenses.gpl3;
+    maintainers      = with maintainers; [ kaiha fpletz ];
   };
 }

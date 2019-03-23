@@ -2,14 +2,14 @@
 #
 # Please insert new packages *alphabetically*
 # in the OTHER PACKAGES section.
-{ pkgs }:
+{ pkgs, haskellLib }:
 
 let
   removeLibraryHaskellDepends = pnames: depends:
     builtins.filter (e: !(builtins.elem (e.pname or "") pnames)) depends;
 in
 
-with import ./lib.nix { inherit pkgs; };
+with haskellLib;
 
 self: super:
 
@@ -23,16 +23,14 @@ self: super:
       };
   in stage1 // stage2 // {
 
-  old-time = overrideCabal stage2.old-time (drv: {
-    postPatch = ''
-      ${pkgs.autoconf}/bin/autoreconf --install --force --verbose
-    '';
-    buildTools = pkgs.lib.optional pkgs.stdenv.isDarwin pkgs.darwin.libiconv;
-  });
+  # GHCJS does not ship with the same core packages as GHC.
+  # https://github.com/ghcjs/ghcjs/issues/676
+  stm = self.stm_2_5_0_0;
+  ghc-compact = self.ghc-compact_0_1_0_0;
 
-  network = addBuildTools super.network (pkgs.lib.optional pkgs.stdenv.isDarwin pkgs.darwin.libiconv);
-  zlib = addBuildTools super.zlib (pkgs.lib.optional pkgs.stdenv.isDarwin pkgs.darwin.libiconv);
-  unix-compat = addBuildTools super.unix-compat (pkgs.lib.optional pkgs.stdenv.isDarwin pkgs.darwin.libiconv);
+  network = addBuildTools super.network (pkgs.lib.optional pkgs.buildPlatform.isDarwin pkgs.buildPackages.darwin.libiconv);
+  zlib = addBuildTools super.zlib (pkgs.lib.optional pkgs.buildPlatform.isDarwin pkgs.buildPackages.darwin.libiconv);
+  unix-compat = addBuildTools super.unix-compat (pkgs.lib.optional pkgs.buildPlatform.isDarwin pkgs.buildPackages.darwin.libiconv);
 
   # LLVM is not supported on this GHC; use the latest one.
   inherit (pkgs) llvmPackages;
@@ -47,14 +45,16 @@ self: super:
 
   # These packages are core libraries in GHC 7.10.x, but not here.
   bin-package-db = null;
-  haskeline = self.haskeline_0_7_2_1;
+  haskeline = self.haskeline_0_7_3_1;
   hoopl = self.hoopl_3_10_2_1;
   hpc = self.hpc_0_6_0_2;
-  terminfo = self.terminfo_0_4_0_1;
+  terminfo = self.terminfo_0_4_1_1;
   xhtml = self.xhtml_3000_2_1;
 
-
 ## OTHER PACKAGES
+
+  # haddock throws the error: No input file(s).
+  fail = dontHaddock super.fail;
 
   cereal = addBuildDepend super.cereal [ self.fail ];
 
@@ -126,7 +126,7 @@ self: super:
   });
 
   ghcjs-dom-jsffi = overrideCabal super.ghcjs-dom-jsffi (drv: {
-    libraryHaskellDepends = [ self.ghcjs-base self.text ];
+    libraryHaskellDepends = (drv.libraryHaskellDepends or []) ++ [ self.ghcjs-base self.text ];
     isLibrary = true;
   });
 
@@ -136,6 +136,17 @@ self: super:
 
   http2 = addBuildDepends super.http2 [ self.aeson self.aeson-pretty self.hex self.unordered-containers self.vector self.word8 ];
   # ghcjsBoot uses async 2.0.1.6, protolude wants 2.1.*
+
+  # These are the correct dependencies specified when calling `cabal2nix --compiler ghcjs`
+  # By default, the `miso` derivation present in hackage-packages.nix
+  # does not contain dependencies suitable for ghcjs
+  miso = overrideCabal super.miso (drv: {
+      libraryHaskellDepends = with self; [
+        BoundedChan bytestring containers ghcjs-base aeson base
+        http-api-data http-types network-uri scientific servant text
+        transformers unordered-containers vector
+      ];
+    });
 
   pqueue = overrideCabal super.pqueue (drv: {
     postPatch = ''
@@ -180,8 +191,6 @@ self: super:
       ] drv.libraryHaskellDepends;
   });
 
-  semigroups = addBuildDepends super.semigroups [ self.hashable self.unordered-containers self.text self.tagged ];
-
   transformers-compat = overrideCabal super.transformers-compat (drv: {
     configureFlags = [];
   });
@@ -189,4 +198,14 @@ self: super:
   # triggers an internal pattern match failure in haddock
   # https://github.com/haskell/haddock/issues/553
   wai = dontHaddock super.wai;
+
+  base-orphans = dontCheck super.base-orphans;
+  distributive = dontCheck super.distributive;
+
+  # https://github.com/glguy/th-abstraction/issues/53
+  th-abstraction = dontCheck super.th-abstraction;
+  # https://github.com/dreixel/syb/issues/21
+  syb = dontCheck super.syb;
+  # https://github.com/ghcjs/ghcjs/issues/677
+  hspec-core = dontCheck super.hspec-core;
 }

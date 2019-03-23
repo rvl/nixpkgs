@@ -7,7 +7,7 @@ let
   cfg = config.services.octoprint;
 
   baseConfig = {
-    plugins.cura.cura_engine = "${pkgs.curaengine}/bin/CuraEngine";
+    plugins.cura.cura_engine = "${pkgs.curaengine_stable}/bin/CuraEngine";
     server.host = cfg.host;
     server.port = cfg.port;
     webcam.ffmpeg = "${pkgs.ffmpeg.bin}/bin/ffmpeg";
@@ -86,13 +86,13 @@ in
 
   config = mkIf cfg.enable {
 
-    users.extraUsers = optionalAttrs (cfg.user == "octoprint") (singleton
+    users.users = optionalAttrs (cfg.user == "octoprint") (singleton
       { name = "octoprint";
         group = cfg.group;
         uid = config.ids.uids.octoprint;
       });
 
-    users.extraGroups = optionalAttrs (cfg.group == "octoprint") (singleton
+    users.groups = optionalAttrs (cfg.group == "octoprint") (singleton
       { name = "octoprint";
         gid = config.ids.gids.octoprint;
       });
@@ -117,7 +117,7 @@ in
       '';
 
       serviceConfig = {
-        ExecStart = "${pkgs.octoprint}/bin/octoprint -b ${cfg.stateDir}";
+        ExecStart = "${pkgs.octoprint}/bin/octoprint serve -b ${cfg.stateDir}";
         User = cfg.user;
         Group = cfg.group;
         PermissionsStartOnly = true;

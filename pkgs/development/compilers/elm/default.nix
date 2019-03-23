@@ -1,88 +1,47 @@
-{ lib, stdenv, buildEnv, haskell, nodejs, fetchurl, fetchpatch, makeWrapper }:
-
-# To update:
-# 1) Update versions in ./update-elm.rb and run it.
-# 2) Checkout elm-reactor and run `elm-package install -y` inside.
-# 3) Run ./elm2nix.rb in elm-reactor's directory.
-# 4) Move the resulting 'package.nix' to 'packages/elm-reactor-elm.nix'.
+{ lib, stdenv, buildEnv
+, haskell, nodejs
+, fetchurl, fetchpatch, makeWrapper, git }:
 
 let
-  makeElmStuff = deps:
-    let json = builtins.toJSON (lib.mapAttrs (name: info: info.version) deps);
-        cmds = lib.mapAttrsToList (name: info: let
-                 pkg = stdenv.mkDerivation {
-
-                   name = lib.replaceChars ["/"] ["-"] name + "-${info.version}";
-
-                   src = fetchurl {
-                     url = "https://github.com/${name}/archive/${info.version}.tar.gz";
-                     meta.homepage = "https://github.com/${name}/";
-                     inherit (info) sha256;
-                   };
-
-                   phases = [ "unpackPhase" "installPhase" ];
-
-                   installPhase = ''
-                     mkdir -p $out
-                     cp -r * $out
-                   '';
-
-                 };
-               in ''
-                 mkdir -p elm-stuff/packages/${name}
-                 ln -s ${pkg} elm-stuff/packages/${name}/${info.version}
-               '') deps;
-    in ''
-      export HOME=/tmp
-      mkdir elm-stuff
-      cat > elm-stuff/exact-dependencies.json <<EOF
-      ${json}
-      EOF
-    '' + lib.concatStrings cmds;
-
-  hsPkgs = haskell.packages.ghc801.override {
-    overrides = self: super:
-      let hlib = haskell.lib;
-          elmRelease = import ./packages/release.nix { inherit (self) callPackage; };
-          elmPkgs' = elmRelease.packages;
-          elmPkgs = elmPkgs' // {
-
-            elm-reactor = hlib.overrideCabal elmPkgs'.elm-reactor (drv: {
-              buildTools = drv.buildTools or [] ++ [ self.elm-make ];
-              preConfigure = makeElmStuff (import ./packages/elm-reactor-elm.nix);
-            });
-
-            elm-repl = hlib.overrideCabal elmPkgs'.elm-repl (drv: {
-              doCheck = false;
+  fetchElmDeps = import ./fetchElmDeps.nix { inherit stdenv lib fetchurl; };
+  hsPkgs = haskell.packages.ghc864.override {
+    overrides = self: super: with haskell.lib;
+      let elmPkgs = {
+            elm = overrideCabal (self.callPackage ./packages/elm.nix { }) (drv: {
+              # sadly with parallelism most of the time breaks compilation
+              enableParallelBuilding = false;
+              preConfigure = self.fetchElmDeps {
+                elmPackages = (import ./packages/elm-srcs.nix);
+                versionsDat = ./versions.dat;
+              };
+              patches = [
+                (fetchpatch {
+                  url = "https://github.com/elm/compiler/pull/1886/commits/39d86a735e28da514be185d4c3256142c37c2a8a.patch";
+                  sha256 = "0nni5qx1523rjz1ja42z6z9pijxvi3fgbw1dhq5qi11mh1nb9ay7";
+                })
+              ];
               buildTools = drv.buildTools or [] ++ [ makeWrapper ];
-              postInstall =
-                let bins = lib.makeBinPath [ nodejs self.elm-make ];
-                in ''
-                  wrapProgram $out/bin/elm-repl \
-                    --prefix PATH ':' ${bins}
-                '';
+              jailbreak = true;
+              postInstall = ''
+                wrapProgram $out/bin/elm \
+                  --prefix PATH ':' ${lib.makeBinPath [ nodejs ]}
+              '';
             });
 
             /*
-            This is not a core Elm package, and it's hosted on GitHub.
-            To update, run:
-
-                cabal2nix --jailbreak --revision refs/tags/foo http://github.com/avh4/elm-format > packages/elm-format.nix
-
-            where foo is a tag for a new version, for example "0.3.1-alpha".
+            The elm-format expression is updated via a script in the https://github.com/avh4/elm-format repo:
+            `pacakge/nix/build.sh`
             */
-            elm-format = self.callPackage ./packages/elm-format.nix { };
+            elm-format = justStaticExecutables (doJailbreak (self.callPackage ./packages/elm-format.nix {}));
 
+            inherit fetchElmDeps;
+            elmVersion = elmPkgs.elm.version;
           };
       in elmPkgs // {
         inherit elmPkgs;
-        elmVersion = elmRelease.version;
+
+        # Needed for elm-format
+        indents = self.callPackage ./packages/indents.nix {};
       };
   };
-in hsPkgs.elmPkgs // {
-  elm = lib.hiPrio (buildEnv {
-    name = "elm-${hsPkgs.elmVersion}";
-    paths = lib.mapAttrsToList (name: pkg: pkg) hsPkgs.elmPkgs;
-    pathsToLink = [ "/bin" ];
-  });
-}
+in hsPkgs.elmPkgs

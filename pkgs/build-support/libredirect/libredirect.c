@@ -47,6 +47,7 @@ static void init()
 
 static const char * rewrite(const char * path, char * buf)
 {
+    if (path == NULL) return path;
     for (int n = 0; n < nrRedirects; ++n) {
         int len = strlen(from[n]);
         if (strncmp(path, from[n], len) != 0) continue;
@@ -116,6 +117,13 @@ int __xstat64(int ver, const char * path, struct stat64 * st)
     int (*__xstat64_real) (int ver, const char *, struct stat64 *) = dlsym(RTLD_NEXT, "__xstat64");
     char buf[PATH_MAX];
     return __xstat64_real(ver, rewrite(path, buf), st);
+}
+
+int stat(const char * path, struct stat * st)
+{
+    int (*__stat_real) (const char *, struct stat *) = dlsym(RTLD_NEXT, "stat");
+    char buf[PATH_MAX];
+    return __stat_real(rewrite(path, buf), st);
 }
 
 int * access(const char * path, int mode)

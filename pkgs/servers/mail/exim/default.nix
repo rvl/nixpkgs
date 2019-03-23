@@ -1,21 +1,33 @@
-{ coreutils, fetchurl, db, openssl, pcre, perl, pkgconfig, stdenv }:
+{ coreutils, db, fetchurl, openssl, pcre, perl, pkgconfig, stdenv
+, enableLDAP ? false, openldap
+, enableMySQL ? false, mysql, zlib
+, enableAuthDovecot ? false, dovecot
+, enablePAM ? false, pam
+}:
 
 stdenv.mkDerivation rec {
-  name = "exim-4.88";
+  name = "exim-4.92";
 
   src = fetchurl {
-    url = "http://ftp.exim.org/pub/exim/exim4/${name}.tar.bz2";
-    sha256 = "0bca3wb45hl7h8m8bpvsmrmqa07jhbhqyigs9pl29hhzwgbmz78i";
+    url = "https://ftp.exim.org/pub/exim/exim4/${name}.tar.xz";
+    sha256 = "0qhxxwl0nhzgp0w3pjkhx9z9lqfpk8id25q5ghf9ay2f90mydjba";
   };
 
-  buildInputs = [ coreutils db openssl pcre perl pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ coreutils db openssl perl pcre ]
+    ++ stdenv.lib.optional enableLDAP openldap
+    ++ stdenv.lib.optionals enableMySQL [ mysql zlib ]
+    ++ stdenv.lib.optional enableAuthDovecot dovecot
+    ++ stdenv.lib.optional enablePAM pam;
 
   preBuild = ''
+    ${stdenv.lib.optionalString enableMySQL "PKG_CONFIG_PATH=$PKG_CONFIG_PATH:${mysql}/share/mysql/pkgconfig/"}
     sed '
       s:^\(BIN_DIRECTORY\)=.*:\1='"$out"'/bin:
       s:^\(CONFIGURE_FILE\)=.*:\1=/etc/exim.conf:
       s:^\(EXIM_USER\)=.*:\1=ref\:nobody:
       s:^\(SPOOL_DIRECTORY\)=.*:\1=/exim-homeless-shelter:
+      s:^# \(TRANSPORT_LMTP\)=.*:\1=yes:
       s:^# \(SUPPORT_MAILDIR\)=.*:\1=yes:
       s:^EXIM_MONITOR=.*$:# &:
       s:^\(FIXED_NEVER_USERS\)=root$:\1=0:
@@ -32,6 +44,27 @@ stdenv.mkDerivation rec {
       s:^# \(RM_COMMAND\)=.*:\1=${coreutils}/bin/rm:
       s:^# \(TOUCH_COMMAND\)=.*:\1=${coreutils}/bin/touch:
       s:^# \(PERL_COMMAND\)=.*:\1=${perl}/bin/perl:
+      ${stdenv.lib.optionalString enableLDAP ''
+        s:^# \(LDAP_LIB_TYPE=OPENLDAP2\)$:\1:
+        s:^# \(LOOKUP_LDAP=yes\)$:\1:
+        s:^\(LOOKUP_LIBS\)=\(.*\):\1=\2 -lldap -llber:
+        s:^# \(LOOKUP_LIBS\)=.*:\1=-lldap -llber:
+      ''}
+      ${stdenv.lib.optionalString enableMySQL ''
+        s:^# \(LOOKUP_MYSQL=yes\)$:\1:
+        s:^# \(LOOKUP_MYSQL_PC=mariadb\)$:\1:
+        s:^\(LOOKUP_LIBS\)=\(.*\):\1=\2 -lmysqlclient:
+        s:^# \(LOOKUP_LIBS\)=.*:\1=-lmysqlclient:
+        s:^# \(LOOKUP_INCLUDE\)=.*:\1=-I${mysql}/include/mysql/:
+      ''}
+      ${stdenv.lib.optionalString enableAuthDovecot ''
+        s:^# \(AUTH_DOVECOT\)=.*:\1=yes:
+      ''}
+      ${stdenv.lib.optionalString enablePAM ''
+        s:^# \(SUPPORT_PAM\)=.*:\1=yes:
+        s:^\(EXTRALIBS_EXIM\)=\(.*\):\1=\2 -lpam:
+        s:^# \(EXTRALIBS_EXIM\)=.*:\1=-lpam:
+      ''}
       #/^\s*#.*/d
       #/^\s*$/d
     ' < src/EDITME > Local/Makefile

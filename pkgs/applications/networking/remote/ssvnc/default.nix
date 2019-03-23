@@ -1,5 +1,5 @@
 { stdenv, fetchurl, imake, zlib, jdk, libX11, libXt, libXmu
-, libXaw, libXext, libXpm, openjpeg, openssl, tcl, tk, perl }:
+, libXaw, libXext, libXpm, openjpeg, openssl, tk, perl }:
 
 stdenv.mkDerivation rec {
   name = "ssvnc-${version}";
@@ -12,7 +12,9 @@ stdenv.mkDerivation rec {
 
   buildInputs = [ imake zlib jdk libX11 libXt libXmu libXaw libXext libXpm openjpeg openssl ];
 
-  configurePhase = "makeFlags=PREFIX=$out";
+  dontUseImakeConfigure = true;
+
+  makeFlags = "PREFIX=$(out)";
 
   hardeningDisable = [ "format" ];
 
@@ -23,7 +25,7 @@ stdenv.mkDerivation rec {
 
   meta = {
     description = "VNC viewer that adds encryption security to VNC connections";
-    homepage = "http://www.karlrunge.com/x11vnc/ssvnc.html";
+    homepage = http://www.karlrunge.com/x11vnc/ssvnc.html;
     license = stdenv.lib.licenses.gpl2;
     maintainers = [ stdenv.lib.maintainers.edwtjo ];
     platforms = with stdenv.lib.platforms; linux;

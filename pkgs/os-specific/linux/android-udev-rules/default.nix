@@ -6,13 +6,13 @@
 
 stdenv.mkDerivation rec {
   name = "android-udev-rules-${version}";
-  version = "20170109";
+  version = "20190114";
 
   src = fetchFromGitHub {
     owner = "M0Rf30";
     repo = "android-udev-rules";
     rev = version;
-    sha256 = "1fxr6iyb70swmmp46xvx8iz9h6xj7x6q9yfdsl958zd63j8sjzjr";
+    sha256 = "1x3vaq8jpnfhxc2lzz5jnlz219w66sn151v5fkdgv68pya4nzhjj";
   };
 
   installPhase = ''
@@ -20,7 +20,7 @@ stdenv.mkDerivation rec {
   '';
 
   meta = with stdenv.lib; {
-    homepage = "https://github.com/M0Rf30/android-udev-rules";
+    homepage = https://github.com/M0Rf30/android-udev-rules;
     description = "Android udev rules list aimed to be the most comprehensive on the net";
     platforms = platforms.linux;
     license = licenses.gpl3;

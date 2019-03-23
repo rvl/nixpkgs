@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, utils, ... }:
 
 with lib;
 
@@ -8,17 +8,21 @@ let
     ${optionalString cfg.userControlled.enable ''
       ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=${cfg.userControlled.group}
       update_config=1''}
-    ${concatStringsSep "\n" (mapAttrsToList (ssid: networkConfig: let
-      psk = if networkConfig.psk != null
-        then ''"${networkConfig.psk}"''
-        else networkConfig.pskRaw;
-      priority = networkConfig.priority;
+    ${cfg.extraConfig}
+    ${concatStringsSep "\n" (mapAttrsToList (ssid: config: with config; let
+      key = if psk != null
+        then ''"${psk}"''
+        else pskRaw;
+      baseAuth = if key != null
+        then ''psk=${key}''
+        else ''key_mgmt=NONE'';
     in ''
       network={
         ssid="${ssid}"
-        ${optionalString (psk != null) ''psk=${psk}''}
-        ${optionalString (psk == null) ''key_mgmt=NONE''}
         ${optionalString (priority != null) ''priority=${toString priority}''}
+        ${optionalString hidden "scan_ssid=1"}
+        ${if (auth != null) then auth else baseAuth}
+        ${extraConfig}
       }
     '') cfg.networks)}
   '' else "/etc/wpa_supplicant.conf";
@@ -70,6 +74,37 @@ in {
                 Mutually exclusive with <varname>psk</varname>.
               '';
             };
+
+            auth = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              example = ''
+                key_mgmt=WPA-EAP
+                eap=PEAP
+                identity="user@example.com"
+                password="secret"
+              '';
+              description = ''
+                Use this option to configure advanced authentication methods like EAP.
+                See
+                <citerefentry>
+                  <refentrytitle>wpa_supplicant.conf</refentrytitle>
+                  <manvolnum>5</manvolnum>
+                </citerefentry>
+                for example configurations.
+
+                Mutually exclusive with <varname>psk</varname> and <varname>pskRaw</varname>.
+              '';
+            };
+
+            hidden = mkOption {
+              type = types.bool;
+              default = false;
+              description = ''
+                Set this to <literal>true</literal> if the SSID of the network is hidden.
+              '';
+            };
+
             priority = mkOption {
               type = types.nullOr types.int;
               default = null;
@@ -83,6 +118,24 @@ in {
                 policy, signal strength, etc.
               '';
             };
+
+            extraConfig = mkOption {
+              type = types.str;
+              default = "";
+              example = ''
+                bssid_blacklist=02:11:22:33:44:55 02:22:aa:44:55:66
+              '';
+              description = ''
+                Extra configuration lines appended to the network block.
+                See
+                <citerefentry>
+                  <refentrytitle>wpa_supplicant.conf</refentrytitle>
+                  <manvolnum>5</manvolnum>
+                </citerefentry>
+                for available options.
+              '';
+            };
+
           };
         });
         description = ''
@@ -123,13 +176,29 @@ in {
           description = "Members of this group can control wpa_supplicant.";
         };
       };
+      extraConfig = mkOption {
+        type = types.str;
+        default = "";
+        example = ''
+          p2p_disabled=1
+        '';
+        description = ''
+          Extra lines appended to the configuration file.
+          See
+          <citerefentry>
+            <refentrytitle>wpa_supplicant.conf</refentrytitle>
+            <manvolnum>5</manvolnum>
+          </citerefentry>
+          for available options.
+        '';
+      };
     };
   };
 
   config = mkIf cfg.enable {
     assertions = flip mapAttrsToList cfg.networks (name: cfg: {
-      assertion = cfg.psk == null || cfg.pskRaw == null;
-      message = ''networking.wireless."${name}".psk and networking.wireless."${name}".pskRaw are mutually exclusive'';
+      assertion = with cfg; count (x: x != null) [ psk pskRaw auth ] <= 1;
+      message = ''options networking.wireless."${name}".{psk,pskRaw,auth} are mutually exclusive'';
     });
 
     environment.systemPackages =  [ pkgs.wpa_supplicant ];
@@ -139,7 +208,7 @@ in {
     # FIXME: start a separate wpa_supplicant instance per interface.
     systemd.services.wpa_supplicant = let
       ifaces = cfg.interfaces;
-      deviceUnit = interface: [ "sys-subsystem-net-devices-${interface}.device" ];
+      deviceUnit = interface: [ "sys-subsystem-net-devices-${utils.escapeSystemdPath interface}.device" ];
     in {
       description = "WPA Supplicant";
 
@@ -148,6 +217,7 @@ in {
       wants = [ "network.target" ];
       requires = lib.concatMap deviceUnit ifaces;
       wantedBy = [ "multi-user.target" ];
+      stopIfChanged = false;
 
       path = [ pkgs.wpa_supplicant ];
 

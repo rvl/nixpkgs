@@ -1,35 +1,34 @@
-{ stdenv, fetchurl, ncurses, gettext
+{ stdenv, fetchurl, ncurses
 , withLibrary ? false, libtool
 , unicodeSupport ? true
+, enableShared ? !stdenv.isDarwin
 }:
-
-let optional = stdenv.lib.optional;
-    optStr = stdenv.lib.optionalString;
-    buildShared = !stdenv.isDarwin;
-in
 
 assert withLibrary -> libtool != null;
 assert unicodeSupport -> ncurses.unicode && ncurses != null;
 
 stdenv.mkDerivation rec {
   name = "dialog-${version}";
-  version = "1.3-20160209";
+  version = "1.3-20190211";
 
   src = fetchurl {
-    url = "ftp://invisible-island.net/dialog/${name}.tgz";
-    sha256 = "11rzh14xy9s99gxdi5i7fgmgihjqsv0ls0ksavkmip2y37rgf503";
+    urls = [
+      "ftp://ftp.invisible-island.net/dialog/${name}.tgz"
+      "https://invisible-mirror.net/archives/dialog/${name}.tgz"
+    ];
+    sha256 = "1lx0bvradzx1zl7znlrsnyljcs596r7wamkhyq37ikbxsy4y5h29";
   };
 
   buildInputs = [ ncurses ];
 
-  configureFlags = ''
-    --disable-rpath-hacks
-    ${optStr withLibrary "--with-libtool"}
-    --with-libtool-opts=${optStr buildShared "-shared"}
-    --with-ncurses${optStr unicodeSupport "w"}
-  '';
+  configureFlags = [
+    "--disable-rpath-hacks"
+    (stdenv.lib.withFeature withLibrary "libtool")
+    "--with-ncurses${stdenv.lib.optionalString unicodeSupport "w"}"
+    "--with-libtool-opts=${stdenv.lib.optionalString enableShared "-shared"}"
+  ];
 
-  installTargets = "install${optStr withLibrary "-full"}";
+  installTargets = "install${stdenv.lib.optionalString withLibrary "-full"}";
 
   meta = {
     homepage = http://invisible-island.net/dialog/dialog.html;

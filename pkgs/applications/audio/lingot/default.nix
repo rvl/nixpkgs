@@ -10,13 +10,14 @@ stdenv.mkDerivation {
 
   hardeningDisable = [ "format" ];
 
-  buildInputs = [ pkgconfig intltool gtk2 alsaLib libglade ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ intltool gtk2 alsaLib libglade ];
 
-  configureFlags = "--disable-jack";
+  configureFlags = [ "--disable-jack" ];
 
   meta = {
     description = "Not a Guitar-Only tuner";
-    homepage = http://www.nongnu.org/lingot/;
+    homepage = https://www.nongnu.org/lingot/;
     license = stdenv.lib.licenses.gpl2Plus;
     platforms = with stdenv.lib.platforms; linux;
     maintainers = with stdenv.lib.maintainers; [viric];

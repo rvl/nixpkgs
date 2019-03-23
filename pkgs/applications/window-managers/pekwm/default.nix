@@ -12,7 +12,8 @@ stdenv.mkDerivation rec {
     sha256 = "003x6bxj1lb2ljxz3v414bn0rdl6z68c0r185fxwgs1qkyzx67wa";
   };
 
-  buildInputs = [ pkgconfig libpng libjpeg
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ libpng libjpeg
   libXext libXft libXpm libXrandr libXinerama ];
 
   meta = with stdenv.lib; {
@@ -31,7 +32,7 @@ stdenv.mkDerivation rec {
         appear as they should when starting applications.
       - Chainable Keygrabber, usability for everyone.
     '';
-      homepage = https://www.pekwm.org;
+      homepage = http://www.pekwm.org;
       license = licenses.gpl2;
       maintainers = [ maintainers.AndersonTorres ];
       platforms = platforms.linux;

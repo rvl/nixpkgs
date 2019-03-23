@@ -6,7 +6,7 @@ import ./make-test.nix ({ pkgs, ...} : {
 
   nodes = {
     sm =
-      { pkgs, config, ... }:
+      { ... }:
       {
         services.smokeping = {
           enable = true;
@@ -14,7 +14,7 @@ import ./make-test.nix ({ pkgs, ...} : {
           mailHost = "127.0.0.2";
           probeConfig = ''
             + FPing
-            binary = /var/setuid-wrappers/fping
+            binary = /run/wrappers/bin/fping
             offset = 0%
           '';
         };

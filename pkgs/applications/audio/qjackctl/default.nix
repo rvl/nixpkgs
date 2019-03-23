@@ -1,25 +1,28 @@
-{ stdenv, fetchurl, alsaLib, libjack2, dbus, qt5 }:
+{ stdenv, fetchurl, pkgconfig, alsaLib, libjack2, dbus, qtbase, qttools, qtx11extras }:
 
 stdenv.mkDerivation rec {
-  version = "0.4.3";
+  version = "0.5.5";
   name = "qjackctl-${version}";
 
   # some dependencies such as killall have to be installed additionally
 
   src = fetchurl {
     url = "mirror://sourceforge/qjackctl/${name}.tar.gz";
-    sha256 = "01wyyynxy21kim0gplzvfij7275a1jz68hdx837d2j1w5x2w7zbb";
+    sha256 = "1rzzqa39a6llr52vjkjr0a86nc776kmr5xs52qqga8ms9697psz5";
   };
 
   buildInputs = [
-    qt5.full
-    qt5.qtx11extras
+    qtbase
+    qtx11extras
+    qttools
     alsaLib
     libjack2
     dbus
   ];
 
-  configureFlags = "--enable-jack-version";
+  nativeBuildInputs = [ pkgconfig ];
+
+  configureFlags = [ "--enable-jack-version" ];
 
   meta = with stdenv.lib; {
     description = "A Qt application to control the JACK sound server daemon";

@@ -1,7 +1,7 @@
 # Wrapper around wrapPythonProgramsIn, below. The $pythonPath
 # variable is passed in from the buildPythonPackage function.
 wrapPythonPrograms() {
-    wrapPythonProgramsIn $out "$out $pythonPath"
+    wrapPythonProgramsIn "$out/bin" "$out $pythonPath"
 }
 
 # Builds environment variables like PYTHONPATH and PATH walking through closure
@@ -16,8 +16,8 @@ buildPythonPath() {
     declare -A pythonPathsSeen=()
     program_PYTHONPATH=
     program_PATH=
-    pythonPathsSeen["@python@"]=1
-    addToSearchPath program_PATH @python@/bin
+    pythonPathsSeen["@pythonHost@"]=1
+    addToSearchPath program_PATH @pythonHost@/bin
     for path in $pythonPath; do
         _addToPythonPath $path
     done
@@ -47,39 +47,49 @@ wrapPythonProgramsIn() {
     buildPythonPath "$pythonPath"
 
     # Find all regular files in the output directory that are executable.
-    for f in $(find "$dir" -type f -perm -0100); do
-        # Rewrite "#! .../env python" to "#! /nix/store/.../python".
-        # Strip suffix, like "3" or "2.7m" -- we don't have any choice on which
-        # Python to use besides one with this hook anyway.
-        if head -n1 "$f" | grep -q '#!.*/env.*\(python\|pypy\)'; then
-            sed -i "$f" -e "1 s^.*/env[ ]*\(python\|pypy\)[^ ]*^#! @executable@^"
-        fi
-
-        # catch /python and /.python-wrapped
-        if head -n1 "$f" | grep -q '/\.\?\(python\|pypy\)'; then
-            # dont wrap EGG-INFO scripts since they are called from python
-            if echo "$f" | grep -qv EGG-INFO/scripts; then
-                echo "wrapping \`$f'..."
-                patchPythonScript "$f"
-                # wrapProgram creates the executable shell script described
-                # above. The script will set PYTHONPATH and PATH variables.!
-                # (see pkgs/build-support/setup-hooks/make-wrapper.sh)
-                local -a wrap_args=("$f"
-                                 --prefix PATH ':' "$program_PATH")
-
-                # Add any additional arguments provided by makeWrapperArgs
-                # argument to buildPythonPackage.
-                local -a user_args="($makeWrapperArgs)"
-                local -a wrapProgramArgs=("${wrap_args[@]}" "${user_args[@]}")
-                wrapProgram "${wrapProgramArgs[@]}"
+    if [ -d "$dir" ]; then
+        find "$dir" -type f -perm -0100 -print0 | while read -d "" f; do
+            # Rewrite "#! .../env python" to "#! /nix/store/.../python".
+            # Strip suffix, like "3" or "2.7m" -- we don't have any choice on which
+            # Python to use besides one with this hook anyway.
+            if head -n1 "$f" | grep -q '#!.*/env.*\(python\|pypy\)'; then
+                sed -i "$f" -e "1 s^.*/env[ ]*\(python\|pypy\)[^ ]*^#!@executable@^"
             fi
-        fi
-    done
+
+            if head -n1 "$f" | grep -q '#!.*'; then
+                # Cross-compilation hack: ensure shebangs are for the host
+                echo "Rewriting $(head -n 1 $f) to #!@pythonHost@"
+                sed -i "$f" -e "1 s^#!@python@^#!@pythonHost@^"
+            fi
+
+            # catch /python and /.python-wrapped
+            if head -n1 "$f" | grep -q '/\.\?\(python\|pypy\)'; then
+                # dont wrap EGG-INFO scripts since they are called from python
+                if echo "$f" | grep -qv EGG-INFO/scripts; then
+                    echo "wrapping \`$f'..."
+                    patchPythonScript "$f"
+                    # wrapProgram creates the executable shell script described
+                    # above. The script will set PYTHONPATH and PATH variables.!
+                    # (see pkgs/build-support/setup-hooks/make-wrapper.sh)
+                    local -a wrap_args=("$f"
+                                    --prefix PATH ':' "$program_PATH"
+                                    --set PYTHONNOUSERSITE "true"
+                                    )
+
+                    # Add any additional arguments provided by makeWrapperArgs
+                    # argument to buildPythonPackage.
+                    local -a user_args="($makeWrapperArgs)"
+                    local -a wrapProgramArgs=("${wrap_args[@]}" "${user_args[@]}")
+                    wrapProgram "${wrapProgramArgs[@]}"
+                fi
+            fi
+        done
+    fi
 }
 
 # Adds the lib and bin directories to the PYTHONPATH and PATH variables,
 # respectively. Recurses on any paths declared in
-# `propagated-native-build-inputs`, while avoiding duplicating paths by
+# `propagated-build-inputs`, while avoiding duplicating paths by
 # flagging the directories it has visited in `pythonPathsSeen`.
 _addToPythonPath() {
     local dir="$1"
@@ -88,11 +98,11 @@ _addToPythonPath() {
     pythonPathsSeen[$dir]=1
     # addToSearchPath is defined in stdenv/generic/setup.sh. It will have
     # the effect of calling `export program_X=$dir/...:$program_X`.
-    addToSearchPath program_PYTHONPATH $dir/lib/@libPrefix@/site-packages
+    addToSearchPath program_PYTHONPATH $dir/@sitePackages@
     addToSearchPath program_PATH $dir/bin
 
     # Inspect the propagated inputs (if they exist) and recur on them.
-    local prop="$dir/nix-support/propagated-native-build-inputs"
+    local prop="$dir/nix-support/propagated-build-inputs"
     if [ -e $prop ]; then
         local new_path
         for new_path in $(cat $prop); do
@@ -109,9 +119,9 @@ createBuildInputsPth() {
             if $(echo -n $x |grep -q python-recursive-pth-loader); then
                 continue
             fi
-            if test -d "$x"/lib/@libPrefix@/site-packages; then
-                echo $x/lib/@libPrefix@/site-packages \
-                    >> "$out"/lib/@libPrefix@/site-packages/${name}-nix-python-$category.pth
+            if test -d "$x"/@sitePackages@; then
+                echo $x/@sitePackages@ \
+                    >> "$out"/@sitePackages@/${name}-nix-python-$category.pth
             fi
         done
     fi

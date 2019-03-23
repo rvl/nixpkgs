@@ -2,16 +2,16 @@
 
 buildGoPackage rec {
   name = "matterircd-${version}";
-  version = "0.9.0";
+  version = "0.18.2";
 
   src = fetchFromGitHub {
     owner = "42wim";
     repo = "matterircd";
     rev = "v${version}";
-    sha256 = "1sh34vwi8ycmdsgpzqwa7gcjzb0rn46aig6n40hxy6q1lk2l6m3c";
+    sha256 = "0g57g91v7208yynf758k9v73jdhz4fbc1v23p97rzrl97aq0rd5r";
   };
 
-  goPackagePath = "github.com/42vim/matterircd";
+  goPackagePath = "github.com/42wim/matterircd";
 
   meta = with stdenv.lib; {
     inherit (src.meta) homepage;

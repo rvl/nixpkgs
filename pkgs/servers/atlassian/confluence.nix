@@ -1,15 +1,16 @@
-{ stdenv, fetchurl }:
+{ stdenv, lib, fetchurl
+, enableSSO ? false
+, crowdProperties ? null
+}:
 
 stdenv.mkDerivation rec {
   name = "atlassian-confluence-${version}";
-  version = "6.0.1";
+  version = "6.14.2";
 
   src = fetchurl {
-    url = "https://www.atlassian.com/software/confluence/downloads/binary/${name}.tar.gz";
-    sha256 = "15af05h0h92z4zw546s7wwglvl0argzrj9w588gb96j5dni9lka4";
+    url = "https://product-downloads.atlassian.com/software/confluence/downloads/${name}.tar.gz";
+    sha256 = "012lh2838l2n7wkj42isxspxw3ix54467vnzvxbsq8wnf2m367ln";
   };
-
-  phases = [ "unpackPhase" "buildPhase" "installPhase" ];
 
   buildPhase = ''
     echo "confluence.home=/run/confluence/home" > confluence/WEB-INF/classes/confluence-init.properties
@@ -19,6 +20,14 @@ stdenv.mkDerivation rec {
     rm -r logs; ln -sf /run/confluence/logs/ .
     rm -r work; ln -sf /run/confluence/work/ .
     rm -r temp; ln -sf /run/confluence/temp/ .
+  '' + lib.optionalString enableSSO ''
+    substituteInPlace confluence/WEB-INF/classes/seraph-config.xml \
+      --replace com.atlassian.confluence.user.ConfluenceAuthenticator\
+                com.atlassian.confluence.user.ConfluenceCrowdSSOAuthenticator
+  '' + lib.optionalString (crowdProperties != null) ''
+    cat <<EOF > confluence/WEB-INF/classes/crowd.properties
+    ${crowdProperties}
+    EOF
   '';
 
   installPhase = ''

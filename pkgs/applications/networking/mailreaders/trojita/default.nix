@@ -1,42 +1,37 @@
-{ stdenv
+{ mkDerivation
 , lib
-, fetchgit
+, fetchurl
 , cmake
 , qtbase
 , qtwebkit
-, makeQtWrapper
+, qttools
 }:
 
-stdenv.mkDerivation rec {
+mkDerivation rec {
   name = "trojita-${version}";
   version = "0.7";
 
-  src = fetchgit {
-    url = "https://anongit.kde.org/trojita.git";
-    rev = "065d527c63e8e4a3ca0df73994f848b52e14ed58";
-    sha256 = "1zlwhir33hha2p3l08wnb4njnfdg69j88ycf1fa4q3x86qm3r7hw";
+  src = fetchurl {
+    url = "mirror://sourceforge/trojita/trojita/${name}.tar.xz";
+    sha256 = "1n9n07md23ny6asyw0xpih37vlwzp7vawbkprl7a1bqwfa0si3g0";
   };
 
   buildInputs = [
-    cmake
     qtbase
     qtwebkit
   ];
 
   nativeBuildInputs = [
-    makeQtWrapper
+    cmake
+    qttools
   ];
 
-  postInstall = ''
-    wrapQtProgram "$out/bin/trojita"
-  '';
 
-
-  meta = {
+  meta = with lib; {
     description = "A Qt IMAP e-mail client";
     homepage = http://trojita.flaska.net/;
-    license = with lib.licenses; [ gpl2 gpl3 ];
-    platforms = stdenv.lib.platforms.linux;
+    license = with licenses; [ gpl2 gpl3 ];
+    platforms = platforms.linux;
   };
 
 }

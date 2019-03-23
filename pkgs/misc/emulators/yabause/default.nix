@@ -1,35 +1,36 @@
-{ stdenv, fetchurl, config
-, cmake, pkgconfig
-, doxygen
-, qt
-, libXmu, mesa, openal, SDL2, freeglut
-}:
+{ stdenv, fetchurl, cmake, pkgconfig, qtbase, qt5, libGLU_combined
+, freeglut ? null, openal ? null, SDL2 ? null }:
 
 stdenv.mkDerivation rec {
-  name = "yabause-${meta.version}";
+  name = "yabause-${version}";
+  version = "0.9.15";
 
   src = fetchurl {
-    url = "http://download.tuxfamily.org/yabause/releases/${meta.version}/${name}.tar.gz";
-    sha256 = "0nkpvnr599g0i2mf19sjvw5m0rrvixdgz2snav4qwvzgfc435rkm";
+    url = "https://download.tuxfamily.org/yabause/releases/${version}/${name}.tar.gz";
+    sha256 = "1cn2rjjb7d9pkr4g5bqz55vd4pzyb7hg94cfmixjkzzkw0zw8d23";
   };
 
-  patches = [ ./linkage-rwx-linux-elf.diff ];
+  nativeBuildInputs = [ cmake pkgconfig ];
+  buildInputs = [ qtbase qt5.qtmultimedia libGLU_combined freeglut openal SDL2 ];
 
-  buildInputs =
-  [ cmake pkgconfig doxygen qt libXmu mesa openal SDL2 freeglut ];
+  patches = [
+    ./linkage-rwx-linux-elf.patch
+    # Fixes derived from
+    # https://github.com/Yabause/yabause/commit/06a816c032c6f7fd79ced6e594dd4b33571a0e73
+    ./0001-Fixes-for-Qt-5.11-upgrade.patch
+  ];
 
-  cmakeConfigureFlags = [    
-    "-DYAB_PORTS='qt'"
-    "-DYAB_OPTIMIZED_DMA='ON'"
-    "-DYAB_NETWORK='ON'" ] ;
+  cmakeFlags = [
+    "-DYAB_NETWORK=ON"
+    "-DYAB_OPTIMIZED_DMA=ON"
+    "-DYAB_PORTS=qt"
+  ] ;
 
   meta = with stdenv.lib; {
-    version = "0.9.14";
     description = "An open-source Sega Saturn emulator";
-    homepage = http://yabause.org/;
+    homepage = https://yabause.org/;
     license = licenses.gpl2Plus;
-    maintainers = [ maintainers.AndersonTorres ];
+    maintainers = with maintainers; [ AndersonTorres ];
     platforms = platforms.linux;
   };
 }
-# TODO: Qt5

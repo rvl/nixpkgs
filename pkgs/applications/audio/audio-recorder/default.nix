@@ -1,40 +1,29 @@
-{ stdenv, fetchurl, lib
-, pkgconfig, intltool, autoconf, makeWrapper
-, glib, dbus, gtk3, libdbusmenu-gtk3, libappindicator-gtk3, gst_all_1
+{ stdenv, fetchurl
+, pkgconfig, intltool, gnome3
+, glib, dbus, gtk3, libappindicator-gtk3, gst_all_1
+, librsvg, wrapGAppsHook
 , pulseaudioSupport ? true, libpulseaudio ? null }:
-
-with lib;
 
 stdenv.mkDerivation rec {
   name = "audio-recorder-${version}";
-  version = "1.7-5";
+  version = "2.1.3";
 
   src = fetchurl {
-    name = "${name}-wily.tar.gz";
-    url = "${meta.homepage}/+archive/ubuntu/ppa/+files/audio-recorder_${version}%7Ewily.tar.gz";
-    sha256 = "1cdlqhfqw2mg51f068j2lhn8mzxggzsbl560l4pl4fxgmpjywpkj";
+    name = "${name}.tar.gz";
+    url = "${meta.homepage}/+archive/ubuntu/ppa/+files/audio-recorder_${version}%7Ebionic.tar.gz";
+    sha256 = "160pnmnmc9zwzyclsci3w1qwlgxkfx1y3x5ck6i587w78570an1r";
   };
 
-  nativeBuildInputs = [ pkgconfig intltool autoconf makeWrapper ];
+  # https://bugs.launchpad.net/audio-recorder/+bug/1784622
+  NIX_CFLAGS_COMPILE = "-I${gnome3.glib.dev}/include/gio-unix-2.0";
 
-  buildInputs = with gst_all_1; [
-    glib dbus gtk3 libdbusmenu-gtk3 libappindicator-gtk3
+  nativeBuildInputs = [ pkgconfig intltool wrapGAppsHook ];
+
+  buildInputs = [
+    glib dbus gtk3 librsvg libappindicator-gtk3
+  ] ++ (with gst_all_1; [
     gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav
-  ] ++ optional pulseaudioSupport libpulseaudio;
-
-  postPatch = ''
-    substituteInPlace configure.ac \
-      --replace 'PKG_CHECK_MODULES(GIO, gio-2.0 >= $GLIB_REQUIRED)' \
-                'PKG_CHECK_MODULES(GIO, gio-2.0 >= $GLIB_REQUIRED gio-unix-2.0)'
-    autoconf
-    intltoolize
-  '';
-
-  postFixup = ''
-    wrapProgram $out/bin/audio-recorder \
-      --prefix XDG_DATA_DIRS : "$out/share:$XDG_ICON_DIRS:$GSETTINGS_SCHEMAS_PATH" \
-      --prefix GST_PLUGIN_SYSTEM_PATH_1_0 ":" "$GST_PLUGIN_SYSTEM_PATH_1_0"
-  '';
+  ]) ++ stdenv.lib.optional pulseaudioSupport libpulseaudio;
 
   meta = with stdenv.lib; {
     description = "Audio recorder for GNOME and Unity Desktops";

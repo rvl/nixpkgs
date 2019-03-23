@@ -1,8 +1,11 @@
-{ stdenv, fetchFromGitHub, emscriptenfastcomp, python, nodejs, closurecompiler, jre }:
+{ emscriptenVersion, stdenv, fetchFromGitHub, emscriptenfastcomp, python, nodejs, closurecompiler
+, jre, binaryen, enableWasm ? true ,  cmake
+}:
 
 let
-  rev = "1.37.1";
+  rev = emscriptenVersion;
   appdir = "share/emscripten";
+  binaryenVersioned = binaryen.override { emscriptenRev = rev; };
 in
 
 stdenv.mkDerivation {
@@ -11,9 +14,11 @@ stdenv.mkDerivation {
   src = fetchFromGitHub {
     owner = "kripken";
     repo = "emscripten";
-    sha256 = "0xl8lv0ihxsnwnhma3i34pkbz0v1yyc93ac6mdqmzv6fx2wczm04";
+    sha256 = "02p0cp86vd1mydlpq544xbydggpnrq9dhbxx7h08j235frjm5cdc";
     inherit rev;
   };
+
+  buildInputs = [ nodejs cmake python ];
 
   buildCommand = ''
     mkdir -p $out/${appdir}
@@ -34,8 +39,25 @@ stdenv.mkDerivation {
     echo "NODE_JS = '${nodejs}/bin/node'" >> $out/${appdir}/config
     echo "JS_ENGINES = [NODE_JS]" >> $out/${appdir}/config
     echo "COMPILER_ENGINE = NODE_JS" >> $out/${appdir}/config
-    echo "CLOSURE_COMPILER = '${closurecompiler}/share/java/compiler.jar'" >> $out/${appdir}/config
+    echo "CLOSURE_COMPILER = '${closurecompiler}/share/java/closure-compiler-v${closurecompiler.version}.jar'" >> $out/${appdir}/config
     echo "JAVA = '${jre}/bin/java'" >> $out/${appdir}/config
+    # to make the test(s) below work
+    echo "SPIDERMONKEY_ENGINE = []" >> $out/${appdir}/config
+  ''
+  + stdenv.lib.optionalString enableWasm ''
+    echo "BINARYEN_ROOT = '${binaryenVersioned}'" >> $out/share/emscripten/config
+  ''
+  +
+  ''
+    echo "--------------- running test -----------------"
+    # quick hack to get the test working
+    HOME=$TMPDIR
+    cp $out/${appdir}/config $HOME/.emscripten
+    export PATH=$PATH:$out/bin
+
+    #export EMCC_DEBUG=2  
+    ${python}/bin/python $src/tests/runner.py test_hello_world
+    echo "--------------- /running test -----------------"
   '';
 
   meta = with stdenv.lib; {

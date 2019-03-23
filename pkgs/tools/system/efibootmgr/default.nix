@@ -1,27 +1,37 @@
-{ stdenv, fetchFromGitHub, perl, efivar, pciutils, zlib, popt }:
+{ stdenv, fetchFromGitHub, fetchpatch, pkgconfig, efivar, popt }:
 
 stdenv.mkDerivation rec {
   name = "efibootmgr-${version}";
-  version = "13";
+  version = "17";
 
-  buildInputs = [ perl efivar pciutils zlib popt ];
+  nativeBuildInputs = [ pkgconfig ];
+
+  buildInputs = [ efivar popt ];
 
   src = fetchFromGitHub {
-    owner = "rhinstaller";
+    owner = "rhboot";
     repo = "efibootmgr";
     rev = version;
-    sha256 = "1kwmvx111c3a5783kx3az76mkhpr1nsdx0yv09gp4k0hgzqlqj96";
+    sha256 = "1niicijxg59rsmiw3rsjwy4bvi1n42dynvm01lnp9haixdzdpq03";
   };
 
-  NIX_CFLAGS_COMPILE = "-I${efivar}/include/efivar";
-  NIX_LDFLAGS = "-lefiboot -lefivar -lpopt";
+  patches = [
+    (fetchpatch {
+      name = "remove-extra-decl.patch";
+      url = "https://github.com/rhboot/efibootmgr/commit/99b578501643377e0b1994b2a068b790d189d5ad.patch";
+      sha256 = "1sbijvlpv4khkix3vix9mbhzffj8lp8zpnbxm9gnzjz8yssz9p5h";
+    })
+  ];
+
+  makeFlags = [ "EFIDIR=nixos" ];
 
   installFlags = [ "prefix=$(out)" ];
 
   meta = with stdenv.lib; {
     description = "A Linux user-space application to modify the Intel Extensible Firmware Interface (EFI) Boot Manager";
-    homepage = http://linux.dell.com/efibootmgr/;
+    homepage = https://github.com/rhboot/efibootmgr;
     license = licenses.gpl2;
+    maintainers = with maintainers; [ ];
     platforms = platforms.linux;
   };
 }

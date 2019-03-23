@@ -3,22 +3,20 @@
 stdenv.mkDerivation rec {
   name = "${pname}-${version}";
   pname = "libmd";
-  version = "0.0.0";
+  version = "1.0.1";
 
   src = fetchurl {
     url = "https://archive.hadrons.org/software/${pname}/${pname}-${version}.tar.xz";
-    sha256 = "121s73pgbqsnmy6xblbrkj9y44c5zzzpf2hcmh6zvcvg4dk26gzx";
+    sha256 = "0waclg2d5qin3r26gy5jvy4584ik60njc8pqbzwk0lzq3j9ynkp1";
   };
 
-  buildInputs = [ autoreconfHook ];
+  nativeBuildInputs = [ autoreconfHook ];
 
   # Writing the version to a .dist-version file is required for the get-version
   # shell script because fetchgit removes the .git directory.
   prePatch = ''
     echo '${version}' > .dist-version;
   '';
-
-  autoreconfPhase = "./autogen";
 
   meta = with stdenv.lib; {
     homepage = "https://www.hadrons.org/software/${pname}/";

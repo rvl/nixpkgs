@@ -1,22 +1,33 @@
-{ stdenv, fetchurl, fetchpatch, zlib, expat, gettext }:
+{ stdenv, fetchurl, fetchFromGitHub, fetchpatch, zlib, expat, gettext
+, autoconf }:
 
 stdenv.mkDerivation rec {
-  name = "exiv2-0.25";
+  name = "exiv2-0.26.2018.12.30";
 
-  src = fetchurl {
-    url = "http://www.exiv2.org/${name}.tar.gz";
-    sha256 = "197g6vgcpyf9p2cwn5p5hb1r714xsk1v4p96f5pv1z8mi9vzq2y8";
+    #url = "http://www.exiv2.org/builds/${name}-trunk.tar.gz";
+  src = fetchFromGitHub rec {
+    owner = "exiv2";
+    repo  = "exiv2";
+    rev = "f5d0b25"; # https://github.com/Exiv2/exiv2/commits/0.26
+    sha256 = "1blaz3g8dlij881g14nv2nsgr984wy6ypbwgi2pixk978p0gm70i";
   };
+
   postPatch = "patchShebangs ./src/svn_version.sh";
+
+  preConfigure = "make config"; # needed because not using tarball
 
   outputs = [ "out" "dev" ];
 
-  nativeBuildInputs = [ gettext ];
+  nativeBuildInputs = [
+    gettext
+    autoconf # needed because not using tarball
+  ];
   propagatedBuildInputs = [ zlib expat ];
 
-  meta = {
+  meta = with stdenv.lib; {
     homepage = http://www.exiv2.org/;
     description = "A library and command-line utility to manage image metadata";
-    platforms = stdenv.lib.platforms.all;
+    platforms = platforms.all;
+    license = licenses.gpl2Plus;
   };
 }

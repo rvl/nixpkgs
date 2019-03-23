@@ -2,8 +2,8 @@
 
 stdenv.mkDerivation rec {
 
-  name = "coq-fiat-${coq.coq-version}-${version}";
-  version = "20161024";
+  name = "coq-fiat-${coq.coq-version}-unstable-${version}";
+  version = "2016-10-24";
 
   src = fetchgit {
     url = "https://github.com/mit-plv/fiat.git";
@@ -11,8 +11,9 @@ stdenv.mkDerivation rec {
     sha256 = "0griqc675yylf9rvadlfsabz41qy5f5idya30p5rv6ysiakxya64";
   };
 
-  buildInputs = [ coq.ocaml coq.camlp5 python27 ];
-  propagatedBuildInputs = [ coq ];
+  buildInputs = [ coq python27 ] ++ (with coq.ocamlPackages; [ ocaml camlp5 ]);
+
+  prePatch = "patchShebangs etc/coq-scripts";
 
   doCheck = false;
 
@@ -32,4 +33,7 @@ stdenv.mkDerivation rec {
     platforms = coq.meta.platforms;
   };
 
+  passthru = {
+    compatibleCoqVersions = v: v == "8.5";
+  };
 }

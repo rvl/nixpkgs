@@ -1,18 +1,30 @@
-{ stdenv, fetchgit, flex, bison }:
+{ stdenv, fetchgit, fetchpatch, flex, bison, pkgconfig, python2, swig, which }:
 
 stdenv.mkDerivation rec {
-  name = "dtc-${version}";
-  version = "1.4.2";
+  pname = "dtc";
+  version = "1.4.7";
 
   src = fetchgit {
-    url = "git://git.kernel.org/pub/scm/utils/dtc/dtc.git";
+    url = "https://git.kernel.org/pub/scm/utils/dtc/dtc.git";
     rev = "refs/tags/v${version}";
-    sha256 = "0pwhbw930pnksrmkimqqwp4nqj9mmh06bs5b8p5l2cnhnh8lxn3j";
+    sha256 = "0l787g1wmd4d6izsp91m5r2qms2h2jg2hhzllfi9qkbnplyz21wn";
   };
 
-  nativeBuildInputs = [ flex bison ];
+  nativeBuildInputs = [ flex bison pkgconfig swig which ];
+  buildInputs = [ python2 ];
 
-  installFlags = [ "INSTALL=install" "PREFIX=$(out)" ];
+  patches = [
+    # Fix setup.py
+    (fetchpatch {
+      url = "https://github.com/dezgeg/dtc/commit/d94a745148ba5c9198143ccc0f7d877fe498ab73.patch";
+      sha256 = "0hpryx04j1swvmjisrfhvss08zzz4nxz9iv72lp4jdgg6vg0argl";
+    })
+  ];
+  postPatch = ''
+    patchShebangs pylibfdt/
+  '';
+
+  installFlags = [ "INSTALL=install" "PREFIX=$(out)" "SETUP_PREFIX=$(out)" ];
 
   meta = with stdenv.lib; {
     description = "Device Tree Compiler";

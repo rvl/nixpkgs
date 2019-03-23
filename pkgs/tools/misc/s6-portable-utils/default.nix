@@ -1,34 +1,35 @@
-{ stdenv, fetchurl, skalibs }:
+{ stdenv, skawarePackages }:
+
+with skawarePackages;
 
 let
+  pname = "s6-portable-utils";
 
-  version = "2.0.5.3";
+in buildPackage {
+  pname = pname;
+  version = "2.2.1.3";
+  sha256 = "1ibjns1slyg1p7jl9irzlrjz8b01f506iw87g3s7db5arhf17vv2";
 
-in stdenv.mkDerivation rec {
+  description = "A set of tiny general Unix utilities optimized for simplicity and small size";
 
-  name = "s6-portable-utils-${version}";
-
-  src = fetchurl {
-    url = "http://www.skarnet.org/software/s6-portable-utils/${name}.tar.gz";
-    sha256 = "029fg9c37vwh9yagd69h8r192nrx4mfva8dwgpm1gxkdssrh3gi7";
-  };
-
-  dontDisableStatic = true;
+  outputs = [ "bin" "dev" "doc" "out" ];
 
   configureFlags = [
-    "--with-sysdeps=${skalibs}/lib/skalibs/sysdeps"
-    "--with-include=${skalibs}/include"
-    "--with-lib=${skalibs}/lib"
-    "--with-dynlib=${skalibs}/lib"
-  ]
-  ++ (stdenv.lib.optional stdenv.isDarwin "--target=${stdenv.system}");
+    "--bindir=\${bin}/bin"
+    "--includedir=\${dev}/include"
+    "--with-sysdeps=${skalibs.lib}/lib/skalibs/sysdeps"
+    "--with-include=${skalibs.dev}/include"
+    "--with-lib=${skalibs.lib}/lib"
+    "--with-dynlib=${skalibs.lib}/lib"
+  ];
 
-  meta = {
-    homepage = http://www.skarnet.org/software/s6-portable-utils/;
-    description = "A set of tiny general Unix utilities optimized for simplicity and small size";
-    platforms = stdenv.lib.platforms.all;
-    license = stdenv.lib.licenses.isc;
-    maintainers = with stdenv.lib.maintainers; [ pmahoney ];
-  };
+  postInstall = ''
+    # remove all s6 executables from build directory
+    rm $(find -name "s6-*" -type f -mindepth 1 -maxdepth 1 -executable)
+    rm seekablepipe
+
+    mv doc $doc/share/doc/${pname}/html
+  '';
+
 
 }

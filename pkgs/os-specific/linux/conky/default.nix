@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, pkgconfig, cmake
+{ config, stdenv, fetchFromGitHub, pkgconfig, cmake
 
 # dependencies
 , glib, libXinerama
@@ -26,11 +26,14 @@
 , toluapp ? null
 
 , wirelessSupport     ? true      , wirelesstools ? null
+, nvidiaSupport       ? false     , libXNVCtrl ? null
+, pulseSupport        ? config.pulseaudio or false, libpulseaudio ? null
 
 , curlSupport         ? true      , curl ? null
 , rssSupport          ? curlSupport
 , weatherMetarSupport ? curlSupport
 , weatherXoapSupport  ? curlSupport
+, journalSupport      ? true, systemd ? null
 , libxml2 ? null
 }:
 
@@ -49,26 +52,29 @@ assert luaImlib2Support    -> luaSupport && imlib2Support
 assert luaCairoSupport     -> luaSupport && toluapp != null
                                          && cairo   != null;
 assert luaCairoSupport || luaImlib2Support
-                           -> lua.luaversion == "5.1";
+                           -> lua.luaversion == "5.3";
 
 assert wirelessSupport     -> wirelesstools != null;
+assert nvidiaSupport       -> libXNVCtrl != null;
+assert pulseSupport        -> libpulseaudio != null;
 
 assert curlSupport         -> curl != null;
 assert rssSupport          -> curlSupport && libxml2 != null;
 assert weatherMetarSupport -> curlSupport;
 assert weatherXoapSupport  -> curlSupport && libxml2 != null;
+assert journalSupport      -> systemd != null;
 
 with stdenv.lib;
 
 stdenv.mkDerivation rec {
   name = "conky-${version}";
-  version = "1.10.5";
+  version = "1.11.3";
 
   src = fetchFromGitHub {
     owner = "brndnmtthws";
     repo = "conky";
     rev = "v${version}";
-    sha256 = "1x1b7h4s8f8qbiyas7sw5v2nq5h2wy3q7hsp1ah4l7191jjidqix";
+    sha256 = "0pdl31xvmy8niagzqx9sd2b6hc6lzwfiaz66m4djf1gz9bksc8qv";
   };
 
   postPatch = ''
@@ -78,17 +84,14 @@ stdenv.mkDerivation rec {
     # Drop examples, since they contain non-ASCII characters that break docbook2x :(
     sed -i 's/ Example: .*$//' doc/config_settings.xml
 
-    substituteInPlace cmake/Docbook.cmake \
-      --replace "http://docbook.sourceforge.net/release/xsl/current/html/docbook.xsl" "${docbook_xsl}/xml/xsl/docbook/html/docbook.xsl"
-    substituteInPlace doc/docs.xml \
-      --replace "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" "${docbook_xml_dtd_44}/xml/dtd/docbook/docbookx.dtd"
-    substituteInPlace cmake/Conky.cmake --replace "#set(RELEASE true)" "set(RELEASE true)"
+    substituteInPlace cmake/Conky.cmake --replace "# set(RELEASE true)" "set(RELEASE true)"
   '';
 
   NIX_LDFLAGS = "-lgcc_s";
 
-  buildInputs = [ pkgconfig glib cmake libXinerama ]
-    ++ optionals docsSupport        [ docbook2x libxslt man less ]
+  nativeBuildInputs = [ cmake pkgconfig ];
+  buildInputs = [ glib libXinerama ]
+    ++ optionals docsSupport        [ docbook2x docbook_xsl docbook_xml_dtd_44 libxslt man less ]
     ++ optional  ncursesSupport     ncurses
     ++ optional  x11Support         xlibsWrapper
     ++ optional  xdamageSupport     libXdamage
@@ -100,6 +103,9 @@ stdenv.mkDerivation rec {
     ++ optional  curlSupport        curl
     ++ optional  rssSupport         libxml2
     ++ optional  weatherXoapSupport libxml2
+    ++ optional  nvidiaSupport      libXNVCtrl
+    ++ optional  pulseSupport       libpulseaudio
+    ++ optional  journalSupport     systemd
     ;
 
   cmakeFlags = []
@@ -118,7 +124,14 @@ stdenv.mkDerivation rec {
     ++ optional weatherMetarSupport "-DBUILD_WEATHER_METAR=ON"
     ++ optional weatherXoapSupport  "-DBUILD_WEATHER_XOAP=ON"
     ++ optional wirelessSupport     "-DBUILD_WLAN=ON"
+    ++ optional nvidiaSupport       "-DBUILD_NVIDIA=ON"
+    ++ optional pulseSupport        "-DBUILD_PULSEAUDIO=ON"
+    ++ optional journalSupport      "-DBUILD_JOURNAL=ON"
     ;
+
+  # `make -f src/CMakeFiles/conky.dir/build.make src/CMakeFiles/conky.dir/conky.cc.o`:
+  # src/conky.cc:137:23: fatal error: defconfig.h: No such file or directory
+  enableParallelBuilding = false;
 
   meta = with stdenv.lib; {
     homepage = http://conky.sourceforge.net/;

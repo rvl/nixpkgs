@@ -1,17 +1,17 @@
-{ lib, fetchurl, buildPythonPackage, docutils, six, sphinx, isPy3k }:
+{ lib, fetchPypi, buildPythonPackage, docutils, six, sphinx, isPy3k }:
 
 buildPythonPackage rec {
-  name = "breathe-${version}";
-  version = "4.2.0";
+  version = "4.11.1";
+  pname = "breathe";
 
-  src = fetchurl {
-    url = "mirror://pypi/b/breathe/${name}.tar.gz";
-    sha256 = "0m3w8yx24nm01xxx6aj08cklnifwlzzmczc5b0ni40l63lhvm3lp";
+  src = fetchPypi {
+    inherit pname version;
+    sha256 = "1mps0cfli6iq2gqsv3d24fs1cp7sq7crd9ji6lw63b9r40998ylv";
   };
 
   propagatedBuildInputs = [ docutils six sphinx ];
 
-  disabled = isPy3k;
+  doCheck = !isPy3k;
 
   meta = {
     homepage = https://github.com/michaeljones/breathe;

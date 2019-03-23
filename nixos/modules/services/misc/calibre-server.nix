@@ -42,19 +42,19 @@ in
         serviceConfig = {
           User = "calibre-server";
           Restart = "always";
-          ExecStart = "${pkgs.calibre}/bin/calibre-server --with-library=${cfg.libraryDir}";
+          ExecStart = "${pkgs.calibre}/bin/calibre-server ${cfg.libraryDir}";
         };
 
       };
 
     environment.systemPackages = [ pkgs.calibre ];
 
-    users.extraUsers.calibre-server = {
+    users.users.calibre-server = {
         uid = config.ids.uids.calibre-server;
         group = "calibre-server";
       };
 
-    users.extraGroups.calibre-server = {
+    users.groups.calibre-server = {
         gid = config.ids.gids.calibre-server;
       };
 

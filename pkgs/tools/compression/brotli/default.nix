@@ -1,24 +1,38 @@
-{ stdenv, fetchFromGitHub }:
+{ stdenv, fetchFromGitHub, cmake }:
 
 # ?TODO: there's also python lib in there
 
 stdenv.mkDerivation rec {
   name = "brotli-${version}";
-  version = "0.3.0";
+  version = "1.0.7";
 
   src = fetchFromGitHub {
     owner = "google";
     repo = "brotli";
     rev = "v" + version;
-    sha256 = "1ijwr8fbrajp4gh8x6lrrpf8gymm0i6w06s97rv294q5dcszn299";
+    sha256 = "1811b55wdfg4kbsjcgh1kc938g118jpvif97ilgrmbls25dfpvvw";
   };
 
-  preConfigure = "cd tools";
+  nativeBuildInputs = [ cmake ];
 
-  # Debian installs "brotli" instead of "bro" but let's keep upstream choice for now.
-  installPhase = ''
-    mkdir -p "$out/bin"
-    mv ./bro "$out/bin/"
+  cmakeFlags = [];
+
+  outputs = [ "out" "dev" "lib" ];
+
+  doCheck = true;
+
+  checkTarget = "test";
+
+  # This breaks on Darwin because our cmake hook tries to make a build folder
+  # and the wonderful bazel BUILD file is already there (yay case-insensitivity?)
+  prePatch = "rm BUILD";
+
+  # Don't bother with "man" output for now,
+  # it currently only makes the manpages hard to use.
+  postInstall = ''
+    mkdir -p $out/share/man/man{1,3}
+    cp ../docs/*.1 $out/share/man/man1/
+    cp ../docs/*.3 $out/share/man/man3/
   '';
 
   meta = with stdenv.lib; {
@@ -44,4 +58,3 @@ stdenv.mkDerivation rec {
     platforms = platforms.all;
   };
 }
-

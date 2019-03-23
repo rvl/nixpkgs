@@ -4,8 +4,6 @@ with lib;
 
 let
 
-  b2s = x: if x then "true" else "false";
-
   cfg = config.services.mongodb;
 
   mongodb = cfg.package;
@@ -95,7 +93,7 @@ in
 
   config = mkIf config.services.mongodb.enable {
 
-    users.extraUsers.mongodb = mkIf (cfg.user == "mongodb")
+    users.users.mongodb = mkIf (cfg.user == "mongodb")
       { name = "mongodb";
         uid = config.ids.uids.mongodb;
         description = "MongoDB server user";
@@ -110,7 +108,7 @@ in
         after = [ "network.target" ];
 
         serviceConfig = {
-          ExecStart = "${mongodb}/bin/mongod --quiet --config ${mongoCnf} --fork --pidfilepath ${cfg.pidFile}";
+          ExecStart = "${mongodb}/bin/mongod --config ${mongoCnf} --fork --pidfilepath ${cfg.pidFile}";
           User = cfg.user;
           PIDFile = cfg.pidFile;
           Type = "forking";

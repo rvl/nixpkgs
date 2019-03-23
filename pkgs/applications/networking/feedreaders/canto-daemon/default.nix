@@ -1,18 +1,17 @@
-{ stdenv, fetchFromGitHub, python34Packages, }:
+{ stdenv, fetchFromGitHub, python3Packages, }:
 
-python34Packages.buildPythonApplication rec {
-  version = "0.9.6";
-  name = "canto-daemon-${version}";
-  namePrefix = "";
+python3Packages.buildPythonApplication rec {
+  version = "0.9.7";
+  pname = "canto-daemon";
 
   src = fetchFromGitHub {
     owner = "themoken";
     repo = "canto-next";
     rev = "v${version}";
-    sha256 = "0ibakwmsbpk10bvxsr5vvka0pks89arric428y5cmfgcpr72sqzw";
+    sha256 = "1si53r8cd4avfc56r315zyrghkppnjd6n125z1agfv59i7hdmk3n";
   };
 
-  propagatedBuildInputs = with python34Packages; [ feedparser ];
+  propagatedBuildInputs = with python3Packages; [ feedparser ];
 
   meta = {
     description = "Daemon for the canto Atom/RSS feed reader";
@@ -24,7 +23,7 @@ python34Packages.buildPythonApplication rec {
       unreadable white text. An interface with almost infinite customization
       and extensibility using the excellent Python programming language.
     '';
-    homepage = http://codezen.org/canto-ng/;
+    homepage = https://codezen.org/canto-ng/;
     license = stdenv.lib.licenses.gpl2;
     platforms = stdenv.lib.platforms.linux;
     maintainers = [ stdenv.lib.maintainers.devhell ];

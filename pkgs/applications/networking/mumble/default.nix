@@ -1,6 +1,6 @@
-{ stdenv, fetchurl, fetchgit, pkgconfig
+{ stdenv, fetchurl, fetchFromGitHub, fetchpatch, makeWrapper, pkgconfig
 , qt4, qmake4Hook, qt5, avahi, boost, libopus, libsndfile, protobuf, speex, libcap
-, alsaLib
+, alsaLib, python
 , jackSupport ? false, libjack2 ? null
 , speechdSupport ? false, speechd ? null
 , pulseSupport ? false, libpulseaudio ? null
@@ -17,16 +17,17 @@ let
   generic = overrides: source: stdenv.mkDerivation (source // overrides // {
     name = "${overrides.type}-${source.version}";
 
-    patches = optional jackSupport ./mumble-jack-support.patch;
+    patches = (source.patches or []) ++ optional jackSupport ./mumble-jack-support.patch;
 
-    nativeBuildInputs = [ pkgconfig ]
-      ++ { qt4 = [ qmake4Hook ]; qt5 = [ qt5.qmakeHook ]; }."qt${toString source.qtVersion}"
+    nativeBuildInputs = [ pkgconfig python ]
+      ++ { qt4 = [ qmake4Hook ]; qt5 = [ qt5.qmake ]; }."qt${toString source.qtVersion}"
       ++ (overrides.nativeBuildInputs or [ ]);
     buildInputs = [ boost protobuf avahi ]
       ++ { qt4 = [ qt4 ]; qt5 = [ qt5.qtbase ]; }."qt${toString source.qtVersion}"
       ++ (overrides.buildInputs or [ ]);
 
     qmakeFlags = [
+      "CONFIG+=c++11"
       "CONFIG+=shared"
       "CONFIG+=no-g15"
       "CONFIG+=packaged"
@@ -42,6 +43,7 @@ let
 
     preConfigure = ''
        qmakeFlags="$qmakeFlags DEFINES+=PLUGIN_PATH=$out/lib"
+       patchShebangs scripts
     '';
 
     makeFlags = [ "release" ];
@@ -59,9 +61,9 @@ let
 
     meta = {
       description = "Low-latency, high quality voice chat software";
-      homepage = "http://mumble.sourceforge.net/";
+      homepage = https://mumble.info;
       license = licenses.bsd3;
-      maintainers = with maintainers; [ viric jgeerds wkennington ];
+      maintainers = with maintainers; [ ];
       platforms = platforms.linux;
     };
   });
@@ -69,7 +71,7 @@ let
   client = source: generic {
     type = "mumble";
 
-    nativeBuildInputs = optional (source.qtVersion == 5) qt5.qttools;
+    nativeBuildInputs = optionals (source.qtVersion == 5) [ qt5.qttools ];
     buildInputs = [ libopus libsndfile speex ]
       ++ optional (source.qtVersion == 5) qt5.qtsvg
       ++ optional stdenv.isLinux alsaLib
@@ -89,7 +91,7 @@ let
 
       mkdir -p $out/share/icons{,/hicolor/scalable/apps}
       cp icons/mumble.svg $out/share/icons
-      ln -s $out/share/icon/mumble.svg $out/share/icons/hicolor/scalable/apps
+      ln -s $out/share/icons/mumble.svg $out/share/icons/hicolor/scalable/apps
     '';
   } source;
 
@@ -108,29 +110,56 @@ let
   };
 
   stableSource = rec {
-    version = "1.2.17";
+    version = "1.2.19";
     qtVersion = 4;
 
     src = fetchurl {
       url = "https://github.com/mumble-voip/mumble/releases/download/${version}/mumble-${version}.tar.gz";
-      sha256 = "176br3b0pv5sz3zvgzsz9rxr3n79irlm902h7n1wh4f6vbph2dhw";
+      sha256 = "1s60vaici3v034jzzi20x23hsj6mkjlc0glipjq4hffrg9qgnizh";
     };
+
+    patches = [
+      # Fix compile error against boost 1.66 (#33655):
+      (fetchpatch {
+        url = "https://github.com/mumble-voip/mumble/commit/"
+            + "ea861fe86743c8402bbad77d8d1dd9de8dce447e.patch";
+        sha256 = "1r50dc8dcl6jmbj4abhnay9div7y56kpmajzqd7ql0pm853agwbh";
+      })
+      # Fixes hang on reconfiguring audio (often including startup)
+      # https://github.com/mumble-voip/mumble/pull/3418
+      (fetchpatch {
+        url = "https://github.com/mumble-voip/mumble/commit/"
+            + "fbbdf2e8ab7d93ed6f7680268ad0689b7eaa71ad.patch";
+        sha256 = "1yhj62mlwm6q42i4aclbia645ha97d3j4ycxhgafr46dbjs0gani";
+      })
+    ];
   };
 
   gitSource = rec {
-    version = "1.3.0-git-2016-04-10";
+    version = "2018-07-01";
     qtVersion = 5;
 
     # Needs submodules
-    src = fetchgit {
-      url = "https://github.com/mumble-voip/mumble";
-      rev = "0502fa67b036bae9f07a586d9f05a8bf74c24291";
-      sha256 = "07c1r26i0b5z7i787nr4mc60799skdzsh764ckk3gdi76agp2r2z";
+    src = fetchFromGitHub {
+      owner = "mumble-voip";
+      repo = "mumble";
+      rev = "c19ac8c0b0f934d2ff206858d7cb66352d6eb418";
+      sha256 = "1mzp1bgn49ycs16d6r8icqq35wq25198fs084vyq6j5f78ni7pvz";
+      fetchSubmodules = true;
     };
   };
 in {
   mumble     = client stableSource;
   mumble_git = client gitSource;
   murmur     = server stableSource;
-  murmur_git = server gitSource;
+  murmur_git = (server gitSource).overrideAttrs (old: {
+    meta = old.meta // { broken = iceSupport; };
+
+    nativeBuildInputs = old.nativeBuildInputs or [] ++ [ makeWrapper ];
+
+    installPhase = old.installPhase or "" + ''
+      wrapProgram $out/bin/murmurd --suffix QT_PLUGIN_PATH : \
+        ${getBin qt5.qtbase}/${qt5.qtbase.qtPluginPrefix}
+    '';
+  });
 }

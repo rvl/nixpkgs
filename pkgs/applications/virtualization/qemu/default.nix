@@ -1,190 +1,158 @@
 { stdenv, fetchurl, fetchpatch, python2, zlib, pkgconfig, glib
-, ncurses, perl, pixman, vde2, alsaLib, texinfo, libuuid, flex
+, ncurses, perl, pixman, vde2, alsaLib, texinfo, flex
 , bison, lzo, snappy, libaio, gnutls, nettle, curl
 , makeWrapper
 , attr, libcap, libcap_ng
-, CoreServices, Cocoa, rez, setfile
-, numaSupport ? stdenv.isLinux, numactl
+, CoreServices, Cocoa, Hypervisor, rez, setfile
+, numaSupport ? stdenv.isLinux && !stdenv.isAarch32, numactl
 , seccompSupport ? stdenv.isLinux, libseccomp
 , pulseSupport ? !stdenv.isDarwin, libpulseaudio
-, sdlSupport ? !stdenv.isDarwin, SDL
+, sdlSupport ? !stdenv.isDarwin, SDL2
+, gtkSupport ? !stdenv.isDarwin && !xenSupport, gtk3, gettext, vte
 , vncSupport ? true, libjpeg, libpng
-, spiceSupport ? !stdenv.isDarwin, spice, spice_protocol, usbredir
-, x86Only ? false
+, smartcardSupport ? true, libcacard
+, spiceSupport ? !stdenv.isDarwin, spice, spice-protocol
+, usbredirSupport ? spiceSupport, usbredir
+, xenSupport ? false, xen
+, cephSupport ? false, ceph
+, openGLSupport ? sdlSupport, mesa_noglu, epoxy, libdrm
+, virglSupport ? openGLSupport, virglrenderer
+, smbdSupport ? false, samba
+, hostCpuOnly ? false
+, hostCpuTargets ? (if hostCpuOnly
+                    then (stdenv.lib.optional stdenv.isx86_64 "i386-softmmu"
+                          ++ ["${stdenv.hostPlatform.qemuArch}-softmmu"])
+                    else null)
 , nixosTestRunner ? false
 }:
 
 with stdenv.lib;
 let
-  version = "2.7.0";
-  audio = optionalString (hasSuffix "linux" stdenv.system) "alsa,"
+  audio = optionalString (hasSuffix "linux" stdenv.hostPlatform.system) "alsa,"
     + optionalString pulseSupport "pa,"
     + optionalString sdlSupport "sdl,";
+
 in
 
 stdenv.mkDerivation rec {
-  name = "qemu-"  
-    + stdenv.lib.optionalString x86Only "x86-only-"
+  version = "3.1.0";
+  name = "qemu-"
+    + stdenv.lib.optionalString xenSupport "xen-"
+    + stdenv.lib.optionalString hostCpuOnly "host-cpu-only-"
     + stdenv.lib.optionalString nixosTestRunner "for-vm-tests-"
     + version;
 
   src = fetchurl {
-    url = "http://wiki.qemu.org/download/qemu-${version}.tar.bz2";
-    sha256 = "0lqyz01z90nvxpc3nx4djbci7hx62cwvs5zwd6phssds0sap6vij";
+    url = "https://wiki.qemu.org/download/qemu-${version}.tar.bz2";
+    sha256 = "08frr1fdjx8qcfh3fafn10kibdwbvkqqvfl7hpqbm7i9dg4f1zlq";
   };
 
   buildInputs =
     [ python2 zlib pkgconfig glib ncurses perl pixman
-      vde2 texinfo libuuid flex bison makeWrapper lzo snappy
+      vde2 texinfo flex bison makeWrapper lzo snappy
       gnutls nettle curl
     ]
-    ++ optionals stdenv.isDarwin [ CoreServices Cocoa rez setfile ]
+    ++ optionals stdenv.isDarwin [ CoreServices Cocoa Hypervisor rez setfile ]
     ++ optionals seccompSupport [ libseccomp ]
     ++ optionals numaSupport [ numactl ]
     ++ optionals pulseSupport [ libpulseaudio ]
-    ++ optionals sdlSupport [ SDL ]
+    ++ optionals sdlSupport [ SDL2 ]
+    ++ optionals gtkSupport [ gtk3 gettext vte ]
     ++ optionals vncSupport [ libjpeg libpng ]
-    ++ optionals spiceSupport [ spice_protocol spice usbredir ]
-    ++ optionals stdenv.isLinux [ alsaLib libaio libcap_ng libcap attr ];
+    ++ optionals smartcardSupport [ libcacard ]
+    ++ optionals spiceSupport [ spice-protocol spice ]
+    ++ optionals usbredirSupport [ usbredir ]
+    ++ optionals stdenv.isLinux [ alsaLib libaio libcap_ng libcap attr ]
+    ++ optionals xenSupport [ xen ]
+    ++ optionals cephSupport [ ceph ]
+    ++ optionals openGLSupport [ mesa_noglu epoxy libdrm ]
+    ++ optionals virglSupport [ virglrenderer ]
+    ++ optionals smbdSupport [ samba ];
 
   enableParallelBuilding = true;
 
+  outputs = [ "out" "ga" ];
+
   patches = [
     ./no-etc-install.patch
+    ./fix-qemu-ga.patch
+    ./9p-ignore-noatime.patch
+  ] ++ optional nixosTestRunner ./force-uid0-on-9p.patch
+    ++ optional pulseSupport ./fix-hda-recording.patch
+    ++ optionals stdenv.hostPlatform.isMusl [
     (fetchpatch {
-      url = "https://sources.debian.net/data/main/q/qemu/1:2.7+dfsg-3/debian/patches/net-vmxnet-initialise-local-tx-descriptor-CVE-2016-6836.patch";
-      sha256 = "1i01vsxsdwrb5r7i9dmrshal4fvpj2j01cmvfkl5wz3ssq5z02wc";
+      url = https://raw.githubusercontent.com/alpinelinux/aports/2bb133986e8fa90e2e76d53369f03861a87a74ef/main/qemu/xattr_size_max.patch;
+      sha256 = "1xfdjs1jlvs99hpf670yianb8c3qz2ars8syzyz8f2c2cp5y4bxb";
     })
     (fetchpatch {
-      url = "https://sources.debian.net/data/main/q/qemu/1:2.7+dfsg-3/debian/patches/scsi-mptconfig-fix-an-assert-expression-CVE-2016-7157.patch";
-      sha256 = "1wqf9k79wdr1k25siyhhybz1bpb0iyshv6fvsf55pgk5p0dg1970";
+      url = https://raw.githubusercontent.com/alpinelinux/aports/2bb133986e8fa90e2e76d53369f03861a87a74ef/main/qemu/musl-F_SHLCK-and-F_EXLCK.patch;
+      sha256 = "1gm67v41gw6apzgz7jr3zv9z80wvkv0jaxd2w4d16hmipa8bhs0k";
     })
+    ./sigrtminmax.patch
     (fetchpatch {
-      url = "https://sources.debian.net/data/main/q/qemu/1:2.7+dfsg-3/debian/patches/scsi-mptconfig-fix-misuse-of-MPTSAS_CONFIG_PACK-CVE-2016-7157.patch";
-      sha256 = "0l78fcbq8mywlgax234dh4226kxzbdgmarz1yrssaaiipkzq4xgw";
+      url = https://raw.githubusercontent.com/alpinelinux/aports/2bb133986e8fa90e2e76d53369f03861a87a74ef/main/qemu/fix-sigevent-and-sigval_t.patch;
+      sha256 = "0wk0rrcqywhrw9hygy6ap0lfg314m9z1wr2hn8338r5gfcw75mav";
     })
-    (fetchpatch {
-      url = "https://sources.debian.net/data/main/q/qemu/1:2.7+dfsg-3/debian/patches/scsi-mptsas-use-g_new0-to-allocate-MPTSASRequest-obj-CVE-2016-7423.patch";
-      sha256 = "14l8w40zjjhpmzz4rkh69h5na8d4did7v99ng7nzrychakd5l29h";
-    })
-    (fetchpatch {
-      url = "https://sources.debian.net/data/main/q/qemu/1:2.7+dfsg-3/debian/patches/scsi-pvscsi-check-page-count-while-initialising-descriptor-rings-CVE-2016-7155.patch";
-      sha256 = "1dwkci5mqgx3xz2q69kbcn48l8vwql9g3qaza2jxi402xdgc07zn";
-    })
-    (fetchpatch {
-      url = "https://sources.debian.net/data/main/q/qemu/1:2.7+dfsg-3/debian/patches/scsi-pvscsi-limit-loop-to-fetch-SG-list-CVE-2016-7156.patch";
-      sha256 = "1r5xm4m9g39p89smsia4i9jbs32nq9gdkpx6wgd91vmswggcbqsi";
-    })
-    (fetchpatch {
-      url = "https://sources.debian.net/data/main/q/qemu/1:2.7+dfsg-3/debian/patches/scsi-pvscsi-limit-process-IO-loop-to-ring-size-CVE-2016-7421.patch";
-      sha256 = "07661d1kd0ddkmzsrjph7jnhz2qbfavkxamnvs3axaqpp52kx6ga";
-    })
-    (fetchpatch {
-      url = "https://sources.debian.net/data/main/q/qemu/1:2.7+dfsg-3/debian/patches/usb-xhci-fix-memory-leak-in-usb_xhci_exit-CVE-2016-7466.patch";
-      sha256 = "0nckwzn9k6369vni12s8hhjn73gbk6ns0mazns0dlgcq546q2fjj";
-    })
-    (fetchpatch {
-      url = "https://sources.debian.net/data/main/q/qemu/1:2.7+dfsg-3/debian/patches/virtio-add-check-for-descriptor-s-mapped-address-CVE-2016-7422.patch";
-      sha256 = "1f1ilpzlxfjqvwmv9h0mzygwl5l8zd690f32vxfv9g6rfbr5h72k";
-    })
-    (fetchpatch {
-      name = "qemu-CVE-2016-8909.patch";
-      url = "http://git.qemu.org/?p=qemu.git;a=patch;h=0c0fc2b5fd534786051889459848764edd798050";
-      sha256 = "0mavkajxchfacpl4gpg7dhppbnhs1bbqn2rwqwiwkl0m5h19d9fv";
-    })
-    (fetchpatch {
-      name = "qemu-CVE-2016-8910.patch";
-      url = "http://git.qemu.org/?p=qemu.git;a=patch;h=c7c35916692fe010fef25ac338443d3fe40be225";
-      sha256 = "10qmlggifdmvj5hg3brs712agjq6ppnslm0n5d5jfgjl7599wxml";
-    })
-    (fetchpatch {
-      name = "qemu-CVE-2016-9103.patch";
-      url = "http://git.qemu.org/?p=qemu.git;a=patch;h=eb687602853b4ae656e9236ee4222609f3a6887d";
-      sha256 = "0j20n4z1wzybx8m7pn1zsxmz4rbl8z14mbalfabcjdgz8sx8g90d";
-    })
-    (fetchpatch {
-      name = "qemu-CVE-2016-9104.patch";
-      url = "http://git.qemu.org/?p=qemu.git;a=patch;h=7e55d65c56a03dcd2c5d7c49d37c5a74b55d4bd6";
-      sha256 = "1l99sf70098l6v05dq4x7p2glxx1l4nq1l8l3711ykp9vxkp91qs";
-    })
-    (fetchpatch {
-      name = "qemu-CVE-2016-9105.patch";
-      url = "http://git.qemu.org/?p=qemu.git;a=patch;h=4c1586787ff43c9acd18a56c12d720e3e6be9f7c";
-      sha256 = "0b2w5myw2vjqk81wm8dz373xfhfkx3hgy7bxr94l060snxcl7ar4";
-    })
-    (fetchpatch {
-      name = "qemu-CVE-2016-9106.patch";
-      url = "http://git.qemu.org/?p=qemu.git;a=patch;h=fdfcc9aeea1492f4b819a24c94dfb678145b1bf9";
-      sha256 = "0npi3fag52icq7xr799h5zi11xscbakdhqmdab0kyl6q331cc32z";
-    })
-    (fetchpatch {
-      name = "qemu-CVE-2016-7994.patch";
-      url = "http://git.qemu.org/?p=qemu.git;a=patch;h=cb3a0522b694cc5bb6424497b3f828ccd28fd1dd";
-      sha256 = "1zhmbqlj0hc69ia4s6h59pi1z3nmijkryxwmf4bzp9gahx8x4xm3";
-    })
-    (fetchpatch {
-      name = "qemu-CVE-2016-8668.patch";
-      url = "http://git.qemu.org/?p=qemu.git;a=patch;h=8caed3d564672e8bc6d2e4c6a35228afd01f4723";
-      sha256 = "19sq6fh7nh8wrk52skky4vwm80029lhm093g11f539krmzjgipik";
-    })
-    (fetchpatch {
-      name = "qemu-CVE-2016-7907.patch";
-      url = "http://git.qemu.org/?p=qemu.git;a=patch;h=070c4b92b8cd5390889716677a0b92444d6e087a";
-      sha256 = "0in89697r6kwkf302v3cg16390q7qs33n2b4kba26m4x65632dxm";
-    })
+  ];
 
-    # FIXME: Fix for CVE-2016-9101 not yet ready: https://lists.gnu.org/archive/html/qemu-devel/2016-10/msg03024.html
-
-    # from http://git.qemu.org/?p=qemu.git;a=patch;h=ff55e94d23ae94c8628b0115320157c763eb3e06
-    ./CVE-2016-9102.patch
-
-    (fetchpatch {
-      name = "qemu-CVE-2016-9911.patch";
-      url = "http://git.qemu.org/?p=qemu.git;a=patch;h=791f97758e223de3290592d169f8e6339c281714";
-      sha256 = "0952mpc81h42k5kqsw42prnw5vw86r3j88wk5z4sr1xd1sg428d6";
-    })
-    (fetchpatch {
-      name = "qemu-CVE-2016-9921_9922.patch";
-      url = "http://git.qemu.org/?p=qemu.git;a=commit;h=4299b90e9ba9ce5ca9024572804ba751aa1a7e70";
-      sha256 = "0mdqa9w1p6cmli6976v4wi0sw9r4p5prkj7lzfd1877wk11c9c73";
-    })
-  ] ++ optional nixosTestRunner ./force-uid0-on-9p.patch;
   hardeningDisable = [ "stackprotector" ];
 
+  preConfigure = ''
+    unset CPP # intereferes with dependency calculation
+  '' + optionalString stdenv.hostPlatform.isMusl ''
+    NIX_CFLAGS_COMPILE+=" -D_LINUX_SYSINFO_H"
+  '';
+
   configureFlags =
-    [ "--smbd=smbd" # use `smbd' from $PATH
-      "--audio-drv-list=${audio}"
+    [ "--audio-drv-list=${audio}"
       "--sysconfdir=/etc"
       "--localstatedir=/var"
     ]
+    # disable sysctl check on darwin.
+    ++ optional stdenv.isDarwin "--cpu=x86_64"
     ++ optional numaSupport "--enable-numa"
     ++ optional seccompSupport "--enable-seccomp"
+    ++ optional smartcardSupport "--enable-smartcard"
     ++ optional spiceSupport "--enable-spice"
-    ++ optional x86Only "--target-list=i386-softmmu,x86_64-softmmu"
+    ++ optional usbredirSupport "--enable-usb-redir"
+    ++ optional (hostCpuTargets != null) "--target-list=${stdenv.lib.concatStringsSep "," hostCpuTargets}"
     ++ optional stdenv.isDarwin "--enable-cocoa"
-    ++ optional stdenv.isLinux "--enable-linux-aio";
+    ++ optional stdenv.isDarwin "--enable-hvf"
+    ++ optional stdenv.isLinux "--enable-linux-aio"
+    ++ optional gtkSupport "--enable-gtk"
+    ++ optional xenSupport "--enable-xen"
+    ++ optional cephSupport "--enable-rbd"
+    ++ optional openGLSupport "--enable-opengl"
+    ++ optional virglSupport "--enable-virglrenderer"
+    ++ optional smbdSupport "--smbd=${samba}/bin/smbd";
+
+  doCheck = false; # tries to access /dev
 
   postFixup =
     ''
-      for exe in $out/bin/qemu-system-* ; do
-        paxmark m $exe
-      done
+      # copy qemu-ga (guest agent) to separate output
+      mkdir -p $ga/bin
+      cp $out/bin/qemu-ga $ga/bin/
     '';
 
-  postInstall =
-    ''
-      # Add a ‘qemu-kvm’ wrapper for compatibility/convenience.
-      p="$out/bin/qemu-system-${if stdenv.system == "x86_64-linux" then "x86_64" else "i386"}"
-      if [ -e "$p" ]; then
-        makeWrapper "$p" $out/bin/qemu-kvm --add-flags "\$([ -e /dev/kvm ] && echo -enable-kvm)"
-      fi
-    '';
+  # Add a ‘qemu-kvm’ wrapper for compatibility/convenience.
+  postInstall = ''
+    if [ -x $out/bin/qemu-system-${stdenv.hostPlatform.qemuArch} ]; then
+      makeWrapper $out/bin/qemu-system-${stdenv.hostPlatform.qemuArch} \
+                  $out/bin/qemu-kvm \
+                  --add-flags "\$([ -e /dev/kvm ] && echo -enable-kvm)"
+    fi
+  '';
+
+  passthru = {
+    qemu-system-i386 = "bin/qemu-system-i386";
+  };
 
   meta = with stdenv.lib; {
     homepage = http://www.qemu.org/;
     description = "A generic and open source machine emulator and virtualizer";
     license = licenses.gpl2Plus;
-    maintainers = with maintainers; [ viric eelco ];
+    maintainers = with maintainers; [ eelco ];
     platforms = platforms.linux ++ platforms.darwin;
   };
 }

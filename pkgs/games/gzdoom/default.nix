@@ -1,21 +1,21 @@
-{ stdenv, fetchFromGitHub, cmake, zdoom
-, openal, fluidsynth, soundfont-fluid, mesa_noglu, SDL2
+{ stdenv, fetchFromGitHub, cmake, makeWrapper
+, openal, fluidsynth, soundfont-fluid, libGL, SDL2
 , bzip2, zlib, libjpeg, libsndfile, mpg123, game-music-emu }:
 
 stdenv.mkDerivation rec {
   name = "gzdoom-${version}";
-  version = "2.2.0";
+  version = "3.7.2";
 
   src = fetchFromGitHub {
     owner = "coelckers";
     repo = "gzdoom";
     rev = "g${version}";
-    sha256 = "0xxgd8fa29pcdir1xah5cvx41bfy76p4dydpp13mf44p9pr29hrb";
+    sha256 = "1kjvjg218d2jk7mzlzihaa90fji4wm5zfix7ikm18wx83hcsgby3";
   };
 
-  nativeBuildInputs = [ cmake ];
+  nativeBuildInputs = [ cmake makeWrapper ];
   buildInputs = [
-    SDL2 mesa_noglu openal fluidsynth bzip2 zlib libjpeg libsndfile mpg123
+    SDL2 libGL openal fluidsynth bzip2 zlib libjpeg libsndfile mpg123
     game-music-emu
   ];
 
@@ -27,7 +27,7 @@ stdenv.mkDerivation rec {
     sed -i \
       -e "s@/usr/share/sounds/sf2/@${soundfont-fluid}/share/soundfonts/@g" \
       -e "s@FluidR3_GM.sf2@FluidR3_GM2-2.sf2@g" \
-      src/sound/music_fluidsynth_mididevice.cpp
+      src/sound/mididevices/music_fluidsynth_mididevice.cpp
   '';
 
   installPhase = ''
@@ -36,16 +36,14 @@ stdenv.mkDerivation rec {
       install -Dm644 "$i" "$out/lib/gzdoom/$i"
     done
     mkdir $out/bin
-    ln -s $out/lib/gzdoom/gzdoom $out/bin/gzdoom
+    makeWrapper $out/lib/gzdoom/gzdoom $out/bin/gzdoom
   '';
 
   meta = with stdenv.lib; {
-    homepage = "https://github.com/coelckers/gzdoom";
+    homepage = https://github.com/coelckers/gzdoom;
     description = "A Doom source port based on ZDoom. It features an OpenGL renderer and lots of new features";
-    # Doom source license, MAME license
-    license = licenses.unfreeRedistributable;
-    platforms = platforms.linux;
+    license = licenses.gpl3;
+    platforms = ["x86_64-linux"];
     maintainers = with maintainers; [ lassulus ];
   };
 }
-

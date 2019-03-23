@@ -1,4 +1,5 @@
-{stdenv, fetchurl, scons, pkgconfig, SDL, mesa, zlib, smpeg, SDL_image, libvorbis, lua5, zip }:
+{ stdenv, fetchurl, fetchpatch, sconsPackages, pkgconfig, SDL, libGLU_combined, zlib, smpeg
+, SDL_image, libvorbis, expat, zip, lua5_1 }:
 
 stdenv.mkDerivation rec {
   name = "battle-tanks-0.9.8083";
@@ -8,20 +9,26 @@ stdenv.mkDerivation rec {
     sha256 = "0ha35kxc8xlbg74wsrbapfgxvcrwy6psjkqi7c6adxs55dmcxliz";
   };
 
-  buildInputs = [ scons pkgconfig SDL mesa zlib smpeg SDL_image libvorbis lua5
-    zip ];
+  nativeBuildInputs = [ sconsPackages.scons_3_0_1 pkgconfig ];
+  buildInputs = [ SDL libGLU_combined zlib smpeg SDL_image libvorbis expat zip lua5_1 ];
 
-  buildPhase = ''
-    scons prefix=$out
-  '';
+  NIX_CFLAGS_COMPILE = "-I${SDL_image}/include/SDL";
 
-  installPhase = ''
-    scons install
-  '';
+  patches = [
+    (fetchpatch {
+      url = "https://sources.debian.org/data/main/b/btanks/0.9.8083-7/debian/patches/gcc-4.7.patch";
+      sha256 = "1dxlk1xh69gj10sqcsyckiakb8an3h41206wby4z44mpmvxc7pi4";
+    })
+    (fetchpatch {
+      url = "https://sources.debian.org/data/main/b/btanks/0.9.8083-7/debian/patches/pow10f.patch";
+      sha256 = "1h45790v2dpdbccfn6lwfgl8782q54i14cz9gpipkaghcka4y0g9";
+    })
+  ];
 
-  meta = {
-    homepage = http://sourceforge.net/projects/btanks/;
+  meta = with stdenv.lib; {
+    homepage = https://sourceforge.net/projects/btanks/;
     description = "Fast 2d tank arcade game";
-    license = stdenv.lib.licenses.gpl2Plus;
+    license = licenses.gpl2Plus;
+    platforms = platforms.unix;
   };
 }

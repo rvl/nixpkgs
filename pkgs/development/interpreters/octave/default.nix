@@ -1,5 +1,5 @@
 { stdenv, fetchurl, gfortran, readline, ncurses, perl, flex, texinfo, qhull
-, libsndfile, portaudio, libX11, graphicsmagick, pcre, pkgconfig, mesa, fltk
+, libsndfile, portaudio, libX11, graphicsmagick, pcre, pkgconfig, libGLU_combined, fltk
 , fftw, fftwSinglePrec, zlib, curl, qrupdate, openblas, arpack, libwebp
 , qt ? null, qscintilla ? null, ghostscript ? null, llvm ? null, hdf5 ? null,glpk ? null
 , suitesparse ? null, gnuplot ? null, jdk ? null, python ? null, overridePlatforms ? null
@@ -18,11 +18,11 @@ let
 in
 
 stdenv.mkDerivation rec {
-  version = "4.2.0";
+  version = "5.1.0";
   name = "octave-${version}";
   src = fetchurl {
     url = "mirror://gnu/octave/${name}.tar.gz";
-    sha256 = "0rsmg5i3b5yfvkvrl9mqvn3f2n1a6vqg45phpja1qlzkh8vsffs4";
+    sha256 = "15blrldzwyxma16rnd4n01gnsrriii0dwmyca6m7qz62r8j12sz3";
   };
 
   buildInputs = [ gfortran readline ncurses perl flex texinfo qhull
@@ -38,12 +38,22 @@ stdenv.mkDerivation rec {
     ++ (stdenv.lib.optional (jdk != null) jdk)
     ++ (stdenv.lib.optional (gnuplot != null) gnuplot)
     ++ (stdenv.lib.optional (python != null) python)
-    ++ (stdenv.lib.optionals (!stdenv.isDarwin) [ mesa libX11 ])
+    ++ (stdenv.lib.optionals (!stdenv.isDarwin) [ libGLU_combined libX11 ])
     ;
+
+  # makeinfo is required by Octave at runtime to display help
+  prePatch = ''
+    substituteInPlace libinterp/corefcn/help.cc \
+      --replace 'Vmakeinfo_program = "makeinfo"' \
+                'Vmakeinfo_program = "${texinfo}/bin/makeinfo"'
+  '';
 
   doCheck = !stdenv.isDarwin;
 
   enableParallelBuilding = true;
+
+  # See https://savannah.gnu.org/bugs/?50339
+  F77_INTEGER_8_FLAG = if openblas.blas64 then "-fdefault-integer-8" else "";
 
   configureFlags =
     [ "--enable-readline"
@@ -69,7 +79,8 @@ stdenv.mkDerivation rec {
   meta = {
     homepage = http://octave.org/;
     license = stdenv.lib.licenses.gpl3Plus;
-    maintainers = with stdenv.lib.maintainers; [viric raskin];
+    maintainers = with stdenv.lib.maintainers; [raskin];
+    description = "Scientific Pragramming Language";
     platforms = if overridePlatforms == null then
       (with stdenv.lib.platforms; linux ++ darwin)
     else overridePlatforms;

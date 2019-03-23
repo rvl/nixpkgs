@@ -1,28 +1,37 @@
-{ stdenv, fetchzip, ocaml, findlib, cppo, easy-format, biniou }:
+{ stdenv, fetchzip, ocaml, findlib, dune, cppo, easy-format, biniou }:
 let
   pname = "yojson";
-  version = "1.2.3";
-in
-stdenv.mkDerivation {
+  param =
+  if stdenv.lib.versionAtLeast ocaml.version "4.02" then rec {
+    version = "1.7.0";
+    url = "https://github.com/ocaml-community/yojson/releases/download/${version}/yojson-${version}.tbz";
+    sha256 = "08llz96if8bcgnaishf18si76cv11zbkni0aldb54k3cn7ipiqvd";
+    buildInputs = [ dune ];
+    extra = { inherit (dune) installPhase; };
+  } else rec {
+    version = "1.2.3";
+    url = "https://github.com/ocaml-community/yojson/archive/v${version}.tar.gz";
+    sha256 = "10dvkndgwanvw4agbjln7kgb1n9s6lii7jw82kwxczl5rd1sgmvl";
+    extra = {
+      createFindlibDestdir = true;
 
-  name = "ocaml-${pname}-${version}";
+      makeFlags = "PREFIX=$(out)";
+
+      preBuild = "mkdir $out/bin";
+    };
+  };
+in
+stdenv.mkDerivation ({
+
+  name = "ocaml${ocaml.version}-${pname}-${param.version}";
 
   src = fetchzip {
-    url = "https://github.com/mjambon/${pname}/archive/v${version}.tar.gz";
-    sha256 = "10dvkndgwanvw4agbjln7kgb1n9s6lii7jw82kwxczl5rd1sgmvl";
+    inherit (param) url sha256;
   };
 
-  buildInputs = [ ocaml findlib ];
+  buildInputs = [ ocaml findlib ] ++ (param.buildInputs or []);
 
   propagatedBuildInputs = [ cppo easy-format biniou ];
-
-  createFindlibDestdir = true;
-
-  makeFlags = "PREFIX=$(out)";
-
-  preBuild = ''
-    mkdir $out/bin
-  '';
 
   meta = with stdenv.lib; {
     description = "An optimized parsing and printing library for the JSON format";
@@ -31,4 +40,4 @@ stdenv.mkDerivation {
     maintainers = [ maintainers.vbgl ];
     platforms = ocaml.meta.platforms or [];
   };
-}
+} // param.extra)

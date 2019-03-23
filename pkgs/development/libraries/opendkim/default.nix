@@ -10,7 +10,11 @@ stdenv.mkDerivation rec {
     sha256 = "06v8bqhh604sz9rh5bvw278issrwjgc4h1wx2pz9a84lpxbvm823";
   };
 
-  configureFlags= [ "--with-milter=${libmilter}" ];
+  configureFlags= [
+    "--with-milter=${libmilter}"
+    "ac_cv_func_malloc_0_nonnull=yes"
+    "ac_cv_func_realloc_0_nonnull=yes"
+  ];
 
   nativeBuildInputs = [ pkgconfig makeWrapper ];
 
@@ -23,7 +27,7 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "C library for producing DKIM-aware applications and an open source milter for providing DKIM service";
-    homepage = "http://www.opendkim.org/";
+    homepage = http://www.opendkim.org/;
     maintainers = with maintainers; [ abbradar ];
     license = licenses.bsd3;
     platforms = platforms.unix;

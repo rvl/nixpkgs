@@ -1,23 +1,20 @@
-{ lib, python3Packages, fetchFromGitHub }:
+{ lib, python3Packages, fetchFromGitHub, glibcLocales }:
 
-let
-  pythonPackages = python3Packages;
-in pythonPackages.buildPythonApplication rec {
-  name = "asciinema-${version}";
-  version = "1.3.0";
-
-  buildInputs = with pythonPackages; [ nose ];
-  propagatedBuildInputs = with pythonPackages; [ requests2 ];
+python3Packages.buildPythonApplication rec {
+  pname = "asciinema";
+  version = "2.0.2";
 
   src = fetchFromGitHub {
     owner = "asciinema";
     repo = "asciinema";
     rev = "v${version}";
-    sha256 = "1hx7xipyy9w72iwlawldlif9qk3f7b8jx8c1wcx114pqbjz5d347";
+    sha256 = "1a2pysxnp6icyd08mgf66xr6f6j0irnfxdpf3fmzcz31ix7l9kc4";
   };
 
+  checkInputs = [ glibcLocales python3Packages.nose ];
+
   checkPhase = ''
-    nosetests
+    LC_ALL=en_US.UTF-8 nosetests
   '';
 
   meta = {

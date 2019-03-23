@@ -6,28 +6,28 @@
 import ./make-test.nix ({ pkgs, ...} : {
   name = "jenkins";
   meta = with pkgs.stdenv.lib.maintainers; {
-    maintainers = [ bjornfor coconnor domenkozar eelco chaoflow ];
+    maintainers = [ bjornfor coconnor domenkozar eelco ];
   };
 
   nodes = {
 
     master =
-      { config, pkgs, ... }:
+      { ... }:
       { services.jenkins.enable = true;
 
         # should have no effect
         services.jenkinsSlave.enable = true;
 
-        users.extraUsers.jenkins.extraGroups = [ "users" ];
+        users.users.jenkins.extraGroups = [ "users" ];
 
         systemd.services.jenkins.serviceConfig.TimeoutStartSec = "6min";
       };
 
     slave =
-      { config, pkgs, ... }:
+      { ... }:
       { services.jenkinsSlave.enable = true;
 
-        users.extraUsers.jenkins.extraGroups = [ "users" ];
+        users.users.jenkins.extraGroups = [ "users" ];
       };
 
   };
@@ -36,6 +36,9 @@ import ./make-test.nix ({ pkgs, ...} : {
     startAll;
 
     $master->waitForUnit("jenkins");
+
+    $master->mustSucceed("curl http://localhost:8080 | grep 'Authentication required'");
+
     print $master->execute("sudo -u jenkins groups");
     $master->mustSucceed("sudo -u jenkins groups | grep jenkins | grep users");
 

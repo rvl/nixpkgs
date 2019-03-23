@@ -11,11 +11,7 @@ in {
   options = {
     services = {
       deluge = {
-        enable = mkOption {
-          default = false;
-          example = true;
-          description = "Start the Deluge daemon";
-        };
+        enable = mkEnableOption "Deluge daemon";
 
         openFilesLimit = mkOption {
           default = openFilesLimit;
@@ -26,15 +22,7 @@ in {
         };
       };
 
-      deluge.web = {
-        enable = mkOption {
-          default = false;
-          example = true;
-          description = ''
-            Start Deluge Web daemon.
-          '';
-        };
-      };
+      deluge.web.enable = mkEnableOption "Deluge Web daemon";
     };
   };
 
@@ -44,9 +32,9 @@ in {
       after = [ "network.target" ];
       description = "Deluge BitTorrent Daemon";
       wantedBy = [ "multi-user.target" ];
-      path = [ pkgs.pythonPackages.deluge ];
+      path = [ pkgs.deluge ];
       serviceConfig = {
-        ExecStart = "${pkgs.pythonPackages.deluge}/bin/deluged -d";
+        ExecStart = "${pkgs.deluge}/bin/deluged -d";
         # To prevent "Quit & shutdown daemon" from working; we want systemd to manage it!
         Restart = "on-success";
         User = "deluge";
@@ -59,15 +47,15 @@ in {
       after = [ "network.target" ];
       description = "Deluge BitTorrent WebUI";
       wantedBy = [ "multi-user.target" ];
-      path = [ pkgs.pythonPackages.deluge ];
-      serviceConfig.ExecStart = "${pkgs.pythonPackages.deluge}/bin/deluge --ui web";
+      path = [ pkgs.deluge ];
+      serviceConfig.ExecStart = "${pkgs.deluge}/bin/deluge --ui web";
       serviceConfig.User = "deluge";
       serviceConfig.Group = "deluge";
     };
 
-    environment.systemPackages = [ pkgs.pythonPackages.deluge ];
+    environment.systemPackages = [ pkgs.deluge ];
 
-    users.extraUsers.deluge = {
+    users.users.deluge = {
       group = "deluge";
       uid = config.ids.uids.deluge;
       home = "/var/lib/deluge/";
@@ -75,6 +63,6 @@ in {
       description = "Deluge Daemon user";
     };
 
-    users.extraGroups.deluge.gid = config.ids.gids.deluge;
+    users.groups.deluge.gid = config.ids.gids.deluge;
   };
 }

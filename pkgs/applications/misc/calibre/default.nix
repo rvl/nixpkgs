@@ -1,65 +1,56 @@
-{ stdenv, fetchurl, fetchpatch, poppler_utils, pkgconfig, libpng
-, imagemagick, libjpeg, fontconfig, podofo, qtbase, qmakeHook, icu, sqlite
-, makeWrapper, unrarSupport ? false, chmlib, python2Packages, xz, libusb1, libmtp
-, xdg_utils, makeDesktopItem
+{ stdenv, fetchurl, poppler_utils, pkgconfig, libpng
+, imagemagick, libjpeg, fontconfig, podofo, qtbase, qmake, icu, sqlite
+, makeWrapper, unrarSupport ? false, chmlib, python2Packages, libusb1, libmtp
+, xdg_utils, makeDesktopItem, wrapGAppsHook, removeReferencesTo
 }:
 
 stdenv.mkDerivation rec {
-  version = "2.76.0";
+  version = "3.40.1";
   name = "calibre-${version}";
 
   src = fetchurl {
     url = "https://download.calibre-ebook.com/${version}/${name}.tar.xz";
-    sha256 = "1xfm586n6gm44mkyn25mbiyhj6w9ji9yl6fvmnr4zk1q6qcga3v8";
+    sha256 = "1s1kq8axfymr7agg7dqw47kanlrkzzhsy8pcj1fs5644zjp5n0bq";
   };
 
   patches = [
     # Patches from Debian that:
     # - disable plugin installation (very insecure)
-    # - disables loading of web bug for privacy
+    ./disable_plugins.patch
     # - switches the version update from enabled to disabled by default
-    (fetchpatch {
-      name = "disable_plugins.patch";
-      url = "http://bazaar.launchpad.net/~calibre-packagers/calibre/debian/download/head:/disable_plugins.py-20111220183043-dcl08ccfagjxt1dv-1/disable_plugins.py";
-      sha256 = "19spdx52dhbrfn9lm084yl3cfwm6f90imd51k97sf7flmpl569pk";
-    })
-    (fetchpatch {
-      name = "links_privacy.patch";
-      url = "http://bazaar.launchpad.net/~calibre-packagers/calibre/debian/download/head:/linksprivacy.patch-20160417214308-6hvive72pc0r4awc-1/links-privacy.patch";
-      sha256 = "0f6pq2b7q56pxrq2j8yqd7bksc623q2zgq29qcli30f13vga1w60";
-    })
-    (fetchpatch {
-      name = "no_updates_dialog.patch";
-      url = "http://bazaar.launchpad.net/~calibre-packagers/calibre/debian/download/head:/no_updates_dialog.pa-20081231120426-rzzufl0zo66t3mtc-16/no_updates_dialog.patch";
-      sha256 = "16xwa2fa47jvs954fjrwr8rhh89aljgi1d1wrfxa40sknlmfwxif";
-    })
+    ./no_updates_dialog.patch
     # the unrar patch is not from debian
   ] ++ stdenv.lib.optional (!unrarSupport) ./dont_build_unrar_plugin.patch;
 
   prePatch = ''
-    sed -i "/pyqt_sip_dir/ s:=.*:= '${python2Packages.pyqt5}/share/sip/PyQt5':"  \
+    sed -i "/pyqt_sip_dir/ s:=.*:= '${python2Packages.pyqt5_with_qtwebkit}/share/sip/PyQt5':"  \
       setup/build_environment.py
 
     # Remove unneeded files and libs
     rm -rf resources/calibre-portable.* \
-           src/{chardet,cherrypy,html5lib,odf,routes}
+           src/odf
   '';
 
   dontUseQmakeConfigure = true;
 
-  nativeBuildInputs = [ makeWrapper pkgconfig qmakeHook ];
+  enableParallelBuilding = true;
+
+  nativeBuildInputs = [ makeWrapper pkgconfig qmake removeReferencesTo ];
 
   buildInputs = [
     poppler_utils libpng imagemagick libjpeg
-    fontconfig podofo qtbase chmlib icu sqlite libusb1 libmtp xdg_utils
+    fontconfig podofo qtbase chmlib icu sqlite libusb1 libmtp xdg_utils wrapGAppsHook
   ] ++ (with python2Packages; [
-    apsw beautifulsoup cssselect cssutils dateutil lxml mechanize netifaces pillow
-    python pyqt5 sip
+    apsw cssselect css-parser dateutil dnspython html5-parser lxml mechanize netifaces pillow
+    python pyqt5_with_qtwebkit sip
+    regex msgpack
     # the following are distributed with calibre, but we use upstream instead
-    chardet cherrypy html5lib_0_9999999 odfpy routes
+    odfpy
   ]);
 
   installPhase = ''
+    runHook preInstall
+
     export HOME=$TMPDIR/fakehome
     export POPPLER_INC_DIR=${poppler_utils.dev}/include/poppler
     export POPPLER_LIB_DIR=${poppler_utils.out}/lib
@@ -67,8 +58,8 @@ stdenv.mkDerivation rec {
     export MAGICK_LIB=${imagemagick.out}/lib
     export FC_INC_DIR=${fontconfig.dev}/include/fontconfig
     export FC_LIB_DIR=${fontconfig.lib}/lib
-    export PODOFO_INC_DIR=${podofo}/include/podofo
-    export PODOFO_LIB_DIR=${podofo}/lib
+    export PODOFO_INC_DIR=${podofo.dev}/include/podofo
+    export PODOFO_LIB_DIR=${podofo.lib}/lib
     export SIP_BIN=${python2Packages.sip}/bin/sip
     ${python2Packages.python.interpreter} setup.py install --prefix=$out
 
@@ -90,7 +81,21 @@ stdenv.mkDerivation rec {
     for entry in $out/share/applications/*.desktop; do
       substituteAllInPlace $entry
     done
+
+    mkdir -p $out/share
+    cp -a man-pages $out/share/man
+
+    runHook postInstall
   '';
+
+  # Remove some references to shrink the closure size. This reference (as of
+  # 2018-11-06) was a single string like the following:
+  #   /nix/store/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-podofo-0.9.6-dev/include/podofo/base/PdfVariant.h
+  preFixup = ''
+    remove-references-to -t ${podofo.dev} $out/lib/calibre/calibre/plugins/podofo.so
+  '';
+
+  disallowedReferences = [ podofo.dev ];
 
   calibreDesktopItem = makeDesktopItem {
     name = "calibre";
@@ -166,7 +171,7 @@ stdenv.mkDerivation rec {
     description = "Comprehensive e-book software";
     homepage = https://calibre-ebook.com;
     license = with licenses; if unrarSupport then unfreeRedistributable else gpl3;
-    maintainers = with maintainers; [ viric domenkozar pSub AndersonTorres ];
+    maintainers = with maintainers; [ domenkozar pSub AndersonTorres ];
     platforms = platforms.linux;
     inherit version;
   };

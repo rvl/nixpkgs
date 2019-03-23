@@ -10,7 +10,8 @@ stdenv.mkDerivation rec {
     url = "mirror://sourceforge/project/xautoclick/xautoclick/xautoclick-0.31/xautoclick-0.31.tar.gz";
     sha256 = "0h522f12a7v2b89411xm51iwixmjp2mp90rnizjgiakx9ajnmqnm";
   };
-  buildInputs = [ xorg.libX11 xorg.libXtst xorg.xinput xorg.libXi xorg.libXext pkgconfig ]
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ xorg.libX11 xorg.libXtst xorg.xinput xorg.libXi xorg.libXext ]
     ++ stdenv.lib.optionals gtkSupport [ gtk2 ]
     ++ stdenv.lib.optionals qtSupport [ qt4 ];
   patchPhase = ''
@@ -20,9 +21,13 @@ stdenv.mkDerivation rec {
     mkdir .bin
     ln -s ${qt4}/bin/moc .bin/moc-qt4
     addToSearchPath PATH .bin
+    sed -i -e "s@LD=\$_cc@LD=\$_cxx@" configure
   '';
 
-  meta = {
-    platforms = stdenv.lib.platforms.linux;
+  meta = with stdenv.lib; {
+    description = "Autoclicker application, which enables you to automatically click the left mousebutton";
+    homepage = http://xautoclick.sourceforge.net;
+    license = licenses.gpl2;
+    platforms = platforms.linux;
   };
 }

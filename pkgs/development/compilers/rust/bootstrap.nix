@@ -1,90 +1,41 @@
-{ stdenv, fetchurl, makeWrapper, cacert, zlib }:
+{ stdenv, fetchurl, callPackage }:
 
 let
-  inherit (stdenv.lib) optionalString;
+  # Note: the version MUST be one version prior to the version we're
+  # building
+  version = "1.31.1";
+
+  # fetch hashes by running `print-hashes.sh 1.31.1`
+  hashes = {
+    i686-unknown-linux-gnu = "1e77e5e8c745320faad9ce6f319a77b4a2e75d972eb68a195acd081ad910ab6d";
+    x86_64-unknown-linux-gnu = "a64685535d0c457f49a8712a096a5c21564cd66fd2f7da739487f028192ebe3c";
+    armv7-unknown-linux-gnueabihf = "11c717b781a7af5bdc829894139f8f45d4c12a061f7f9e39481f21426a04eb21";
+    aarch64-unknown-linux-gnu = "29a7c6eb536fefd0ca459e48dfaea006aa8bff8a87aa82a9b7d483487033632a";
+    i686-apple-darwin = "46566dc25fcbd8badc9950b8c9f9b0faeca065b5a09cd96258e4f4b10d686aed";
+    x86_64-apple-darwin = "8398b1b303bdf0e7605d08b87070a514a4f588797c6fb3593718cb9cec233ad6";
+  };
 
   platform =
-    if stdenv.system == "i686-linux"
+    if stdenv.hostPlatform.system == "i686-linux"
     then "i686-unknown-linux-gnu"
-    else if stdenv.system == "x86_64-linux"
+    else if stdenv.hostPlatform.system == "x86_64-linux"
     then "x86_64-unknown-linux-gnu"
-    else if stdenv.system == "i686-darwin"
+    else if stdenv.hostPlatform.system == "armv7l-linux"
+    then "armv7-unknown-linux-gnueabihf"
+    else if stdenv.hostPlatform.system == "aarch64-linux"
+    then "aarch64-unknown-linux-gnu"
+    else if stdenv.hostPlatform.system == "i686-darwin"
     then "i686-apple-darwin"
-    else if stdenv.system == "x86_64-darwin"
+    else if stdenv.hostPlatform.system == "x86_64-darwin"
     then "x86_64-apple-darwin"
-    else abort "missing boostrap url for platform ${stdenv.system}";
-
-  # fetch hashes by running `print-hashes.sh 1.13.0`
-  bootstrapHash =
-    if stdenv.system == "i686-linux"
-    then "239734113f6750d31085c7a08c260d492991cc1ef10817b6d44154515f3f9439"
-    else if stdenv.system == "x86_64-linux"
-    then "95f4c372b1b81ac1038161e87e932dd7ab875d25c167a861c3949b0f6a65516d"
-    else if stdenv.system == "i686-darwin"
-    then "f6e01cab3bf8d0a6fe9cc2447aa10ce894569daaa72d44063c229da918b96023"
-    else if stdenv.system == "x86_64-darwin"
-    then "f538ca5732b844cf7f00fc4aaaf200a49a845b58b4ec8aef38da0b00e2cf6efe"
-    else throw "missing boostrap hash for platform ${stdenv.system}";
-
-  needsPatchelf = stdenv.isLinux;
+    else throw "missing bootstrap url for platform ${stdenv.hostPlatform.system}";
 
   src = fetchurl {
      url = "https://static.rust-lang.org/dist/rust-${version}-${platform}.tar.gz";
-     sha256 = bootstrapHash;
+     sha256 = hashes."${platform}";
   };
 
-  version = "1.13.0";
-in
-
-rec {
-  rustc = stdenv.mkDerivation rec {
-    name = "rustc-bootstrap-${version}";
-
-    inherit version;
-    inherit src;
-
-    buildInputs = [ makeWrapper ];
-    phases = ["unpackPhase" "installPhase"];
-
-    installPhase = ''
-      ./install.sh --prefix=$out \
-        --components=rustc,rust-std-${platform},rust-docs
-
-      ${optionalString needsPatchelf ''
-        patchelf \
-          --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) \
-          "$out/bin/rustc"
-      ''}
-
-      # Do NOT, I repeat, DO NOT use `wrapProgram` on $out/bin/rustc
-      # (or similar) here. It causes strange effects where rustc loads
-      # the wrong libraries in a bootstrap-build causing failures that
-      # are very hard to track dow. For details, see
-      # https://github.com/rust-lang/rust/issues/34722#issuecomment-232164943
-    '';
-  };
-
-  cargo = stdenv.mkDerivation rec {
-    name = "cargo-bootstrap-${version}";
-
-    inherit version;
-    inherit src;
-
-    buildInputs = [ makeWrapper zlib rustc ];
-    phases = ["unpackPhase" "installPhase"];
-
-    installPhase = ''
-      ./install.sh --prefix=$out \
-        --components=cargo
-
-      ${optionalString needsPatchelf ''
-        patchelf \
-          --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) \
-          "$out/bin/cargo"
-      ''}
-
-      wrapProgram "$out/bin/cargo" \
-        --suffix PATH : "${rustc}/bin"
-    '';
-  };
-}
+in callPackage ./binaryBuild.nix
+  { inherit version src platform;
+    versionType = "bootstrap";
+  }

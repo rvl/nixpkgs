@@ -6,7 +6,7 @@ let
   cfg = config.services.cgminer;
 
   convType = with builtins;
-    v: if isBool v then (if v then "true" else "false") else toString v;
+    v: if isBool v then boolToString v else toString v;
   mergedHwConfig =
     mapAttrsToList (n: v: ''"${n}": "${(concatStringsSep "," (map convType v))}"'')
       (foldAttrs (n: a: [n] ++ a) [] cfg.hardware);
@@ -110,7 +110,7 @@ in
 
   config = mkIf config.services.cgminer.enable {
 
-    users.extraUsers = optionalAttrs (cfg.user == "cgminer") (singleton
+    users.users = optionalAttrs (cfg.user == "cgminer") (singleton
       { name = "cgminer";
         uid = config.ids.uids.cgminer;
         description = "Cgminer user";

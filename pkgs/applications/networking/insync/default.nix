@@ -2,11 +2,15 @@
 
 stdenv.mkDerivation rec {
   name = "insync-${version}";
-  version = "1.3.13.36129";
-  src = fetchurl {
-    url = "http://s.insynchq.com/builds/insync-portable_${version}_amd64.tar.bz2";
-    sha256 = "18d8ww529nvhwcl5k31qmkzb83k9753ics0dw64w202r8vwbm3cd";
-  };
+  version = "1.5.5.37367";
+  src =
+    if stdenv.hostPlatform.system == "x86_64-linux" then
+      fetchurl {
+        url = "http://s.insynchq.com/builds/insync-portable_${version}_amd64.tar.bz2";
+        sha256 = "1yz8l8xjr0pm30hvv4w59wzs569xzkpn8lv12pyl82r1l16h5zp3";
+      }
+    else
+      throw "${name} is not supported on ${stdenv.hostPlatform.system}";
 
   buildInputs = [ makeWrapper ];
 

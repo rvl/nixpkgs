@@ -5,40 +5,33 @@
 
 { pkgs, gimp }:
 let
-  inherit (pkgs) stdenv fetchurl pkgconfig glib fetchFromGitHub;
+  inherit (pkgs) stdenv fetchurl pkgconfig intltool glib fetchFromGitHub;
   inherit (gimp) targetPluginDir targetScriptDir;
 
   pluginDerivation = a: stdenv.mkDerivation ({
     prePhases = "extraLib";
     extraLib = ''
       installScripts(){
-        mkdir -p ${targetScriptDir};
-        for p in "$@"; do cp "$p" ${targetScriptDir}; done
+        mkdir -p $out/${targetScriptDir};
+        for p in "$@"; do cp "$p" $out/${targetScriptDir}; done
       }
       installPlugins(){
-        mkdir -p ${targetPluginDir};
-        for p in "$@"; do cp "$p" ${targetPluginDir}; done
+        mkdir -p $out/${targetPluginDir};
+        for p in "$@"; do cp "$p" $out/${targetPluginDir}; done
       }
     '';
   }
   // a
-    # don't call this gimp-* unless you want nix replace gimp by a plugin :-)
-  // { name = "${a.name}-${gimp.name}-plugin"; }
+  // {
+      name = "gimp-plugin-${a.name}";
+      buildInputs = [ gimp gimp.gtk glib ] ++ (a.buildInputs or []);
+      nativeBuildInputs = [ pkgconfig intltool ] ++ (a.nativeBuildInputs or []);
+    }
   );
 
   scriptDerivation = {name, src} : pluginDerivation {
     inherit name; phases = "extraLib installPhase";
     installPhase = "installScripts ${src}";
-  };
-
- libLQR = pluginDerivation {
-    name = "liblqr-1-0.4.1";
-    # required by lqrPlugin, you don't havet to install this lib explicitely
-    buildInputs = [ gimp ] ++ gimp.nativeBuildInputs;
-    src = fetchurl {
-      url = http://registry.gimp.org/files/liblqr-1-0.4.1.tar.bz2;
-      sha256 = "02g90wag7xi5rjlmwq8h0qs666b1i2sa90s4303hmym40il33nlz";
-    };
   };
 
 in
@@ -48,9 +41,8 @@ rec {
        Video
     */
     name = "gap-2.6.0";
-    buildInputs = [ gimp pkgconfig glib pkgs.intltool gimp.gtk ] ++ gimp.nativeBuildInputs;
     src = fetchurl {
-      url = http://ftp.gimp.org/pub/gimp/plug-ins/v2.6/gap/gimp-gap-2.6.0.tar.bz2;
+      url = https://ftp.gimp.org/pub/gimp/plug-ins/v2.6/gap/gimp-gap-2.6.0.tar.bz2;
       sha256 = "1jic7ixcmsn4kx2cn32nc5087rk6g8xsrz022xy11yfmgvhzb0ql";
     };
     patchPhase = ''
@@ -60,7 +52,7 @@ rec {
     hardeningDisable = [ "format" ];
     meta = with stdenv.lib; {
       description = "The GIMP Animation Package";
-      homepage = http://www.gimp.org;
+      homepage = https://www.gimp.org;
       # The main code is given in GPLv3, but it has ffmpeg in it, and I think ffmpeg license
       # falls inside "free".
       license = with licenses; [ gpl3 free ];
@@ -73,7 +65,7 @@ rec {
        Filters/Generic/FFT Inverse
     */
     name = "fourier-0.4.1";
-    buildInputs = [ gimp pkgs.fftw  pkgconfig glib] ++ gimp.nativeBuildInputs;
+    buildInputs = with pkgs; [ fftw ];
     postInstall = "fail";
     installPhase = "installPlugins fourier";
     src = fetchurl {
@@ -87,7 +79,7 @@ rec {
        Blur/Focus Blur
     */
     name = "focusblur-3.2.6";
-    buildInputs = [ gimp pkgconfig pkgs.fftwSinglePrec ] ++ gimp.nativeBuildInputs;
+    buildInputs = with pkgs; [ fftwSinglePrec ];
     patches = [ ./patches/focusblur-glib.patch ];
     postInstall = "fail";
     installPhase = "installPlugins src/focusblur";
@@ -95,6 +87,7 @@ rec {
       url = "http://registry.gimp.org/files/${name}.tar.bz2";
       sha256 = "1gqf3hchz7n7v5kpqkhqh8kwnxbsvlb5cr2w2n7ngrvl56f5xs1h";
     };
+    meta.broken = true;
   };
 
   resynthesizer = pluginDerivation {
@@ -105,7 +98,7 @@ rec {
       Filters/Enhance/Smart remove selection
     */
     name = "resynthesizer-0.16";
-    buildInputs = [ gimp pkgs.fftw ] ++ gimp.nativeBuildInputs;
+    buildInputs = with pkgs; [ fftw ];
     src = fetchurl {
       url = http://www.logarithmic.net/pfh-files/resynthesizer/resynthesizer-0.16.tar.gz;
       sha256 = "1k90a1jzswxmajn56rdxa4r60v9v34fmqsiwfdxqcvx3yf4yq96x";
@@ -125,8 +118,8 @@ rec {
       Filters/Enhance/Smart remove selection
     */
     name = "resynthesizer-2.0.1";
-    buildInputs = [ gimp pkgs.fftw pkgs.autoreconfHook ] 
-      ++ gimp.nativeBuildInputs;
+    buildInputs = with pkgs; [ fftw ];
+    nativeBuildInputs = with pkgs; [ autoreconfHook ];
     makeFlags = "GIMP_LIBDIR=$out/lib/gimp/2.0/";
     src = fetchFromGitHub {
       owner = "bootchk";
@@ -137,16 +130,15 @@ rec {
   };
 
   texturize = pluginDerivation {
-    name = "texturize-2.1";
-    buildInputs = [ gimp ] ++ gimp.nativeBuildInputs;
-    src = fetchurl {
-      url = mirror://sourceforge/gimp-texturize/texturize-2.1_src.tgz;
-      sha256 = "0cdjq25g3yfxx6bzx6nid21kq659s1vl9id4wxyjs2dhcv229cg3";
+    name = "texturize-2.2.2017-07-28";
+    src = fetchFromGitHub {
+      owner = "lmanul";
+      repo = "gimp-texturize";
+      rev = "de4367f71e40fe6d82387eaee68611a80a87e0e1";
+      sha256 = "1zzvbczly7k456c0y6s92a1i8ph4ywmbvdl8i4rcc29l4qd2z8fw";
     };
-    patchPhase = ''
-      sed -i '/.*gimpimage_pdb.h.*/ d' src/*.c*
-    '';
     installPhase = "installPlugins src/texturize";
+    meta.broken = true; # https://github.com/lmanul/gimp-texturize/issues/1
   };
 
   waveletSharpen = pluginDerivation {
@@ -154,7 +146,6 @@ rec {
       Filters/Enhance/Wavelet sharpen
     */
     name = "wavelet-sharpen-0.1.2";
-    buildInputs = [ gimp ] ++ gimp.nativeBuildInputs;
     src = fetchurl {
       url = http://registry.gimp.org/files/wavelet-sharpen-0.1.2.tar.gz;
       sha256 = "0vql1k67i21g5ivaa1jh56rg427m0icrkpryrhg75nscpirfxxqw";
@@ -167,70 +158,18 @@ rec {
        Layer/Liquid Rescale
     */
     name = "lqr-plugin-0.6.1";
-    buildInputs = [ pkgconfig libLQR gimp ] ++ gimp.nativeBuildInputs;
+    buildInputs = with pkgs; [ liblqr1 ];
     src = fetchurl {
       url = http://registry.gimp.org/files/gimp-lqr-plugin-0.6.1.tar.bz2;
       sha256 = "00hklkpcimcbpjly4rjhfipaw096cpy768g9wixglwrsyqhil7l9";
     };
-    #postInstall = ''mkdir -p $out/nix-support; echo "${libLQR}" > "$out/nix-support/propagated-user-env-packages"'';
+    #postInstall = ''mkdir -p $out/nix-support; echo "${liblqr1}" > "$out/nix-support/propagated-user-env-packages"'';
     installPhase = "installPlugins src/gimp-lqr-plugin";
   };
 
-  gmic =
-    pluginDerivation rec {
-      name = "gmic-1.6.5.0";
+  gmic = pkgs.gmic.gimpPlugin;
 
-      buildInputs = [pkgconfig pkgs.fftw pkgs.opencv gimp] ++ gimp.nativeBuildInputs;
-
-      src = fetchurl {
-        url = http://gmic.eu/files/source/gmic_1.6.5.0.tar.gz;
-        sha256 = "1vb6zm5zpqfnzxjvb9yfvczaqacm55rf010ib0yk9f28b17qrjgb";
-      };
-
-      sourceRoot = "${name}/src";
-
-      buildFlags = "gimp";
-
-      installPhase = "installPlugins gmic_gimp";
-
-      meta = {
-        description = "Script language for image processing which comes with its open-source interpreter";
-        homepage = http://gmic.eu/gimp.shtml;
-        license = stdenv.lib.licenses.cecill20;
-        /*
-        The purpose of this Free Software license agreement is to grant users
-        the right to modify and redistribute the software governed by this
-        license within the framework of an open source distribution model.
-        [ ... ] */
-      };
-  };
-
-  # this is more than a gimp plugin !
-  # either load the raw image with gimp (and the import dialog will popup)
-  # or use the binary
-  ufraw = pluginDerivation rec {
-    name = "ufraw-0.19.2";
-    buildInputs = [pkgs.gtkimageview pkgs.lcms gimp] ++ gimp.nativeBuildInputs;
-      # --enable-mime - install mime files, see README for more information
-      # --enable-extras - build extra (dcraw, nikon-curve) executables
-      # --enable-dst-correction - enable DST correction for file timestamps.
-      # --enable-contrast - enable the contrast setting option.
-      # --enable-interp-none: enable 'None' interpolation (mostly for debugging).
-      # --with-lensfun: use the lensfun library - experimental feature, read this before using it.
-      # --with-prefix=PREFIX - use also PREFIX as an input prefix for the build
-      # --with-dosprefix=PREFIX - PREFIX in the the prefix in dos format (needed only for ms-window
-    configureFlags = "--enable-extras --enable-dst-correction --enable-contrast";
-
-    src = fetchurl {
-      url = "mirror://sourceforge/ufraw/${name}.tar.gz";
-      sha256 = "1lxba7pb3vcsq94dwapg9bk9mb3ww6r3pvvcyb0ah5gh2sgzxgkk";
-    };
-    installPhase = "
-      installPlugins ufraw-gimp
-      mkdir -p $out/bin
-      cp ufraw $out/bin
-    ";
-  };
+  ufraw = pkgs.ufraw.gimpPlugin;
 
   gimplensfun = pluginDerivation rec {
     version = "0.2.4";
@@ -243,7 +182,7 @@ rec {
       sha256 = "0zlmp9v732qmzj083mnk5z421s57mnckmpjhiw890wmmwzj2lhxz";
     };
 
-    buildInputs = [ gimp pkgconfig glib gimp.gtk pkgs.lensfun pkgs.exiv2 ];
+    buildInputs = with pkgs; [ lensfun exiv2 ];
 
     installPhase = "
       installPlugins gimp-lensfun
@@ -256,7 +195,7 @@ rec {
 
       license = stdenv.lib.licenses.gpl3Plus;
       maintainers = [ ];
-      platforms = stdenv.lib.platforms.gnu;
+      platforms = stdenv.lib.platforms.gnu ++ stdenv.lib.platforms.linux;
     };
   };
 

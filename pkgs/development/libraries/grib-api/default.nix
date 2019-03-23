@@ -4,11 +4,11 @@
 
 stdenv.mkDerivation rec{
   name = "grib-api-${version}";
-  version = "1.19.0";
+  version = "1.28.0";
 
   src = fetchurl {
     url = "https://software.ecmwf.int/wiki/download/attachments/3473437/grib_api-${version}-Source.tar.gz";
-    sha256 = "07cj9mw5bb249lxx1m9nmfdqb8b2a8cm7s6x62cdwca3sp16dv6a";
+    sha256 = "0qbj12ap7yy2rl1pq629chnss2jl73wxdj1lwzv0xp87r6z5qdfl";
   };
 
   preConfigure = ''
@@ -23,6 +23,10 @@ stdenv.mkDerivation rec{
                   libpng
                 ] ++ stdenv.lib.optionals enablePython [
                   pythonPackages.python
+                ];
+
+  propagatedBuildInputs = stdenv.lib.optionals enablePython [
+                  pythonPackages.numpy
                 ];
 
   cmakeFlags = [ "-DENABLE_PYTHON=${if enablePython then "ON" else "OFF"}"
@@ -45,7 +49,7 @@ stdenv.mkDerivation rec{
 
 
   meta = with stdenv.lib; {
-    homepage = "https://software.ecmwf.int/wiki/display/GRIB/Home";
+    homepage = https://software.ecmwf.int/wiki/display/GRIB/Home;
     license = licenses.asl20;
     platforms = with platforms; linux ++ darwin;
     description = "ECMWF Library for the GRIB file format";

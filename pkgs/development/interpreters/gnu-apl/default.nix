@@ -2,23 +2,22 @@
 
 stdenv.mkDerivation rec {
   name = "gnu-apl-${version}";
-  version = "1.6";
+  version = "1.7";
 
   src = fetchurl {
     url = "mirror://gnu/apl/apl-${version}.tar.gz";
-    sha256 = "057zwzvvgcrrwsl52a27w86hgy31jqq6avqq629xj7yq90qah3ay";
+    sha256 = "07xq8ddlmz8psvsmwr23gar108ri0lwmw0n6kpxcv8ypas1f5xlg";
   };
 
   buildInputs = [ readline gettext ncurses ];
 
+  # Needed with GCC 7
+  NIX_CFLAGS_COMPILE = stdenv.lib.optionalString stdenv.cc.isGNU "-Wno-error=int-in-bool-context"
+    + stdenv.lib.optionalString stdenv.cc.isClang "-Wno-error=null-dereference";
+
   patchPhase = stdenv.lib.optionalString stdenv.isDarwin ''
     substituteInPlace src/LApack.cc --replace "malloc.h" "malloc/malloc.h"
   '';
-
-  configureFlags = stdenv.lib.optionals stdenv.isDarwin [
-    "--disable-dependency-tracking"
-    "--disable-silent-rules"
-  ];
 
   postInstall = ''
     cp -r support-files/ $out/share/doc/
@@ -27,10 +26,10 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "Free interpreter for the APL programming language";
-    homepage    = http://www.gnu.org/software/apl/;
+    homepage    = https://www.gnu.org/software/apl/;
     license     = licenses.gpl3Plus;
     maintainers = [ maintainers.kovirobi ];
-    platforms   = with stdenv.lib.platforms; linux ++ darwin;
+    platforms   = with platforms; linux ++ darwin;
     inherit version;
 
     longDescription = ''

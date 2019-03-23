@@ -18,14 +18,14 @@ let
     var_prefix = "${stateDir}"
     prayer_user = "${prayerUser}"
     prayer_group = "${prayerGroup}"
-    sendmail_path = "/var/setuid-wrappers/sendmail"
+    sendmail_path = "/run/wrappers/bin/sendmail"
 
     use_http_port ${cfg.port}
 
     ${cfg.extraConfig}
   '';
 
-  prayerCfg = pkgs.runCommand "prayer.cf" { } ''
+  prayerCfg = pkgs.runCommand "prayer.cf" { preferLocalBuild = true; } ''
     # We have to remove the http_port 80, or it will start a server there
     cat ${prayer}/etc/prayer.cf | grep -v http_port > $out
     cat ${prayerExtraCfg} >> $out
@@ -72,14 +72,14 @@ in
   config = mkIf config.services.prayer.enable {
     environment.systemPackages = [ prayer ];
 
-    users.extraUsers = singleton
+    users.users = singleton
       { name = prayerUser;
         uid = config.ids.uids.prayer;
         description = "Prayer daemon user";
         home = stateDir;
       };
 
-    users.extraGroups = singleton
+    users.groups = singleton
       { name = prayerGroup;
         gid = config.ids.gids.prayer;
       };

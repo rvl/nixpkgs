@@ -1,8 +1,9 @@
 { stdenv, fetchurl, makeWrapper, pkgconfig, gtk2, gtkspell2, aspell
 , gst_all_1, startupnotification, gettext
-, perl, perlXMLParser, libxml2, nss, nspr, farstream, farsight2
-, libXScrnSaver, ncurses, avahi, dbus, dbus_glib, intltool, libidn
+, perlPackages, libxml2, nss, nspr, farstream
+, libXScrnSaver, ncurses, avahi, dbus, dbus-glib, intltool, libidn
 , lib, python, libICE, libXext, libSM
+, cyrus_sasl ? null
 , openssl ? null
 , gnutls ? null
 , libgcrypt ? null
@@ -14,11 +15,11 @@
 let unwrapped = stdenv.mkDerivation rec {
   name = "pidgin-${version}";
   majorVersion = "2";
-  version = "${majorVersion}.11.0";
+  version = "${majorVersion}.13.0";
 
   src = fetchurl {
     url = "mirror://sourceforge/pidgin/${name}.tar.bz2";
-    sha256 = "0crkggjj6y07v1kdwil9vw532b0vrs6p33nmlvdkpnl60m2169pp";
+    sha256 = "13vdqj70315p9rzgnbxjp9c51mdzf1l4jg1kvnylc4bidw61air7";
   };
 
   inherit nss ncurses;
@@ -30,18 +31,17 @@ let unwrapped = stdenv.mkDerivation rec {
   buildInputs = [
     gtkspell2 aspell startupnotification
     gst_all_1.gstreamer gst_all_1.gst-plugins-base gst_all_1.gst-plugins-good
-    libxml2 nss nspr farstream farsight2
+    libxml2 nss nspr farstream
     libXScrnSaver ncurses python
-    avahi dbus dbus_glib intltool libidn
-    libICE libXext libSM
+    avahi dbus dbus-glib intltool libidn
+    libICE libXext libSM cyrus_sasl
   ]
   ++ (lib.optional (openssl != null) openssl)
   ++ (lib.optional (gnutls != null) gnutls)
   ++ (lib.optional (libgcrypt != null) libgcrypt);
 
-  propagatedBuildInputs = [
-    pkgconfig gtk2 perl perlXMLParser gettext
-  ];
+  propagatedBuildInputs = [ pkgconfig gtk2 gettext ]
+    ++ (with perlPackages; [ perl XMLParser ]);
 
   patches = [ ./pidgin-makefile.patch ./add-search-path.patch ];
 
@@ -55,6 +55,7 @@ let unwrapped = stdenv.mkDerivation rec {
     "--disable-nm"
     "--disable-tcl"
   ]
+  ++ (lib.optionals (cyrus_sasl != null) [ "--enable-cyrus-sasl=yes" ])
   ++ (lib.optionals (gnutls != null) ["--enable-gnutls=yes" "--enable-nss=no"]);
 
   enableParallelBuilding = true;
@@ -75,7 +76,6 @@ let unwrapped = stdenv.mkDerivation rec {
 
 in if plugins == [] then unwrapped
     else import ./wrapper.nix {
-      inherit stdenv makeWrapper symlinkJoin plugins;
+      inherit makeWrapper symlinkJoin plugins;
       pidgin = unwrapped;
     }
-

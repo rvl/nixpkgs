@@ -4,21 +4,21 @@
 import ./make-test.nix ({ pkgs, ...} : {
   name = "ipv6";
   meta = with pkgs.stdenv.lib.maintainers; {
-    maintainers = [ eelco chaoflow ];
+    maintainers = [ eelco ];
   };
 
   nodes =
-    { client = { config, pkgs, ... }: { };
+    { client = { ... }: { };
 
       server =
-        { config, pkgs, ... }:
+        { ... }:
         { services.httpd.enable = true;
           services.httpd.adminAddr = "foo@example.org";
           networking.firewall.allowedTCPPorts = [ 80 ];
         };
 
       router =
-        { config, pkgs, ... }:
+        { ... }:
         { services.radvd.enable = true;
           services.radvd.config =
             ''
@@ -47,29 +47,29 @@ import ./make-test.nix ({ pkgs, ...} : {
       # Detection).
       sub waitForAddress {
           my ($machine, $iface, $scope) = @_;
-          $machine->waitUntilSucceeds("[ `ip -o -6 addr show dev $iface scope $scope | grep -v tentative | wc -l` -eq 1 ]");
+          $machine->waitUntilSucceeds("[ `ip -o -6 addr show dev $iface scope $scope | grep -v tentative | wc -l` -ge 1 ]");
           my $ip = (split /[ \/]+/, $machine->succeed("ip -o -6 addr show dev $iface scope $scope"))[3];
           $machine->log("$scope address on $iface is $ip");
           return $ip;
       }
 
       subtest "loopback address", sub {
-          $client->succeed("ping6 -c 1 ::1 >&2");
-          $client->fail("ping6 -c 1 ::2 >&2");
+          $client->succeed("ping -c 1 ::1 >&2");
+          $client->fail("ping -c 1 ::2 >&2");
       };
 
       subtest "local link addressing", sub {
           my $clientIp = waitForAddress $client, "eth1", "link";
           my $serverIp = waitForAddress $server, "eth1", "link";
-          $client->succeed("ping6 -c 1 -I eth1 $clientIp >&2");
-          $client->succeed("ping6 -c 1 -I eth1 $serverIp >&2");
+          $client->succeed("ping -c 1 $clientIp%eth1 >&2");
+          $client->succeed("ping -c 1 $serverIp%eth1 >&2");
       };
 
       subtest "global addressing", sub {
           my $clientIp = waitForAddress $client, "eth1", "global";
           my $serverIp = waitForAddress $server, "eth1", "global";
-          $client->succeed("ping6 -c 1 $clientIp >&2");
-          $client->succeed("ping6 -c 1 $serverIp >&2");
+          $client->succeed("ping -c 1 $clientIp >&2");
+          $client->succeed("ping -c 1 $serverIp >&2");
           $client->succeed("curl --fail -g http://[$serverIp]");
           $client->fail("curl --fail -g http://[$clientIp]");
       };

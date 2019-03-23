@@ -1,27 +1,53 @@
-{ stdenv, fetchurl, vala_0_23, python, intltool, pkgconfig
-, glib, libgee_0_6, gtk3, dee, libdbusmenu-glib
-}:
+{ stdenv, fetchurl, pkgconfig, automake, autoconf, libtool
+, glib, vala, dee, gobject-introspection, libdbusmenu
+, gtk3, intltool, gnome-common, python3, icu }:
 
 stdenv.mkDerivation rec {
-  name = "libunity-${version}";
-  version = "6.12.0";
+  pname = "libunity";
+  version = "7.1.4";
+
+  name = "${pname}-${version}";
+
+  outputs = [ "out" "dev" ];
 
   src = fetchurl {
-    url = "https://launchpad.net/libunity/6.0/${version}/+download/${name}.tar.gz";
-    sha256 = "1nadapl3390x98q1wv2yarh60hzi7ck0d1s8zz9xsiq3zz6msbjd";
+    url = "https://launchpad.net/ubuntu/+archive/primary/+files/${pname}_${version}+15.10.20151002.orig.tar.gz";
+    sha256 = "1sf98qcjkxfibxk03firnc12dm6il8jzaq5763qam8ydg4li4gij";
   };
 
-  buildInputs = [ glib libgee_0_6 gtk3 ];
-  propagatedBuildInputs = [ dee libdbusmenu-glib ];
-  nativeBuildInputs = [ vala_0_23 python intltool pkgconfig ];
+  nativeBuildInputs = [
+    autoconf
+    automake
+    gnome-common
+    gobject-introspection
+    intltool
+    libtool
+    pkgconfig
+    python3
+    vala
+  ];
 
-  enableParallelBuilding = true;
+  buildInputs = [
+    glib
+    gtk3
+  ];
+
+  propagatedBuildInputs = [ dee libdbusmenu ];
+
+  preConfigure = "NOCONFIGURE=1 ./autogen.sh";
+
+  configureFlags = [
+    "--disable-static"
+    "--with-pygi-overrides-dir=$(out)/${python3.sitePackages}/gi/overrides"
+  ];
+
+  NIX_LDFLAGS = "-L${icu}/lib";
 
   meta = with stdenv.lib; {
-    description = "A library for instrumenting- and integrating with all aspects of the Unity shell";
-    homepage = "https://launchpad.net/libunity";
+    description = "A library for instrumenting and integrating with all aspects of the Unity shell";
+    homepage = https://launchpad.net/libunity;
     license = licenses.lgpl3;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ abbradar ];
+    maintainers = with maintainers; [ worldofpeace ];
   };
 }

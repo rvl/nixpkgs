@@ -1,7 +1,7 @@
 { stdenv, fetchurl
 , libtool, pkgconfig, automake, autoconf, intltool
-, glib, gobjectIntrospection, gtk2, gtk_doc
-, clutter, clutter_gtk
+, glib, gobject-introspection, gtk2, gtk-doc
+, clutter, clutter-gtk
 }:
 
 stdenv.mkDerivation rec {
@@ -31,11 +31,12 @@ stdenv.mkDerivation rec {
 
   configureScript = "sh autogen.sh";
 
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs = [
-    pkgconfig automake autoconf libtool
+    automake autoconf libtool
     intltool
-    gobjectIntrospection glib
-    gtk2 gtk_doc clutter clutter_gtk
+    gobject-introspection glib
+    gtk2 gtk-doc clutter clutter-gtk
   ];
 
   # patch to resolve GL errors

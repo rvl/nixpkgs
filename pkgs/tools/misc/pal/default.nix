@@ -1,4 +1,4 @@
-{stdenv, fetchurl, ncurses, glib, gettext, readline, pkgconfig }:
+{stdenv, fetchurl, glib, gettext, readline, pkgconfig }:
 
 stdenv.mkDerivation rec {
   name = "pal-0.4.3";
@@ -14,7 +14,8 @@ stdenv.mkDerivation rec {
 
   makeFlags = "prefix=$(out)";
 
-  buildInputs = [ glib gettext readline pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ glib gettext readline ];
 
   hardeningDisable = [ "format" ];
 

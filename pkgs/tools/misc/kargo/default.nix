@@ -12,7 +12,7 @@ python2Packages.buildPythonApplication rec {
   doCheck = false;
 
   propagatedBuildInputs = with python2Packages; [
-    ansible2
+    ansible
     boto
     cffi
     cryptography
@@ -20,7 +20,7 @@ python2Packages.buildPythonApplication rec {
     markupsafe
     netaddr
     pyasn1
-    requests2
+    requests
     setuptools
   ];
 
@@ -30,7 +30,6 @@ python2Packages.buildPythonApplication rec {
     platforms = platforms.linux;
     license = licenses.gpl3;
     maintainers = with maintainers; [
-      jgeerds
     ];
   };
 }

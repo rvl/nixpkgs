@@ -1,13 +1,15 @@
-{ stdenv, fetchurl, zlib, bzip2, libiconv, libxml2, openssl, ncurses, curl
-, libmilter, pcre }:
+{ stdenv, fetchurl, pkgconfig
+, zlib, bzip2, libiconv, libxml2, openssl, ncurses, curl, libmilter, pcre2
+, libmspack, systemd
+}:
 
 stdenv.mkDerivation rec {
   name = "clamav-${version}";
-  version = "0.99.2";
+  version = "0.101.1";
 
   src = fetchurl {
     url = "https://www.clamav.net/downloads/production/${name}.tar.gz";
-    sha256 = "0yh2q318bnmf2152g2h1yvzgqbswn0wvbzb8p4kf7v057shxcyqn";
+    sha256 = "01mq3z04fjbq5iq8wfwfim72iv3dn04d3ishc5lkhxpmnalqydps";
   };
 
   # don't install sample config files into the absolute sysconfdir folder
@@ -15,21 +17,22 @@ stdenv.mkDerivation rec {
     substituteInPlace Makefile.in --replace ' etc ' ' '
   '';
 
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs = [
-    zlib bzip2 libxml2 openssl ncurses curl libiconv libmilter pcre
+    zlib bzip2 libxml2 openssl ncurses curl libiconv libmilter pcre2 libmspack
+    systemd
   ];
 
   configureFlags = [
+    "--libdir=$(out)/lib"
     "--sysconfdir=/etc/clamav"
+    "--with-systemdsystemunitdir=$(out)/lib/systemd"
+    "--disable-llvm" # enabling breaks the build at the moment
     "--with-zlib=${zlib.dev}"
-    "--disable-zlib-vcheck" # it fails to recognize that 1.2.10 >= 1.2.2
-    "--with-libbz2-prefix=${bzip2.dev}"
-    "--with-iconv-dir=${libiconv}"
     "--with-xml=${libxml2.dev}"
     "--with-openssl=${openssl.dev}"
-    "--with-libncurses-prefix=${ncurses.dev}"
     "--with-libcurl=${curl.dev}"
-    "--with-pcre=${pcre.dev}"
+    "--with-system-libmspack"
     "--enable-milter"
   ];
 
@@ -39,10 +42,10 @@ stdenv.mkDerivation rec {
   '';
 
   meta = with stdenv.lib; {
-    homepage = http://www.clamav.net;
+    homepage = https://www.clamav.net;
     description = "Antivirus engine designed for detecting Trojans, viruses, malware and other malicious threats";
     license = licenses.gpl2;
-    maintainers = with maintainers; [ phreedom robberer qknight ];
+    maintainers = with maintainers; [ phreedom robberer qknight fpletz ];
     platforms = platforms.linux;
   };
 }

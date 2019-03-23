@@ -1,20 +1,29 @@
-{stdenv, fetchurl}:
+{ stdenv, fetchurl }:
+
 stdenv.mkDerivation rec {
-  version = "2.2.0";
+  version = "2.2.4";
   name = "discount-${version}";
 
   src = fetchurl {
     url = "http://www.pell.portland.or.us/~orc/Code/discount/discount-${version}.tar.bz2";
-    sha256 = "1wxrv86xr8cacwhzkyzmfxg58svfnn3swbpbk5hq621ckk19alxj";
+    sha256 = "199hwajpspqil0a4y3yxsmhdp2dm73gqkzfk4mrwzsmlq8y1xzbl";
   };
+
   patches = ./fix-configure-path.patch;
   configureScript = "./configure.sh";
 
+  configureFlags = [
+    "--enable-all-features"
+    "--pkg-config"
+    "--shared"
+    "--with-fenced-code"
+  ];
+
   meta = with stdenv.lib; {
     description = "Implementation of Markdown markup language in C";
-    homepage = "http://www.pell.portland.or.us/~orc/Code/discount/";
+    homepage = http://www.pell.portland.or.us/~orc/Code/discount/;
     license = licenses.bsd3;
-    maintainers = [ maintainers.shell ];
+    maintainers = with maintainers; [ shell ndowens ];
     platforms = platforms.unix;
   };
 }

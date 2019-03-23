@@ -20,23 +20,32 @@ rec {
 
   # Helper for the common case where we have separate feature and
   # plugin JARs.
-  buildEclipsePlugin = { name, srcFeature, srcPlugin, ... } @ attrs:
-    buildEclipsePluginBase (attrs // {
-      srcs = [ srcFeature srcPlugin ];
+  buildEclipsePlugin =
+    { name, srcFeature, srcPlugin ? null, srcPlugins ? [], ... } @ attrs:
+      assert srcPlugin == null -> srcPlugins != [];
+      assert srcPlugin != null -> srcPlugins == [];
 
-      phases = [ "installPhase" ];
+      let
 
-      installPhase = ''
-        dropinDir="$out/eclipse/dropins/${name}"
+        pSrcs = if (srcPlugin != null) then [ srcPlugin ] else srcPlugins;
 
-        mkdir -p $dropinDir/features
-        unzip ${srcFeature} -d $dropinDir/features/
+      in
 
-        mkdir -p $dropinDir/plugins
-        cp -v ${srcPlugin} $dropinDir/plugins/${name}.jar
-      '';
+        buildEclipsePluginBase (attrs // {
+          srcs = [ srcFeature ] ++ pSrcs;
 
-    });
+          buildCommand = ''
+            dropinDir="$out/eclipse/dropins/${name}"
+
+            mkdir -p $dropinDir/features
+            unzip ${srcFeature} -d $dropinDir/features/
+
+            mkdir -p $dropinDir/plugins
+            for plugin in ${toString pSrcs}; do
+              cp -v $plugin $dropinDir/plugins/$(stripHash $plugin)
+            done
+          '';
+        });
 
   # Helper for the case where the build directory has the layout of an
   # Eclipse update site, that is, it contains the directories
@@ -44,7 +53,8 @@ rec {
   # directories will be installed.
   buildEclipseUpdateSite = { name, ... } @ attrs:
     buildEclipsePluginBase (attrs // {
-      phases = [ "unpackPhase" "installPhase" ];
+      dontBuild = true;
+      doCheck = false;
 
       installPhase = ''
         dropinDir="$out/eclipse/dropins/${name}"
@@ -104,18 +114,87 @@ rec {
     };
   };
 
-  anyedittools = buildEclipsePlugin rec {
-    name = "anyedit-${version}";
-    version = "2.6.0.201511291145";
+  ansi-econsole = buildEclipsePlugin rec {
+    name = "ansi-econsole-${version}";
+    version = "1.3.5.201612301822";
 
     srcFeature = fetchurl {
-      url = "http://andrei.gmxhome.de/eclipse/features/AnyEditTools_${version}.jar";
-      sha256 = "1vllci75qcd28b6hn2jz29l6cabxx9ql5i6l9cwq9rxp49dhc96b";
+      url = "https://mihnita.github.io/ansi-econsole/install/features/net.mihai-nita.ansicon_${version}.jar";
+      sha256 = "086ylxpsrlpbvwv5mw7v6b44j63cwzgi8apg2mq058ydr5ak6hxs";
     };
 
     srcPlugin = fetchurl {
-      url = "https://github.com/iloveeclipse/anyedittools/releases/download/2.6.0/de.loskutov.anyedit.AnyEditTools_${version}.jar";
-      sha256 = "0mgq0ylfa7srjf7azyx0kbahlsjf0sdpazqphzx4f0bfn1l328s4";
+      url = "https://mihnita.github.io/ansi-econsole/install/plugins/net.mihai-nita.ansicon.plugin_${version}.jar";
+      sha256 = "1j42l0xxzs89shqkyn91lb0gia10mifzy0i73c3n7gj7sv2ddbjq";
+    };
+
+    meta = with stdenv.lib; {
+      homepage = "https://mihai-nita.net/java/#ePluginAEC";
+      description = "Adds support for ANSI escape sequences in the Eclipse console";
+      license = licenses.asl20;
+      platforms = platforms.all;
+      maintainers = [ maintainers.rycee ];
+    };
+  };
+
+  antlr-runtime_4_5 = buildEclipsePluginBase rec {
+    name = "antlr-runtime-4.5.3";
+
+    src = fetchurl {
+      url = "http://www.antlr.org/download/${name}.jar";
+      sha256 = "0lm78i2annlczlc2cg5xvby0g1dyl0sh1y5xc2pymjlmr67a1g4k";
+    };
+
+    buildCommand = ''
+      dropinDir="$out/eclipse/dropins/"
+      mkdir -p $dropinDir
+      cp -v $src $dropinDir/${name}.jar
+    '';
+
+    meta = with stdenv.lib; {
+      description = "A powerful parser generator for processing structured text or binary files";
+      homepage = http://www.antlr.org/;
+      license = licenses.bsd3;
+      platforms = platforms.all;
+      maintainers = [ maintainers.rycee ];
+    };
+  };
+
+  antlr-runtime_4_7 = buildEclipsePluginBase rec {
+    name = "antlr-runtime-4.7.1";
+
+    src = fetchurl {
+      url = "http://www.antlr.org/download/${name}.jar";
+      sha256 = "07f91mjclacrvkl8a307w2abq5wcqp0gcsnh0jg90ddfpqcnsla3";
+    };
+
+    buildCommand = ''
+      dropinDir="$out/eclipse/dropins/"
+      mkdir -p $dropinDir
+      cp -v $src $dropinDir/${name}.jar
+    '';
+
+    meta = with stdenv.lib; {
+      description = "A powerful parser generator for processing structured text or binary files";
+      homepage = http://www.antlr.org/;
+      license = licenses.bsd3;
+      platforms = platforms.all;
+      maintainers = [ maintainers.rycee ];
+    };
+  };
+
+  anyedittools = buildEclipsePlugin rec {
+    name = "anyedit-${version}";
+    version = "2.7.1.201709201439";
+
+    srcFeature = fetchurl {
+      url = "http://andrei.gmxhome.de/eclipse/features/AnyEditTools_${version}.jar";
+      sha256 = "1wqzl7wq85m9gil8rnvly45ps0a2m0svw613pg6djs5i7amhnayh";
+    };
+
+    srcPlugin = fetchurl {
+      url = "https://github.com/iloveeclipse/anyedittools/releases/download/2.7.1/de.loskutov.anyedit.AnyEditTools_${version}.jar";
+      sha256 = "03iyb6j2srq74iigmg7dk098c2svyv0ygdfql5jqr44a32n07k8q";
     };
 
     meta = with stdenv.lib; {
@@ -127,18 +206,41 @@ rec {
     };
   };
 
+  autodetect-encoding = buildEclipsePlugin rec {
+    name = "autodetect-encoding-${version}";
+    version = "1.8.5.201801191359";
+
+    srcFeature = fetchurl {
+      url = "https://github.com/cypher256/eclipse-encoding-plugin/raw/master/eclipse.encoding.updatesite.snapshot/features/eclipse.encoding.plugin.feature_${version}.jar";
+      sha256 = "1m8ypsc1dwz0y6yhjgxsdi9813d38jllv7javgwvcd30g042a3kx";
+    };
+
+    srcPlugin = fetchurl {
+      url = "https://github.com/cypher256/eclipse-encoding-plugin/raw/master/eclipse.encoding.updatesite.snapshot/plugins/mergedoc.encoding_${version}.jar";
+      sha256 = "1n2rzybfcwp3ss2qi0fhd8vm38vdwav8j837lqiqlfcnvzwsk86m";
+    };
+
+    meta = with stdenv.lib; {
+      homepage = https://github.com/cypher256/eclipse-encoding-plugin;
+      description = "Show file encoding and line ending for the active editor in the eclipse status bar";
+      license = licenses.epl10;
+      platforms = platforms.all;
+      maintainers = [ maintainers.rycee ];
+    };
+  };
+
   bytecode-outline = buildEclipsePlugin rec {
     name = "bytecode-outline-${version}";
-    version = "2.4.3";
+    version = "2.5.0.201711011753-5a57fdf";
 
     srcFeature = fetchurl {
       url = "http://andrei.gmxhome.de/eclipse/features/de.loskutov.BytecodeOutline.feature_${version}.jar";
-      sha256 = "0imhwp73gxy1y5d5gpjgd05ywn0xg3vqc5980wcx3fd51g4ifc67";
+      sha256 = "0yciqhcq0n5i326mwy57r4ywmkz2c2jky7r4pcmznmhvks3z65ps";
     };
 
     srcPlugin = fetchurl {
       url = "http://dl.bintray.com/iloveeclipse/plugins/de.loskutov.BytecodeOutline_${version}.jar";
-      sha256 = "0230i88mvvxhn11m9c5mv3494zhh1xkxyfyva9qahck0wbqwpzkw";
+      sha256 = "1vmsqv32jfl7anvdkw0vir342miv5sr9df7vd1w44lf1yf97vxlw";
     };
 
     meta = with stdenv.lib; {
@@ -152,12 +254,12 @@ rec {
 
   cdt = buildEclipseUpdateSite rec {
     name = "cdt-${version}";
-    version = "9.0.1";
+    version = "9.6.0";
 
     src = fetchzip {
       stripRoot = false;
-      url = "https://www.eclipse.org/downloads/download.php?r=1&nf=1&file=/tools/cdt/releases/9.0/${name}.zip";
-      sha256 = "0vdx0j9ci533wnk7y17qjvjyqx38hlrdw67z6pi05vfv3r6ys39x";
+      url = "https://www.eclipse.org/downloads/download.php?r=1&nf=1&file=/tools/cdt/releases/9.6/${name}/${name}.zip";
+      sha256 = "08rk3b1va57jcy4s161fx0xmb8dn47akhhxd2f28hspq6i2jqicm";
     };
 
     meta = with stdenv.lib; {
@@ -171,12 +273,12 @@ rec {
 
   checkstyle = buildEclipseUpdateSite rec {
     name = "checkstyle-${version}";
-    version = "7.3.0.201612142232";
+    version = "8.7.0.201801131309";
 
     src = fetchzip {
       stripRoot = false;
-      url = "mirror://sourceforge/project/eclipse-cs/Eclipse%20Checkstyle%20Plug-in/7.3.0/net.sf.eclipsecs-updatesite_${version}.zip";
-      sha256 = "1mbiszwnakfmjx5mnh9h2rrp9jzizkmz89p8z4spq2m9kwy1lkqj";
+      url = "mirror://sourceforge/project/eclipse-cs/Eclipse%20Checkstyle%20Plug-in/8.7.0/net.sf.eclipsecs-updatesite_${version}.zip";
+      sha256 = "07fymk705x4mwq7vh2i6frsf67jql4bzrkdzhb4n74zb0g1dib60";
     };
 
     meta = with stdenv.lib; {
@@ -212,7 +314,7 @@ rec {
     };
   };
 
-  cup = buildEclipsePluginBase rec {
+  cup = buildEclipsePlugin rec {
     name = "cup-${version}";
     version = "1.1.0.201604221613";
     version_ = "1.0.0.201604221613";
@@ -222,36 +324,52 @@ rec {
       sha256 = "13nnsf0cqg02z3af6xg45rhcgiffsibxbx6h1zahjv7igvqgkyna";
     };
 
-    srcPlugin1 = fetchurl {
-      url = "http://www2.in.tum.de/projects/cup/eclipse/plugins/CupReferencedLibraries_${version_}.jar";
-      sha256 = "0kif8kivrysprva1pxzajm88gi967qf7idhb6ga2xpvsdcris91j";
-    };
+    srcPlugins = [
+      (fetchurl {
+        url = "http://www2.in.tum.de/projects/cup/eclipse/plugins/CupReferencedLibraries_${version_}.jar";
+        sha256 = "0kif8kivrysprva1pxzajm88gi967qf7idhb6ga2xpvsdcris91j";
+      })
 
-    srcPlugin2 = fetchurl {
-      url = "http://www2.in.tum.de/projects/cup/eclipse/plugins/de.tum.in.www2.CupPlugin_${version}.jar";
-      sha256 = "022phbrsny3gb8npb6sxyqqxacx138q5bd7dq3gqxh3kprx5chbl";
-    };
-
-    srcs = [ srcFeature srcPlugin1 srcPlugin2 ];
+      (fetchurl {
+        url = "http://www2.in.tum.de/projects/cup/eclipse/plugins/de.tum.in.www2.CupPlugin_${version}.jar";
+        sha256 = "022phbrsny3gb8npb6sxyqqxacx138q5bd7dq3gqxh3kprx5chbl";
+      })
+    ];
 
     propagatedBuildInputs = [ zest ];
-
-    phases = [ "installPhase" ];
-
-    installPhase = ''
-      dropinDir="$out/eclipse/dropins/${name}"
-      mkdir -p $dropinDir/features
-      unzip ${srcFeature} -d $dropinDir/features/
-      mkdir -p $dropinDir/plugins
-      cp -v ${srcPlugin1} $dropinDir/plugins/''${srcPlugin1#*-}
-      cp -v ${srcPlugin2} $dropinDir/plugins/''${srcPlugin2#*-}
-    '';
 
     meta = with stdenv.lib; {
       homepage = http://www2.cs.tum.edu/projects/cup/eclipse.php;
       description = "IDE for developing CUP based parsers";
       platforms = platforms.all;
       maintainers = [ maintainers.romildo ];
+    };
+  };
+
+  drools = buildEclipseUpdateSite rec {
+    name = "drools-${version}";
+    version = "7.17.0.Final";
+
+    src = fetchzip {
+      url = "https://download.jboss.org/drools/release/${version}/droolsjbpm-tools-distribution-${version}.zip";
+      sha512 = "2qzc1iszqfrfnw8xip78n3kp6hlwrvrr708vlmdk7nv525xhs0ssjaxriqdhcr0s6jripmmazxivv3763rnk2bfkh31hmbnckpx4r3m";
+      extraPostFetch = ''
+        # work around https://github.com/NixOS/nixpkgs/issues/38649
+        chmod go-w $out;
+
+        # update site is a couple levels deep, alongside some other irrelevant stuff
+        cd $out;
+        find . -type f -not -path ./binaries/org.drools.updatesite/\* -exec rm {} \;
+        rmdir sources;
+        mv binaries/org.drools.updatesite/* .;
+        rmdir binaries/org.drools.updatesite binaries;
+      '';
+    };
+
+    meta = with stdenv.lib; {
+      homepage = https://www.drools.org/;
+      description = "Drools is a Business Rules Management System (BRMS) solution";
+      license = licenses.asl20;
     };
   };
 
@@ -339,19 +457,80 @@ rec {
     };
   };
 
+  jsonedit = buildEclipsePlugin rec {
+    name = "jsonedit-${version}";
+    version = "1.1.1";
+
+    srcFeature = fetchurl {
+      url = "https://boothen.github.io/Json-Eclipse-Plugin/features/jsonedit-feature_${version}.jar";
+      sha256 = "0zkg8d8x3l5jpfxi0mz9dn62wmy4fjgpwdikj280fvsklmcw5b86";
+    };
+
+    srcPlugins =
+      let
+        fetch = { n, h }:
+          fetchurl {
+            url = "https://boothen.github.io/Json-Eclipse-Plugin/plugins/jsonedit-${n}_${version}.jar";
+            sha256 = h;
+          };
+      in
+        map fetch [
+          { n = "core"; h = "0svs0aswnhl26cqw6bmw30cisx4cr50kc5njg272sy5c1dqjm1zq"; }
+          { n = "editor"; h = "1q62dinrbb18aywbvii4mlr7rxa20rdsxxd6grix9y8h9776q4l5"; }
+          { n = "folding"; h = "1qh4ijfb1gl9xza5ydi87v1kyima3a9sh7lncwdy1way3pdhln1y"; }
+          { n = "model"; h = "1pr6k2pdfdwx8jqs7gx7wzn3gxsql3sk6lnjha8m15lv4al6d4kj"; }
+          { n = "outline"; h = "1jgr2g16j3id8v367jbgd6kx6g2w636fbzmd8jvkvkh7y1jgjqxm"; }
+          { n = "preferences"; h = "027fhaqa5xbil6dmhvkbpha3pgw6dpmc2im3nlliyds57mdmdb1h"; }
+          { n = "text"; h = "0clywylyidrxlqs0n816nhgjmk1c3xl7sn904ki4q050amfy0wb2"; }
+        ];
+
+    propagatedBuildInputs = [ antlr-runtime_4_7 ];
+
+    meta = with stdenv.lib; {
+      description = "Adds support for JSON files to Eclipse";
+      homepage = https://github.com/boothen/Json-Eclipse-Plugin;
+      license = licenses.epl10;
+      platforms = platforms.all;
+      maintainers = [ maintainers.rycee ];
+    };
+  };
+
   jdt = buildEclipseUpdateSite rec {
     name = "jdt-${version}";
-    version = "4.6";
+    version = "4.10";
 
     src = fetchzip {
       stripRoot = false;
-      url = "https://www.eclipse.org/downloads/download.php?r=1&nf=1&file=/eclipse/downloads/drops4/R-4.6-201606061100/org.eclipse.jdt-4.6.zip";
-      sha256 = "0raz8d09fnnx19l012l5frca97qavfivvygn3mvsllcyskhqc5hg";
+      url = https://www.eclipse.org/downloads/download.php?r=1&nf=1&file=/eclipse/downloads/drops4/R-4.10-201812060815/org.eclipse.jdt-4.10.zip;
+      sha256 = "1h11w3zd6xy5w4sk6xnyb2a27wxwhp83qfx67ji7bzdrwbvljqkz";
     };
 
     meta = with stdenv.lib; {
       homepage = https://www.eclipse.org/jdt/;
       description = "Eclipse Java development tools";
+      license = licenses.epl10;
+      platforms = platforms.all;
+      maintainers = [ maintainers.rycee ];
+    };
+  };
+
+  jdt-codemining = buildEclipsePlugin rec {
+    name = "jdt-codemining-${version}";
+    version = "1.0.0.201806221018";
+
+    srcFeature = fetchurl {
+      url = "http://oss.opensagres.fr/jdt-codemining/snapshot/features/jdt-codemining-feature_${version}.jar";
+      sha256 = "1vy30rsb9xifn4r1r2n84d48g6riadzli1xvhfs1mf5pkm5ljwl6";
+    };
+
+    srcPlugin = fetchurl {
+      url = "http://oss.opensagres.fr/jdt-codemining/snapshot/plugins/org.eclipse.jdt.codemining_${version}.jar";
+      sha256 = "0qdzlqcjcm2i4mwhmcdml0am83z1dayrcmf37ji7vmw6iwdk1xmp";
+    };
+
+    meta = with stdenv.lib; {
+      homepage = https://github.com/angelozerr/jdt-codemining;
+      description = "Provides JDT Java CodeMining";
       license = licenses.epl10;
       platforms = platforms.all;
       maintainers = [ maintainers.rycee ];
@@ -371,7 +550,7 @@ rec {
       sha256 = "1xfj4j27d1h4bdf2v7f78zi8lz4zkkj7s9kskmsqx5jcs2d459yp";
       extraPostFetch =
         ''
-          mv "$out/${repo}-${rev}/releases/local-repo"/* "$out/"
+          mv "$out/${repo}-${rev}/releases/local-repo/"* "$out/"
         '';
     };
 
@@ -388,14 +567,33 @@ rec {
     version = "4.4.1.201605041056";
 
     src = fetchzip {
-      url = "http://download.scala-ide.org/sdk/lithium/e44/scala211/stable/update-site.zip";
+      url = "http://download.scala-ide.org/sdk/lithium/e44/scala211/stable/base-20160504-1321.zip";
       sha256 = "13xgx2rwlll0l4bs0g6gyvrx5gcc0125vzn501fdj0wv2fqxn5lw";
     };
 
     meta = with stdenv.lib; {
-      homepage = "http://scala-ide.org/";
+      homepage = http://scala-ide.org/;
       description = "The Scala IDE for Eclipse";
       license = licenses.bsd3;
+      platforms = platforms.all;
+      maintainers = [ maintainers.rycee ];
+    };
+  };
+
+  spotbugs = buildEclipseUpdateSite rec {
+    name = "spotbugs-${version}";
+    version = "3.1.11";
+
+    src = fetchzip {
+      stripRoot = false;
+      url = "https://github.com/spotbugs/spotbugs/releases/download/${version}/eclipsePlugin.zip";
+      sha256 = "0aanqwx3gy1arpbkqd846381hiy6272lzwhfjl94x8jhfykpqqbj";
+    };
+
+    meta = with stdenv.lib; {
+      homepage = https://spotbugs.github.io/;
+      description = "Plugin that uses static analysis to look for bugs in Java code";
+      license = licenses.lgpl21;
       platforms = platforms.all;
       maintainers = [ maintainers.rycee ];
     };
@@ -419,6 +617,51 @@ rec {
       homepage = http://testng.org/;
       description = "Eclipse plugin for the TestNG testing framework";
       license = licenses.asl20;
+      platforms = platforms.all;
+      maintainers = [ maintainers.rycee ];
+    };
+  };
+
+  vrapper = buildEclipseUpdateSite rec {
+    name = "vrapper-${version}";
+    version = "0.72.0";
+    owner = "vrapper";
+    repo = "vrapper";
+    date = "20170311";
+
+    src = fetchzip {
+      stripRoot = false;
+      url = "https://github.com/${owner}/${repo}/releases/download/${version}/vrapper_${version}_${date}.zip";
+      sha256 = "0nyirf6km97q211cxfy01kidxac20m8ba3kk9xj73ykrhsk3cxjp";
+    };
+
+    meta = with stdenv.lib; {
+      homepage = "https://github.com/vrapper/vrapper";
+      description = "A wrapper to provide a Vim-like input scheme for moving around and editing text";
+      license = licenses.gpl3;
+      platforms = platforms.all;
+      maintainers = [ maintainers.stumoss ];
+    };
+  };
+
+  yedit = buildEclipsePlugin rec {
+    name = "yedit-${version}";
+    version = "1.0.20.201509041456";
+
+    srcFeature = fetchurl {
+      url = "http://dadacoalition.org/yedit/features/org.dadacoalition.yedit.feature_${version}-RELEASE.jar";
+      sha256 = "0rps73y19gwlrdr8jjrg3rhcaaagghnmri8297inxc5q2dvg0mlk";
+    };
+
+    srcPlugin = fetchurl {
+      url = "http://dadacoalition.org/yedit/plugins/org.dadacoalition.yedit_${version}-RELEASE.jar";
+      sha256 = "1wpyw4z28ka60z36f8m71kz1giajcm26wb9bpv18sjiqwdgx9v0z";
+    };
+
+    meta = with stdenv.lib; {
+      homepage = https://github.com/oyse/yedit;
+      description = "A YAML editor plugin for Eclipse";
+      license = licenses.epl10;
       platforms = platforms.all;
       maintainers = [ maintainers.rycee ];
     };

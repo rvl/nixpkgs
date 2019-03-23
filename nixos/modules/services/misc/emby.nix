@@ -1,10 +1,9 @@
-{ config, pkgs, lib, mono, ... }:
+{ config, pkgs, lib, ... }:
 
 with lib;
 
 let
   cfg = config.services.emby;
-  emby = pkgs.emby;
 in
 {
   options = {
@@ -22,6 +21,12 @@ in
         default = "emby";
         description = "Group under which emby runs.";
       };
+
+      dataDir = mkOption {
+        type = types.path;
+        default = "/var/lib/emby/ProgramData-Server";
+        description = "Location where Emby stores its data.";
+      };
     };
   };
 
@@ -31,11 +36,18 @@ in
       after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
       preStart = ''
-        test -d /var/lib/emby/ProgramData-Server || {
-          echo "Creating initial Emby data directory in /var/lib/emby/ProgramData-Server"
-          mkdir -p /var/lib/emby/ProgramData-Server
-          chown -R ${cfg.user}:${cfg.group} /var/lib/emby/ProgramData-Server
-          }
+        if [ -d ${cfg.dataDir} ]
+        then
+            for plugin in ${cfg.dataDir}/plugins/*
+            do
+                echo "Correcting permissions of plugin: $plugin"
+                chmod u+w $plugin
+            done
+        else
+            echo "Creating initial Emby data directory in ${cfg.dataDir}"
+            mkdir -p ${cfg.dataDir}
+            chown -R ${cfg.user}:${cfg.group} ${cfg.dataDir}
+        fi
       '';
 
       serviceConfig = {
@@ -43,19 +55,19 @@ in
         User = cfg.user;
         Group = cfg.group;
         PermissionsStartOnly = "true";
-        ExecStart = "${pkgs.emby}/bin/MediaBrowser.Server.Mono";
+        ExecStart = "${pkgs.emby}/bin/emby -programdata ${cfg.dataDir}";
         Restart = "on-failure";
       };
     };
 
-    users.extraUsers = mkIf (cfg.user == "emby") {
+    users.users = mkIf (cfg.user == "emby") {
       emby = {
         group = cfg.group;
         uid = config.ids.uids.emby;
       };
     };
 
-    users.extraGroups = mkIf (cfg.group == "emby") {
+    users.groups = mkIf (cfg.group == "emby") {
       emby = {
         gid = config.ids.gids.emby;
       };

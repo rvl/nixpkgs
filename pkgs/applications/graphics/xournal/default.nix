@@ -1,7 +1,7 @@
 { stdenv, fetchurl, makeDesktopItem
 , ghostscript, atk, gtk2, glib, fontconfig, freetype
 , libgnomecanvas, libgnomeprint, libgnomeprintui
-, pango, libX11, xproto, zlib, poppler
+, pango, libX11, xorgproto, zlib, poppler
 , autoconf, automake, libtool, pkgconfig}:
 
 let
@@ -9,26 +9,22 @@ let
 in
 
 stdenv.mkDerivation rec {
-  version = "0.4.8";
+  version = "0.4.8.2016";
   name = "xournal-" + version;
   src = fetchurl {
     url = "mirror://sourceforge/xournal/${name}.tar.gz";
-    sha256 = "0c7gjcqhygiyp0ypaipdaxgkbivg6q45vhsj8v5jsi9nh6iqff13";
+    sha256 = "09i88v3wacmx7f96dmq0l3afpyv95lh6jrx16xzm0jd1szdrhn5j";
   };
 
   buildInputs = [
     ghostscript atk gtk2 glib fontconfig freetype
     libgnomecanvas
-    pango libX11 xproto zlib poppler
+    pango libX11 xorgproto zlib poppler
   ] ++ stdenv.lib.optionals (!stdenv.isDarwin) [
     libgnomeprint libgnomeprintui
   ];
 
   nativeBuildInputs = [ autoconf automake libtool pkgconfig ];
-
-  patches = stdenv.lib.optionals isGdkQuartzBackend [
-    ./gdk-quartz-backend.patch
-  ];
 
   NIX_LDFLAGS = [ "-lz" ]
     ++ stdenv.lib.optionals (!isGdkQuartzBackend) [ "-lX11" ];

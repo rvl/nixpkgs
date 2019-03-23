@@ -20,7 +20,7 @@ stdenv.mkDerivation rec {
 
   postPatch = ''
     substituteInPlace configure.ac --replace m4_esyscmd m4_esyscmd_s
-    substituteInPlace scripts/git_hash.sh --replace /bin/bash /bin/sh
+    substituteInPlace scripts/git_hash.sh --replace /bin/bash ${stdenv.shell}
     echo ${version} > .scmversion
   '';
 
@@ -36,5 +36,6 @@ stdenv.mkDerivation rec {
     license = licenses.bsd3;
     platforms =  [ "x86_64-linux" ];
     maintainers = [ maintainers.abuibrahim ];
+    broken = true;
   };
 }

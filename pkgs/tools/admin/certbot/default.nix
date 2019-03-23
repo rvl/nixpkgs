@@ -1,37 +1,35 @@
-{ stdenv, python2Packages, fetchFromGitHub, dialog }:
+{ stdenv, python3Packages, fetchFromGitHub, dialog }:
 
-# Latest version of certbot supports python3 and python3 version of pythondialog
-
-python2Packages.buildPythonApplication rec {
-  name = "certbot-${version}";
-  version = "0.9.3";
+python3Packages.buildPythonApplication rec {
+  pname = "certbot";
+  version = "0.31.0";
 
   src = fetchFromGitHub {
-    owner = "certbot";
-    repo = "certbot";
+    owner = pname;
+    repo = pname;
     rev = "v${version}";
-    sha256 = "03yfr8vlq62l0h14qk03flrkbvbv9mc5cf6rmh37naj8jwpl8cic";
+    sha256 = "0rwjxmkpicyc9a5janvj1lfi430nq6ha94nyfgp11ds9fyydbh1s";
   };
 
-  propagatedBuildInputs = with python2Packages; [
+  propagatedBuildInputs = with python3Packages; [
     ConfigArgParse
     acme
     configobj
     cryptography
+    josepy
     parsedatetime
     psutil
     pyRFC3339
     pyopenssl
-    python2-pythondialog
     pytz
     six
     zope_component
     zope_interface
   ];
-  buildInputs = [ dialog ] ++ (with python2Packages; [ nose mock gnureadline ]);
+  buildInputs = [ dialog ] ++ (with python3Packages; [ mock gnureadline ]);
 
   patchPhase = ''
-    substituteInPlace certbot/notify.py --replace "/usr/sbin/sendmail" "/var/setuid-wrappers/sendmail"
+    substituteInPlace certbot/notify.py --replace "/usr/sbin/sendmail" "/run/wrappers/bin/sendmail"
     substituteInPlace certbot/util.py --replace "sw_vers" "/usr/bin/sw_vers"
   '';
 
@@ -41,6 +39,8 @@ python2Packages.buildPythonApplication rec {
                        --prefix PATH : "${dialog}/bin:$PATH"
     done
   '';
+
+  doCheck = !stdenv.isDarwin; # On Hydra Darwin tests fail with "Too many open files".
 
   meta = with stdenv.lib; {
     homepage = src.meta.homepage;

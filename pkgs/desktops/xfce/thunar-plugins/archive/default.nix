@@ -1,8 +1,8 @@
-{ stdenv, fetchFromGitHub, pkgconfig, xfce4_dev_tools
+{ stdenv, fetchFromGitHub, pkgconfig, xfce4-dev-tools
 , gtk
-, thunarx-2-dev
+, thunar-bare
 , exo, libxfce4util, libxfce4ui
-, xfconf, udev, libnotify
+, xfconf, udev, libnotify, hicolor-icon-theme
 }:
 
 stdenv.mkDerivation rec {
@@ -18,12 +18,12 @@ stdenv.mkDerivation rec {
     sha256 = "0l8715x23qmk0jkywiza3qx0xxmafxi4grp7p82kkc5df5ccs8kx";
   };
 
+  nativeBuildInputs = [ pkgconfig ];
   buildInputs = [
-    pkgconfig
-    xfce4_dev_tools
-    thunarx-2-dev
+    xfce4-dev-tools
+    thunar-bare
     exo gtk libxfce4util libxfce4ui
-    xfconf udev libnotify
+    xfconf udev libnotify hicolor-icon-theme
   ];
 
   preConfigure = ''
@@ -44,7 +44,6 @@ stdenv.mkDerivation rec {
     pushd $out/libexec/thunar-archive-plugin > /dev/null
     ln -s ./file-roller.tap org.gnome.FileRoller.tap
     popd > /dev/null
-    rm $out/share/icons/hicolor/icon-theme.cache
   '';
 
   enableParallelBuilding = true;

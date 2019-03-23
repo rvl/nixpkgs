@@ -4,17 +4,15 @@
 
 stdenv.mkDerivation rec {
   name = "alsa-tools-${version}";
-  version = "1.1.0";
+  version = "1.1.7";
 
   src = fetchurl {
-    urls = [
-      "ftp://ftp.alsa-project.org/pub/tools/${name}.tar.bz2"
-      "http://alsa.cybermirror.org/tools/${name}.tar.bz2"
-    ];
-    sha256 = "0ldbaz3qr7z0639xg37ba7cmrb512rrjavap6r5jjl0ab665ad3x";
+    url = "mirror://alsa/tools/${name}.tar.bz2";
+    sha256 = "1xjfghr9s0j6n91kgs95cc4r6qrjsgc4yj2w0nir3xpnm0l36950";
   };
 
-  buildInputs = [ alsaLib pkgconfig gtk2 gtk3 fltk13 ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ alsaLib gtk2 gtk3 fltk13 ];
 
   patchPhase = ''
     export tools="as10k1 hda-verb hdspmixer echomixer hdajackretask hdspconf hwmixvolume mixartloader rmedigicontrol sscape_ctl vxloader envy24control hdajacksensetest hdsploader ld10k1 pcxhrloader sb16_csp us428control"
@@ -40,7 +38,7 @@ stdenv.mkDerivation rec {
     done
   '';
 
-  meta = {
+  meta = with stdenv.lib; {
     homepage = http://www.alsa-project.org/;
     description = "ALSA, the Advanced Linux Sound Architecture tools";
 
@@ -49,7 +47,8 @@ stdenv.mkDerivation rec {
       MIDI functionality to the Linux-based operating system.
     '';
 
-    platforms = stdenv.lib.platforms.linux;
-    maintainers = [ stdenv.lib.maintainers.fps ];
+    license = licenses.gpl2;
+    platforms = platforms.linux;
+    maintainers = [ maintainers.fps ];
   };
 }

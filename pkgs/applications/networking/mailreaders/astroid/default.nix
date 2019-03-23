@@ -1,36 +1,48 @@
-{ stdenv, fetchFromGitHub, scons, pkgconfig, gnome3, gmime, webkitgtk24x
-  , libsass, notmuch, boost, makeWrapper }:
+{ stdenv, fetchFromGitHub, cmake, pkgconfig, gnome3, gmime3, webkitgtk
+, libsass, notmuch, boost, wrapGAppsHook, glib-networking, protobuf, vim_configurable
+, gtkmm3, libpeas, gsettings-desktop-schemas
+, makeWrapper, python3, python3Packages
+, vim ? vim_configurable.override {
+                    features = "normal";
+                    gui = "auto";
+                  }
+, ronn
+}:
 
 stdenv.mkDerivation rec {
   name = "astroid-${version}";
-  version = "0.6";
+  version = "0.14";
 
   src = fetchFromGitHub {
     owner = "astroidmail";
     repo = "astroid";
     rev = "v${version}";
-    sha256 = "0zashjmqv8ips9q8ckyhgm9hfyf01wpgs6g21cwl05q5iklc5x7r";
+    sha256 = "1wkv1icsx3g3gq485dnvcdhr9srrjgz4ws1i1krcw9n61bj7gxh8";
   };
 
-  patches = [ ./propagate-environment.patch ];
+  nativeBuildInputs = [ cmake ronn pkgconfig wrapGAppsHook ];
 
-  buildInputs = [ scons pkgconfig gnome3.gtkmm gmime webkitgtk24x libsass
-                  gnome3.libpeas notmuch boost gnome3.gsettings_desktop_schemas
-                  makeWrapper ];
+  buildInputs = [
+    gtkmm3 gmime3 webkitgtk libsass libpeas
+    python3 python3Packages.pygobject3
+    notmuch boost gsettings-desktop-schemas gnome3.adwaita-icon-theme
+    glib-networking protobuf
+   ] ++ (if vim == null then [] else [ vim ]);
 
-  buildPhase = "scons --prefix=$out build";
-  installPhase = "scons --prefix=$out install";
-
-  preFixup = ''
-    wrapProgram "$out/bin/astroid" \
-      --prefix XDG_DATA_DIRS : "$GSETTINGS_SCHEMAS_PATH"
+  postPatch = ''
+    sed -i "s~gvim ~${vim}/bin/vim -g ~g" src/config.cc
+    sed -i "s~ -geom 10x10~~g" src/config.cc
   '';
 
-  meta = {
-    homepage = "https://astroidmail.github.io/";
+  postInstall = ''
+    wrapProgram "$out/bin/astroid" --set CHARSET=en_us.UTF-8
+  '';
+
+  meta = with stdenv.lib; {
+    homepage = https://astroidmail.github.io/;
     description = "GTK+ frontend to the notmuch mail system";
-    maintainers = [ stdenv.lib.maintainers.bdimcheff ];
-    license = stdenv.lib.licenses.gpl3Plus;
-    platforms = stdenv.lib.platforms.linux;
+    maintainers = with maintainers; [ bdimcheff SuprDewd ];
+    license = licenses.gpl3Plus;
+    platforms = platforms.linux;
   };
 }

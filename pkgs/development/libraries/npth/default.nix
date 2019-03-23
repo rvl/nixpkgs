@@ -1,12 +1,14 @@
 { stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
-  name = "npth-1.2";
+  name = "npth-1.6";
 
   src = fetchurl {
-    url = "ftp://ftp.gnupg.org/gcrypt/npth/${name}.tar.bz2";
-    sha256 = "12n0nvhw4fzwp0k7gjv3rc6pdml0qiinbbfiz4ilg6pl5kdxvnvd";
+    url = "mirror://gnupg/npth/${name}.tar.bz2";
+    sha256 = "1lg2lkdd3z1s3rpyf88786l243adrzyk9p4q8z9n41ygmpcsp4qk";
   };
+
+  doCheck = true;
 
   meta = with stdenv.lib; {
     description = "The New GNU Portable Threads Library";

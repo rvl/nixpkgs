@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, libgpgerror }:
+{ buildPackages, stdenv, fetchurl, gettext, libgpgerror }:
 
 stdenv.mkDerivation rec {
   name = "libksba-1.3.5";
@@ -8,9 +8,13 @@ stdenv.mkDerivation rec {
     sha256 = "0h53q4sns1jz1pkmhcz5wp9qrfn9f5g9i3vjv6dafwzzlvblyi21";
   };
 
-  outputs = [ "out" "dev" "doc" ];
+  outputs = [ "out" "dev" "info" ];
 
+  buildInputs = [ gettext ];
   propagatedBuildInputs = [ libgpgerror ];
+  depsBuildBuild = [ buildPackages.stdenv.cc ];
+
+  configureFlags = [ "--with-libgpg-error-prefix=${libgpgerror.dev}" ];
 
   postInstall = ''
     mkdir -p $dev/bin
@@ -23,6 +27,5 @@ stdenv.mkDerivation rec {
     description = "CMS and X.509 access library";
     platforms = platforms.all;
     license = licenses.lgpl3;
-    maintainers = with maintainers; [ wkennington ];
   };
 }

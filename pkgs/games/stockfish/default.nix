@@ -1,20 +1,21 @@
-{ stdenv, fetchurl, unzip }:
+{ stdenv, fetchurl }:
 
 let arch = if stdenv.isx86_64 then "x86-64" else
            if stdenv.isi686 then "x86-32" else
            "unknown";
+
+    version = "10";
 in
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
 
-  name = "stockfish-7";
+  name = "stockfish-${version}";
 
   src = fetchurl {
-    url = "https://stockfish.s3.amazonaws.com/${name}-src.zip";
-    sha256 = "0djzg3h5d9qs27snf0rr6zl6iaki1jb84v8m8k3c2lcjbj2vpwc9";
+    url = "https://github.com/official-stockfish/Stockfish/archive/sf_${version}.tar.gz";
+    sha256 = "1lrxqq8fw1wrw5b45r4s3ddd51yr85a2k8a9i1wjvyd6v9vm7761";
   };
 
-  buildInputs = [ unzip ];
   postUnpack = "sourceRoot+=/src";
   makeFlags = [ "PREFIX=$(out)" "ARCH=${arch}" ];
   buildFlags = "build ";
@@ -22,14 +23,14 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
 
   meta = with stdenv.lib; {
-    homepage = "https://stockfishchess.org/";
+    homepage = https://stockfishchess.org/;
     description = "Strong open source chess engine";
     longDescription = ''
       Stockfish is one of the strongest chess engines in the world. It is also
       much stronger than the best human chess grandmasters.
       '';
     maintainers = with maintainers; [ luispedro peti ];
-    platforms = with platforms; i686 ++ x86_64;
+    platforms = ["x86_64-linux" "i686-linux"];
     license = licenses.gpl2;
   };
 
