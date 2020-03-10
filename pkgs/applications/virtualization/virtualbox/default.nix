@@ -21,8 +21,8 @@ let
   buildType = "release";
   # Remember to change the extpackRev and version in extpack.nix and
   # guest-additions/default.nix as well.
-  main = "036x2mvkk22lbg72cz6pik9z538j1ag6mmwjjmfikgrq1i7v24jy";
-  version = "6.0.14";
+  main = "0xfg0hh8dmhs43aw4d4xyfwkcm62glis0ar7bfan6q33d2nqqjbi";
+  version = "6.0.18";
 
   iasl' = iasl.overrideAttrs (old: rec {
     inherit (old) pname;
@@ -102,26 +102,6 @@ in stdenv.mkDerivation {
     })
   ++ [
     ./qtx11extras.patch
-    # Kernel 5.4 fix, should be fixed with next upstream release
-    # https://www.virtualbox.org/ticket/18945
-    (fetchpatch {
-      name = "kernel-5.4-fix-1.patch";
-      url = "https://www.virtualbox.org/changeset/81586/vbox?format=diff";
-      sha256 = "0zbkc9v65pkdmjik53x29g39qyf7narkhpwpx5n1n1bfqnhf0k1r";
-      stripLen = 1;
-    })
-    (fetchpatch {
-      name = "kernel-5.4-fix-2.patch";
-      url = "https://www.virtualbox.org/changeset/81587/vbox?format=diff";
-      sha256 = "1j98cqxj8qlqwaqr4mvwwbkmchw8jmygjwgzz82gix7fj76j2y9c";
-      stripLen = 1;
-    })
-    (fetchpatch {
-      name = "kernel-5.4-fix-3.patch";
-      url = "https://www.virtualbox.org/changeset/81649/vbox?format=diff";
-      sha256 = "1d6p5k5dgzmjglqfkbcbvpn1x3wxila30q4gcbb7pxwfgclaw2hk";
-      stripLen = 1;
-    })
   ];
 
   postPatch = ''
