@@ -262974,7 +262974,7 @@ self: {
        license = lib.licenses.bsd3;
      }) {};
 
-  "shake-cabal" = callPackage
+  "shake-cabal_0_2_2_2" = callPackage
     ({ mkDerivation, base, binary, Cabal, composition-prelude, deepseq
      , directory, filepath, hashable, shake
      }:
@@ -262990,9 +262990,10 @@ self: {
        ];
        description = "Shake library for use with cabal";
        license = lib.licenses.bsd3;
+       hydraPlatforms = lib.platforms.none;
      }) {};
 
-  "shake-cabal_0_2_2_3" = callPackage
+  "shake-cabal" = callPackage
     ({ mkDerivation, base, binary, Cabal, composition-prelude, deepseq
      , directory, filepath, hashable, shake
      }:
@@ -263006,7 +263007,6 @@ self: {
        ];
        description = "Shake library for use with cabal";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "shake-cabal-build" = callPackage
