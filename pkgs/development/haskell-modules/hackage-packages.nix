@@ -18883,38 +18883,6 @@ self: {
        hydraPlatforms = lib.platforms.none;
      }) {};
 
-  "ShellCheck_0_8_0" = callPackage
-    ({ mkDerivation, aeson, array, base, bytestring, containers
-     , deepseq, Diff, directory, filepath, mtl, parsec, process
-     , QuickCheck, regex-tdfa
-     }:
-     mkDerivation {
-       pname = "ShellCheck";
-       version = "0.8.0";
-       sha256 = "05jlapp4m997w36h2wszdxz9gvczdczaylypsbn14jqpb650w232";
-       revision = "1";
-       editedCabalFile = "1c942n7lz59b0acvppg25k01f87rj3icrza9pfp9mlpiwaq1y8qw";
-       isLibrary = true;
-       isExecutable = true;
-       libraryHaskellDepends = [
-         aeson array base bytestring containers deepseq Diff directory
-         filepath mtl parsec process QuickCheck regex-tdfa
-       ];
-       executableHaskellDepends = [
-         aeson array base bytestring containers deepseq Diff directory
-         filepath mtl parsec QuickCheck regex-tdfa
-       ];
-       testHaskellDepends = [
-         aeson array base bytestring containers deepseq Diff directory
-         filepath mtl parsec QuickCheck regex-tdfa
-       ];
-       description = "Shell script analysis tool";
-       license = lib.licenses.gpl3Only;
-       hydraPlatforms = lib.platforms.none;
-       mainProgram = "shellcheck";
-       maintainers = [ lib.maintainers.zowoq ];
-     }) {};
-
   "ShellCheck" = callPackage
     ({ mkDerivation, aeson, array, base, bytestring, containers
      , deepseq, Diff, directory, fgl, filepath, mtl, parsec, process
