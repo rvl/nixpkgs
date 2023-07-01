@@ -164108,8 +164108,6 @@ self: {
        benchmarkHaskellDepends = [ base bytestring tasty-bench text ];
        description = "Conversion from strings to Integer";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
-       broken = true;
      }) {};
 
   "integer-gmp_1_1" = callPackage
