@@ -2861,6 +2861,19 @@ self: {
        broken = true;
      }) {};
 
+  "Cabal-syntax_3_6_0_0" = callPackage
+    ({ mkDerivation, Cabal }:
+     mkDerivation {
+       pname = "Cabal-syntax";
+       version = "3.6.0.0";
+       sha256 = "0lcj4g55sj5iv727g7k57pscgyj0fx3smwapm1gmd5qkc3yfa9fa";
+       libraryHaskellDepends = [ Cabal ];
+       doHaddock = false;
+       description = "A library for working with .cabal files";
+       license = lib.licenses.bsd3;
+       hydraPlatforms = lib.platforms.none;
+     }) {};
+
   "Cabal-syntax_3_10_1_0" = callPackage
     ({ mkDerivation, array, base, binary, bytestring, containers
      , deepseq, directory, filepath, mtl, parsec, pretty, text, time
