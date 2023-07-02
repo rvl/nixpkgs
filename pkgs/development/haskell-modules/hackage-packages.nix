@@ -216708,8 +216708,6 @@ self: {
        ];
        description = "Lua engine to power custom pandoc conversions";
        license = lib.licenses.gpl2Plus;
-       hydraPlatforms = lib.platforms.none;
-       broken = true;
      }) {};
 
   "pandoc-lua-marshal" = callPackage
@@ -216907,8 +216905,6 @@ self: {
        ];
        description = "Pandoc document conversion as an HTTP servant-server";
        license = lib.licenses.gpl2Plus;
-       hydraPlatforms = lib.platforms.none;
-       broken = true;
      }) {};
 
   "pandoc-sidenote" = callPackage
