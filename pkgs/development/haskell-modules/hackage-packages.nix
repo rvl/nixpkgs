@@ -95152,32 +95152,6 @@ self: {
 
   "eventlog2html" = callPackage
     ({ mkDerivation, aeson, array, attoparsec, base, blaze-html
-     , bytestring, containers, file-embed, filepath, ghc-events
-     , ghc-heap, githash, hashable, hashtables, hvega, mtl
-     , optparse-applicative, semigroups, statistics-linreg, text, time
-     , trie-simple, vector
-     }:
-     mkDerivation {
-       pname = "eventlog2html";
-       version = "0.9.3";
-       sha256 = "1wgpqrqkk0cvyxmmgkmq04k3d1v91qdqb737xx7k51d3lb909n7l";
-       isLibrary = true;
-       isExecutable = true;
-       libraryHaskellDepends = [
-         aeson array attoparsec base blaze-html bytestring containers
-         file-embed filepath ghc-events ghc-heap hashable hashtables hvega
-         mtl optparse-applicative semigroups statistics-linreg text time
-         trie-simple vector
-       ];
-       executableHaskellDepends = [ aeson base filepath githash text ];
-       description = "Visualise an eventlog";
-       license = lib.licenses.bsd3;
-       mainProgram = "eventlog2html";
-       maintainers = [ lib.maintainers.maralorn ];
-     }) {};
-
-  "eventlog2html_0_10_0" = callPackage
-    ({ mkDerivation, aeson, array, attoparsec, base, blaze-html
      , blaze-markup, bytestring, containers, file-embed, filepath
      , ghc-events, ghc-heap, githash, hashable, hashtables, hvega, mtl
      , optparse-applicative, raw-strings-qq, semigroups
@@ -95198,7 +95172,6 @@ self: {
        executableHaskellDepends = [ aeson base filepath githash text ];
        description = "Visualise an eventlog";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
        mainProgram = "eventlog2html";
        maintainers = [ lib.maintainers.maralorn ];
      }) {};
@@ -152391,19 +152364,6 @@ self: {
      }) {};
 
   "hspec-api" = callPackage
-    ({ mkDerivation, base, hspec, hspec-core, hspec-discover }:
-     mkDerivation {
-       pname = "hspec-api";
-       version = "2.9.0";
-       sha256 = "0a260pjz0fyj51wpdnlb5kzrrwzdam2rxr019c5xrl14gg77a007";
-       libraryHaskellDepends = [ base hspec-core ];
-       testHaskellDepends = [ base hspec hspec-core ];
-       testToolDepends = [ hspec-discover ];
-       description = "A Testing Framework for Haskell";
-       license = lib.licenses.mit;
-     }) {};
-
-  "hspec-api_2_11_1" = callPackage
     ({ mkDerivation, base, hspec, hspec-core, hspec-discover
      , transformers
      }:
@@ -152416,7 +152376,6 @@ self: {
        testToolDepends = [ hspec-discover ];
        description = "A Testing Framework for Haskell";
        license = lib.licenses.mit;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "hspec-attoparsec" = callPackage
@@ -161901,33 +161860,6 @@ self: {
      }:
      mkDerivation {
        pname = "implicit-hie";
-       version = "0.1.2.7";
-       sha256 = "0yb457n26455kbq6kv8g48q66pmmaxcpikmpg9gm00sd6adgq6gl";
-       isLibrary = true;
-       isExecutable = true;
-       libraryHaskellDepends = [
-         attoparsec base directory filepath filepattern text transformers
-         yaml
-       ];
-       executableHaskellDepends = [
-         attoparsec base directory filepath filepattern text transformers
-         yaml
-       ];
-       testHaskellDepends = [
-         attoparsec base directory filepath filepattern hspec
-         hspec-attoparsec text transformers yaml
-       ];
-       description = "Auto generate hie-bios cradles & hie.yaml";
-       license = lib.licenses.bsd3;
-       mainProgram = "gen-hie";
-     }) {};
-
-  "implicit-hie_0_1_4_0" = callPackage
-    ({ mkDerivation, attoparsec, base, directory, filepath, filepattern
-     , hspec, hspec-attoparsec, text, transformers, yaml
-     }:
-     mkDerivation {
-       pname = "implicit-hie";
        version = "0.1.4.0";
        sha256 = "08ggdlh5j1ya5rjhvcp1k1iyd5bvrgm865qnaxnqz7xvq7b1864k";
        isLibrary = true;
@@ -161946,7 +161878,6 @@ self: {
        ];
        description = "Auto generate hie-bios cradles & hie.yaml";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
        mainProgram = "gen-hie";
      }) {};
 
@@ -216292,42 +216223,6 @@ self: {
 
   "pandoc-crossref" = callPackage
     ({ mkDerivation, base, containers, criterion, data-default, deepseq
-     , directory, filepath, gitrev, hspec, microlens, microlens-mtl
-     , microlens-th, mtl, open-browser, optparse-applicative, pandoc
-     , pandoc-types, syb, template-haskell, temporary, text, utility-ht
-     }:
-     mkDerivation {
-       pname = "pandoc-crossref";
-       version = "0.3.14.0";
-       sha256 = "1f55xz5r7h6vjjj0dsq5glavn0zjh02imi4mja8qbwn3rvi67l86";
-       isLibrary = true;
-       isExecutable = true;
-       enableSeparateDataOutput = true;
-       libraryHaskellDepends = [
-         base containers data-default directory filepath microlens
-         microlens-mtl microlens-th mtl pandoc pandoc-types syb
-         template-haskell text utility-ht
-       ];
-       executableHaskellDepends = [
-         base deepseq gitrev open-browser optparse-applicative pandoc
-         pandoc-types template-haskell temporary text
-       ];
-       testHaskellDepends = [
-         base containers data-default directory filepath hspec microlens mtl
-         pandoc pandoc-types text
-       ];
-       benchmarkHaskellDepends = [
-         base criterion pandoc pandoc-types text
-       ];
-       doHaddock = false;
-       description = "Pandoc filter for cross-references";
-       license = lib.licenses.gpl2Only;
-       mainProgram = "pandoc-crossref";
-       maintainers = [ lib.maintainers.maralorn ];
-     }) {};
-
-  "pandoc-crossref_0_3_16_0" = callPackage
-    ({ mkDerivation, base, containers, criterion, data-default, deepseq
      , directory, filepath, gitrev, hspec, microlens, microlens-ghc
      , microlens-mtl, microlens-th, mtl, open-browser
      , optparse-applicative, pandoc, pandoc-cli, pandoc-types, syb
@@ -216360,7 +216255,6 @@ self: {
        doHaddock = false;
        description = "Pandoc filter for cross-references";
        license = lib.licenses.gpl2Only;
-       hydraPlatforms = lib.platforms.none;
        mainProgram = "pandoc-crossref";
        maintainers = [ lib.maintainers.maralorn ];
      }) {};
@@ -243814,47 +243708,6 @@ self: {
      }:
      mkDerivation {
        pname = "reflex";
-       version = "0.8.2.2";
-       sha256 = "1add5bcsyq2k02w2q0ifbyfcvcic1hmjdbgxg8ajd5riam0lhb16";
-       libraryHaskellDepends = [
-         base bifunctors commutative-semigroups comonad constraints
-         constraints-extras containers data-default dependent-map
-         dependent-sum exception-transformers haskell-src-exts
-         haskell-src-meta lens MemoTrie mmorph monad-control
-         monoidal-containers mtl patch prim-uniq primitive profunctors
-         random ref-tf reflection semialign semigroupoids stm syb
-         template-haskell these time transformers unbounded-delays
-         witherable
-       ];
-       testHaskellDepends = [
-         base bifunctors commutative-semigroups constraints
-         constraints-extras containers deepseq dependent-map dependent-sum
-         directory filemanip filepath hlint hspec lens monoidal-containers
-         mtl patch proctest ref-tf semialign split text these these-lens
-         transformers witherable
-       ];
-       benchmarkHaskellDepends = [
-         base containers criterion deepseq dependent-map dependent-sum
-         loch-th mtl primitive process ref-tf split stm time transformers
-       ];
-       description = "Higher-order Functional Reactive Programming";
-       license = lib.licenses.bsd3;
-     }) {};
-
-  "reflex_0_9_1_0" = callPackage
-    ({ mkDerivation, base, bifunctors, commutative-semigroups, comonad
-     , constraints, constraints-extras, containers, criterion
-     , data-default, deepseq, dependent-map, dependent-sum, directory
-     , exception-transformers, filemanip, filepath, haskell-src-exts
-     , haskell-src-meta, hlint, hspec, lens, loch-th, MemoTrie, mmorph
-     , monad-control, monoidal-containers, mtl, patch, prim-uniq
-     , primitive, process, proctest, profunctors, random, ref-tf
-     , reflection, semialign, semigroupoids, split, stm, syb
-     , template-haskell, text, these, these-lens, time, transformers
-     , unbounded-delays, witherable
-     }:
-     mkDerivation {
-       pname = "reflex";
        version = "0.9.1.0";
        sha256 = "0d90i7jryln6fp3x5c6y05hs2aix4wp0h4jak02c2jgrh9nq1g97";
        libraryHaskellDepends = [
@@ -243880,7 +243733,6 @@ self: {
        ];
        description = "Higher-order Functional Reactive Programming";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "reflex-animation" = callPackage
@@ -246346,28 +246198,6 @@ self: {
        ];
        description = "Equiprobable draw from publicly verifiable random data";
        license = lib.licenses.agpl3Plus;
-     }) {};
-
-  "relude_0_7_0_0" = callPackage
-    ({ mkDerivation, base, bytestring, containers, deepseq, doctest
-     , gauge, ghc-prim, Glob, hashable, hedgehog, mtl, stm, text
-     , transformers, unordered-containers
-     }:
-     mkDerivation {
-       pname = "relude";
-       version = "0.7.0.0";
-       sha256 = "1gx1h3656wz80v72acqky88iv7a2shinfv6apzzyjxii8lc22jf7";
-       libraryHaskellDepends = [
-         base bytestring containers deepseq ghc-prim hashable mtl stm text
-         transformers unordered-containers
-       ];
-       testHaskellDepends = [
-         base bytestring containers doctest Glob hedgehog text
-       ];
-       benchmarkHaskellDepends = [ base gauge unordered-containers ];
-       description = "Safe, performant, user-friendly and lightweight Haskell Standard Library";
-       license = lib.licenses.mit;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "relude" = callPackage
