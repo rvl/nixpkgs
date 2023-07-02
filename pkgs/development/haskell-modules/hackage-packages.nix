@@ -152046,8 +152046,6 @@ self: {
        ];
        description = "Isocline-based Lua REPL";
        license = lib.licenses.mit;
-       hydraPlatforms = lib.platforms.none;
-       broken = true;
      }) {};
 
   "hslua-typing" = callPackage
