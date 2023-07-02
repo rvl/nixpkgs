@@ -152066,8 +152066,6 @@ self: {
        ];
        description = "Type specifiers for Lua";
        license = lib.licenses.mit;
-       hydraPlatforms = lib.platforms.none;
-       broken = true;
      }) {};
 
   "hsluv-haskell" = callPackage
