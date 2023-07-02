@@ -72586,8 +72586,6 @@ self: {
        ];
        description = "X509 reader and writer";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
-       broken = true;
      }) {};
 
   "crypton-x509-store" = callPackage
