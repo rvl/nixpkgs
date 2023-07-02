@@ -247648,14 +247648,16 @@ self: {
        maintainers = [ lib.maintainers.thielema ];
      }) {};
 
-  "resolv_0_1_1_2" = callPackage
+  "resolv_0_1_2_0" = callPackage
     ({ mkDerivation, base, base16-bytestring, binary, bytestring
      , containers, directory, filepath, tasty, tasty-hunit
      }:
      mkDerivation {
        pname = "resolv";
-       version = "0.1.1.2";
-       sha256 = "0wczdy3vmpfcfwjn1m95bygc5d83m97xxmavhdvy5ayn8c402fp4";
+       version = "0.1.2.0";
+       sha256 = "0wa6wsh6i52q4ah2z0hgzlks325kigch4yniz0y15nw4skxbm8l1";
+       revision = "6";
+       editedCabalFile = "1qhl69hrvdby2wmk1ip0mr3ghq57zqk1n06qp768bbpdanrfvxx1";
        libraryHaskellDepends = [
          base base16-bytestring binary bytestring containers
        ];
@@ -247663,7 +247665,7 @@ self: {
          base bytestring directory filepath tasty tasty-hunit
        ];
        description = "Domain Name Service (DNS) lookup via the libresolv standard library routines";
-       license = lib.licenses.gpl2Only;
+       license = lib.licenses.gpl2Plus;
        hydraPlatforms = lib.platforms.none;
      }) {};
 
