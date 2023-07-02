@@ -147219,48 +147219,6 @@ self: {
        mainProgram = "hp2pretty";
      }) {};
 
-  "hpack_0_35_0" = callPackage
-    ({ mkDerivation, aeson, base, bifunctors, bytestring, Cabal
-     , containers, cryptonite, deepseq, directory, filepath, Glob, hspec
-     , hspec-discover, http-client, http-client-tls, http-types, HUnit
-     , infer-license, interpolate, mockery, pretty, QuickCheck
-     , scientific, template-haskell, temporary, text, transformers
-     , unordered-containers, vector, yaml
-     }:
-     mkDerivation {
-       pname = "hpack";
-       version = "0.35.0";
-       sha256 = "1cii4bdn4rm2l3yw9vsv4ygn61zmalaa282iqg9rihys90nvrgf6";
-       revision = "1";
-       editedCabalFile = "1x0rmra2fpfzmhhw090iila2drfdmb1y28ybypmgbi0asa1zl751";
-       isLibrary = true;
-       isExecutable = true;
-       libraryHaskellDepends = [
-         aeson base bifunctors bytestring Cabal containers cryptonite
-         deepseq directory filepath Glob http-client http-client-tls
-         http-types infer-license pretty scientific text transformers
-         unordered-containers vector yaml
-       ];
-       executableHaskellDepends = [
-         aeson base bifunctors bytestring Cabal containers cryptonite
-         deepseq directory filepath Glob http-client http-client-tls
-         http-types infer-license pretty scientific text transformers
-         unordered-containers vector yaml
-       ];
-       testHaskellDepends = [
-         aeson base bifunctors bytestring Cabal containers cryptonite
-         deepseq directory filepath Glob hspec http-client http-client-tls
-         http-types HUnit infer-license interpolate mockery pretty
-         QuickCheck scientific template-haskell temporary text transformers
-         unordered-containers vector yaml
-       ];
-       testToolDepends = [ hspec-discover ];
-       description = "A modern format for Haskell packages";
-       license = lib.licenses.mit;
-       hydraPlatforms = lib.platforms.none;
-       mainProgram = "hpack";
-     }) {};
-
   "hpack" = callPackage
     ({ mkDerivation, aeson, base, bifunctors, bytestring, Cabal
      , containers, cryptonite, deepseq, directory, filepath, Glob, hspec
