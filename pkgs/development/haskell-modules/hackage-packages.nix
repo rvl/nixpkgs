@@ -35172,6 +35172,7 @@ self: {
        ];
        description = "The ASCII character set and encoding";
        license = lib.licenses.asl20;
+       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "ascii_1_7_0_1" = callPackage
@@ -35372,6 +35373,7 @@ self: {
        ];
        description = "ASCII representations of numbers";
        license = lib.licenses.asl20;
+       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "ascii-numbers_1_2_0_1" = callPackage
@@ -35481,6 +35483,7 @@ self: {
        ];
        description = "Representing ASCII with refined supersets";
        license = lib.licenses.asl20;
+       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "ascii-superset_1_3_0_1" = callPackage
@@ -35539,6 +35542,7 @@ self: {
        ];
        description = "Template Haskell support for ASCII";
        license = lib.licenses.asl20;
+       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "ascii-th_1_2_0_1" = callPackage
@@ -60134,7 +60138,6 @@ self: {
          base clash-prelude deepseq ghc-typelits-knownnat QuickCheck
        ];
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "clash-prelude" = callPackage
@@ -60189,7 +60192,6 @@ self: {
        ];
        description = "Hedgehog Generators for clash-prelude";
        license = lib.licenses.bsd2;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "clash-prelude-quickcheck" = callPackage
@@ -60202,7 +60204,6 @@ self: {
        libraryHaskellDepends = [ base clash-prelude QuickCheck ];
        description = "QuickCheck instances for various types in the CλaSH Prelude";
        license = "unknown";
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "clash-shake" = callPackage
@@ -72530,7 +72531,6 @@ self: {
        ];
        description = "Simple and easy network connections API";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "crypton-x509" = callPackage
@@ -72574,7 +72574,6 @@ self: {
        ];
        description = "X.509 collection accessing and storing methods";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "crypton-x509-system" = callPackage
@@ -72591,7 +72590,6 @@ self: {
        ];
        description = "Handle per-operating-system X.509 accessors and storage";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "crypton-x509-validation" = callPackage
@@ -72616,7 +72614,6 @@ self: {
        ];
        description = "X.509 Certificate and CRL validation";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "cryptonite" = callPackage
@@ -151766,7 +151763,6 @@ self: {
        ];
        description = "Command-line interface for Lua";
        license = lib.licenses.mit;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "hslua-core" = callPackage
@@ -151950,7 +151946,6 @@ self: {
        ];
        description = "Lua module to work with file zips";
        license = lib.licenses.mit;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "hslua-objectorientation" = callPackage
@@ -160294,7 +160289,6 @@ self: {
        ];
        description = "Lattice iCE40 Primitive IP";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "icepeak" = callPackage
@@ -169837,6 +169831,7 @@ self: {
        ];
        description = "Type-level JSON specification";
        license = lib.licenses.mit;
+       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "json-spec-openapi" = callPackage
@@ -169854,6 +169849,7 @@ self: {
        ];
        description = "json-spec-openapi";
        license = lib.licenses.mit;
+       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "json-state" = callPackage
@@ -182558,7 +182554,6 @@ self: {
        ];
        description = "RISC-V Core";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "lipsum-gen" = callPackage
@@ -235110,6 +235105,7 @@ self: {
        libraryToolDepends = [ proto-lens-protoc protobuf ];
        description = "Basic protocol buffer message types";
        license = lib.licenses.bsd3;
+       hydraPlatforms = lib.platforms.none;
      }) {inherit (pkgs) protobuf;};
 
   "proto-lens-protoc" = callPackage
@@ -235131,6 +235127,7 @@ self: {
        ];
        description = "Protocol buffer compiler for the proto-lens library";
        license = lib.licenses.bsd3;
+       hydraPlatforms = lib.platforms.none;
        mainProgram = "proto-lens-protoc";
      }) {inherit (pkgs) protobuf;};
 
@@ -235164,6 +235161,7 @@ self: {
        ];
        description = "Cabal support for codegen with proto-lens";
        license = lib.licenses.bsd3;
+       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "proto3-suite" = callPackage
@@ -238368,7 +238366,6 @@ self: {
        testToolDepends = [ hspec-discover ];
        description = "QUIC";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "quick-generator" = callPackage
@@ -287598,6 +287595,7 @@ self: {
        ];
        description = "TensorFlow bindings";
        license = lib.licenses.asl20;
+       hydraPlatforms = lib.platforms.none;
      }) {inherit (pkgs) libtensorflow;};
 
   "tensorflow-core-ops" = callPackage
@@ -287618,6 +287616,7 @@ self: {
        ];
        description = "Haskell wrappers for Core Tensorflow Ops";
        license = lib.licenses.asl20;
+       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "tensorflow-logging" = callPackage
@@ -287646,6 +287645,7 @@ self: {
        ];
        description = "TensorBoard related functionality";
        license = lib.licenses.asl20;
+       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "tensorflow-mnist" = callPackage
@@ -287699,6 +287699,7 @@ self: {
        ];
        description = "Code generation for TensorFlow operations";
        license = lib.licenses.asl20;
+       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "tensorflow-ops" = callPackage
@@ -287728,6 +287729,7 @@ self: {
        ];
        description = "Friendly layer around TensorFlow bindings";
        license = lib.licenses.asl20;
+       hydraPlatforms = lib.platforms.none;
      }) {};
 
   "tensorflow-proto" = callPackage
@@ -287745,6 +287747,7 @@ self: {
        libraryToolDepends = [ protobuf ];
        description = "TensorFlow protocol buffers";
        license = lib.licenses.asl20;
+       hydraPlatforms = lib.platforms.none;
      }) {inherit (pkgs) protobuf;};
 
   "tensorflow-records" = callPackage
