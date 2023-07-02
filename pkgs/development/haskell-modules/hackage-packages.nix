@@ -236553,7 +236553,6 @@ self: {
        description = "Nix backend for PureScript. Transpile PureScript code to Nix.";
        license = lib.licenses.bsd3;
        mainProgram = "purenix";
-       maintainers = [ lib.maintainers.cdepillabout ];
      }) {};
 
   "purescheme-wai-routing-core" = callPackage
