@@ -138755,30 +138755,6 @@ self: {
        license = lib.licenses.bsd3;
      }) {};
 
-  "hermes-json_0_2_0_1" = callPackage
-    ({ mkDerivation, aeson, attoparsec, attoparsec-iso8601, base
-     , bytestring, containers, deepseq, dlist, hedgehog, mtl, scientific
-     , tasty, tasty-hedgehog, text, time, time-compat, transformers
-     , unliftio, unliftio-core
-     }:
-     mkDerivation {
-       pname = "hermes-json";
-       version = "0.2.0.1";
-       sha256 = "1i10nmblh6zxbqpqk5z5r97334j6x37kgw459i4icm6c4hi55k4l";
-       libraryHaskellDepends = [
-         attoparsec attoparsec-iso8601 base bytestring deepseq dlist mtl
-         scientific text time time-compat transformers unliftio
-         unliftio-core
-       ];
-       testHaskellDepends = [
-         aeson base bytestring containers hedgehog scientific tasty
-         tasty-hedgehog text time
-       ];
-       description = "Fast JSON decoding via simdjson C++ bindings";
-       license = lib.licenses.mit;
-       hydraPlatforms = lib.platforms.none;
-     }) {};
-
   "hermes-json" = callPackage
     ({ mkDerivation, aeson, attoparsec, attoparsec-iso8601, base
      , bytestring, containers, deepseq, dlist, hedgehog, primitive
