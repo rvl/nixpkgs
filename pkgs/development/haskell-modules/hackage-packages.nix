@@ -302894,6 +302894,25 @@ self: {
        license = lib.licenses.bsd3;
      }) {};
 
+  "unix-compat_0_6" = callPackage
+    ({ mkDerivation, base, directory, extra, hspec, HUnit
+     , monad-parallel, temporary, unix
+     }:
+     mkDerivation {
+       pname = "unix-compat";
+       version = "0.6";
+       sha256 = "1y6m8ix8np6vambabdaj2h7ydgda8igwy3kliv53mba3clx85kdl";
+       revision = "1";
+       editedCabalFile = "0g5mi6rh977idajgxnnlsd7dp28vf4xwiiwpsc4pj1rqv0lhjp8g";
+       libraryHaskellDepends = [ base unix ];
+       testHaskellDepends = [
+         base directory extra hspec HUnit monad-parallel temporary
+       ];
+       description = "Portable POSIX-compatibility layer";
+       license = lib.licenses.bsd3;
+       hydraPlatforms = lib.platforms.none;
+     }) {};
+
   "unix-compat" = callPackage
     ({ mkDerivation, base, directory, extra, hspec, HUnit
      , monad-parallel, temporary, unix
