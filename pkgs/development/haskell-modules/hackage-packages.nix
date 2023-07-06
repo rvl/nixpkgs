@@ -161836,6 +161836,33 @@ self: {
      }:
      mkDerivation {
        pname = "implicit-hie";
+       version = "0.1.2.7";
+       sha256 = "0yb457n26455kbq6kv8g48q66pmmaxcpikmpg9gm00sd6adgq6gl";
+       isLibrary = true;
+       isExecutable = true;
+       libraryHaskellDepends = [
+         attoparsec base directory filepath filepattern text transformers
+         yaml
+       ];
+       executableHaskellDepends = [
+         attoparsec base directory filepath filepattern text transformers
+         yaml
+       ];
+       testHaskellDepends = [
+         attoparsec base directory filepath filepattern hspec
+         hspec-attoparsec text transformers yaml
+       ];
+       description = "Auto generate hie-bios cradles & hie.yaml";
+       license = lib.licenses.bsd3;
+       mainProgram = "gen-hie";
+     }) {};
+
+  "implicit-hie_0_1_4_0" = callPackage
+    ({ mkDerivation, attoparsec, base, directory, filepath, filepattern
+     , hspec, hspec-attoparsec, text, transformers, yaml
+     }:
+     mkDerivation {
+       pname = "implicit-hie";
        version = "0.1.4.0";
        sha256 = "08ggdlh5j1ya5rjhvcp1k1iyd5bvrgm865qnaxnqz7xvq7b1864k";
        isLibrary = true;
@@ -161854,6 +161881,7 @@ self: {
        ];
        description = "Auto generate hie-bios cradles & hie.yaml";
        license = lib.licenses.bsd3;
+       hydraPlatforms = lib.platforms.none;
        mainProgram = "gen-hie";
      }) {};
 
