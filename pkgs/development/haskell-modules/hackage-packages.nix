@@ -279674,6 +279674,40 @@ self: {
 
   "stylish-haskell" = callPackage
     ({ mkDerivation, aeson, base, bytestring, Cabal, containers
+     , directory, file-embed, filepath, ghc, ghc-boot, ghc-boot-th
+     , ghc-lib-parser-ex, HsYAML, HsYAML-aeson, HUnit, mtl
+     , optparse-applicative, random, regex-tdfa, strict, syb
+     , test-framework, test-framework-hunit, text
+     }:
+     mkDerivation {
+       pname = "stylish-haskell";
+       version = "0.14.4.0";
+       sha256 = "0y0vfz5vkvw0wzcsw2ym3nix0v3pwjw2vas0qv3lrhdvn3ba9gb7";
+       isLibrary = true;
+       isExecutable = true;
+       libraryHaskellDepends = [
+         aeson base bytestring Cabal containers directory file-embed
+         filepath ghc ghc-boot ghc-boot-th ghc-lib-parser-ex HsYAML
+         HsYAML-aeson mtl regex-tdfa syb text
+       ];
+       executableHaskellDepends = [
+         aeson base bytestring Cabal containers directory file-embed
+         filepath ghc ghc-boot ghc-boot-th ghc-lib-parser-ex HsYAML
+         HsYAML-aeson mtl optparse-applicative regex-tdfa strict syb text
+       ];
+       testHaskellDepends = [
+         aeson base bytestring Cabal containers directory file-embed
+         filepath ghc ghc-boot ghc-boot-th ghc-lib-parser-ex HsYAML
+         HsYAML-aeson HUnit mtl random regex-tdfa syb test-framework
+         test-framework-hunit text
+       ];
+       description = "Haskell code prettifier";
+       license = lib.licenses.bsd3;
+       mainProgram = "stylish-haskell";
+     }) {};
+
+  "stylish-haskell_0_14_5_0" = callPackage
+    ({ mkDerivation, aeson, base, bytestring, Cabal, containers
      , directory, file-embed, filepath, ghc-lib-parser
      , ghc-lib-parser-ex, HsYAML, HsYAML-aeson, HUnit, mtl
      , optparse-applicative, random, regex-tdfa, strict, syb
@@ -279702,6 +279736,7 @@ self: {
        ];
        description = "Haskell code prettifier";
        license = lib.licenses.bsd3;
+       hydraPlatforms = lib.platforms.none;
        mainProgram = "stylish-haskell";
      }) {};
 
