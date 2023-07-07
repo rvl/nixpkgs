@@ -111708,6 +111708,33 @@ self: {
        hydraPlatforms = lib.platforms.none;
      }) {};
 
+  "ghc-exactprint_1_5_0" = callPackage
+    ({ mkDerivation, base, bytestring, containers, data-default, Diff
+     , directory, fail, filemanip, filepath, free, ghc, ghc-boot
+     , ghc-paths, HUnit, mtl, ordered-containers, silently, syb
+     }:
+     mkDerivation {
+       pname = "ghc-exactprint";
+       version = "1.5.0";
+       sha256 = "07m4cg47knrrvpyimnbc0nq9176vkzwwa64b2iqfj6azn6q2hagp";
+       revision = "1";
+       editedCabalFile = "1v6my8bnhjhw7k3v2q9iwjpz9lj5g6ilvlzdq6svcabxahmzbr2c";
+       isLibrary = true;
+       isExecutable = true;
+       libraryHaskellDepends = [
+         base bytestring containers data-default directory fail filepath
+         free ghc ghc-boot ghc-paths mtl ordered-containers syb
+       ];
+       testHaskellDepends = [
+         base bytestring containers data-default Diff directory fail
+         filemanip filepath ghc ghc-boot ghc-paths HUnit mtl
+         ordered-containers silently syb
+       ];
+       description = "ExactPrint for GHC";
+       license = lib.licenses.bsd3;
+       hydraPlatforms = lib.platforms.none;
+     }) {};
+
   "ghc-exactprint" = callPackage
     ({ mkDerivation, base, bytestring, Cabal-syntax, containers
      , data-default, Diff, directory, fail, filemanip, filepath, free
