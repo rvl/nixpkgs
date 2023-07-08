@@ -216340,9 +216340,7 @@ self: {
        testToolDepends = [ tasty-discover ];
        description = "A Pandoc filter for emphasizing code in fenced blocks";
        license = lib.licenses.mpl20;
-       hydraPlatforms = lib.platforms.none;
        mainProgram = "pandoc-emphasize-code";
-       broken = true;
      }) {};
 
   "pandoc-filter-graphviz" = callPackage
