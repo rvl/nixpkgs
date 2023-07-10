@@ -247917,8 +247917,9 @@ self: {
      }) {};
 
   "rest-rewrite" = callPackage
-    ({ mkDerivation, base, containers, hashable, monad-loops, mtl
-     , parsec, process, QuickCheck, text, time, unordered-containers
+    ({ mkDerivation, base, containers, graphviz, hashable, monad-loops
+     , mtl, parsec, process, QuickCheck, text, time
+     , unordered-containers, z3
      }:
      mkDerivation {
        pname = "rest-rewrite";
@@ -247932,12 +247933,13 @@ self: {
          base containers hashable mtl QuickCheck text time
          unordered-containers
        ];
+       testSystemDepends = [ graphviz z3 ];
        doHaddock = false;
        description = "Rewriting library with online termination checking";
        license = lib.licenses.bsd3;
        hydraPlatforms = lib.platforms.none;
        broken = true;
-     }) {};
+     }) {inherit (pkgs) graphviz; inherit (pkgs) z3;};
 
   "rest-snap" = callPackage
     ({ mkDerivation, base, base-compat, bytestring, case-insensitive
