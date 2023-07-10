@@ -247937,8 +247937,6 @@ self: {
        doHaddock = false;
        description = "Rewriting library with online termination checking";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
-       broken = true;
      }) {inherit (pkgs) graphviz; inherit (pkgs) z3;};
 
   "rest-snap" = callPackage
