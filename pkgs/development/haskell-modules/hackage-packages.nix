@@ -234808,8 +234808,6 @@ self: {
        libraryToolDepends = [ c2hs ];
        description = "Simple audio library for Windows, Linux, OSX";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
-       broken = true;
      }) {libpulse = null; libpulse-simple = null; 
          inherit (pkgs) libpulseaudio;};
 
@@ -234828,8 +234826,6 @@ self: {
        libraryToolDepends = [ c2hs ];
        description = "Simple audio library for SDL";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
-       broken = true;
      }) {inherit (pkgs) SDL2;};
 
   "proteome" = callPackage
