@@ -73027,8 +73027,6 @@ self: {
        ];
        description = "High-performance CSS tokenizer and serializer";
        license = lib.licenses.mit;
-       hydraPlatforms = lib.platforms.none;
-       broken = true;
      }) {};
 
   "css-text" = callPackage
