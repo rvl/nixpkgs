@@ -82816,8 +82816,6 @@ self: {
        testHaskellDepends = [ base QuickCheck ];
        description = "Converts integers to lists of digits and back";
        license = lib.licenses.bsd3;
-       hydraPlatforms = lib.platforms.none;
-       broken = true;
      }) {};
 
   "digraph" = callPackage
