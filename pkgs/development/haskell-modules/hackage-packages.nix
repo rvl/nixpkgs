@@ -294189,8 +294189,6 @@ self: {
        testToolDepends = [ hspec-discover markdown-unlit ];
        description = "TOML 1.0.0 parser";
        license = lib.licenses.isc;
-       hydraPlatforms = lib.platforms.none;
-       broken = true;
      }) {};
 
   "toml-reader" = callPackage
