@@ -15894,6 +15894,14 @@ with pkgs;
 
   # Haskell and GHC
 
+  test-haskell = haskell.packages.ghc96.ghcWithHoogle (hp: with hp; [
+    turtle
+    shake
+    taffybar
+    xmonad
+    # hnix
+  ]);
+
   haskell = callPackage ./haskell-packages.nix { };
 
   haskellPackages = dontRecurseIntoAttrs
