@@ -287,4 +287,13 @@ self: super: {
   # which needs changes to work with mtl >=2.3
   hnix-store-remote = appendPatch ./patches/hnix-store-remote-compat-for-ghc-9.6.patch super.hnix-store-remote;
   hnix = markBroken (doJailbreak super.hnix);  # tricky deriving issues
+
+  # fourmolu_0_13_0_0 = overrideCabal (drv: {
+  #   libraryHaskellDepends = drv.libraryHaskellDepends ++ [ self.file-embed ];
+  # }) (disableCabalFlag "fixity-th" super.fourmolu_0_13_0_0);
+  fourmolu = self.fourmolu_0_13_0_0; # updates for Cabal-syntax and text deps
+  ormolu = self.ormolu_0_7_1_0;  # updates for Cabal-syntax and text deps
+  # these are switched off in haskell-language-server
+  hls-ormolu-plugin = markBroken super.hls-ormolu-plugin;
+  hls-fourmolu-plugin = markBroken super.hls-fourmolu-plugin;
 }
