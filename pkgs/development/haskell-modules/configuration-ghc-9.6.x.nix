@@ -282,4 +282,8 @@ self: super: {
 
   # The curl executable is required for withApplication tests.
   warp_3_3_28 = addTestToolDepend pkgs.curl super.warp_3_3_28;
+
+  # currently stuck on hnix-store-0.5.0.0,
+  # which needs changes to work with mtl >=2.3
+  hnix-store-remote = appendPatch ./patches/hnix-store-remote-compat-for-ghc-9.6.patch super.hnix-store-remote;
 }

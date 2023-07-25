@@ -1,0 +1,29 @@
+ src/System/Nix/Store/Remote/Logger.hs   | 2 +-
+ src/System/Nix/Store/Remote/Protocol.hs | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/System/Nix/Store/Remote/Logger.hs b/src/System/Nix/Store/Remote/Logger.hs
+index 7f6064b..f7a4cbf 100644
+--- a/src/System/Nix/Store/Remote/Logger.hs
++++ b/src/System/Nix/Store/Remote/Logger.hs
+@@ -7,7 +7,7 @@ module System.Nix.Store.Remote.Logger
+   )
+ where
+ 
+-
++import           Control.Monad.IO.Class         ( liftIO )
+ import           Control.Monad.Except
+ import           Control.Monad.Reader           ( asks )
+ import           Control.Monad.State            ( get )
+diff --git a/src/System/Nix/Store/Remote/Protocol.hs b/src/System/Nix/Store/Remote/Protocol.hs
+index 5f844df..b6130b7 100644
+--- a/src/System/Nix/Store/Remote/Protocol.hs
++++ b/src/System/Nix/Store/Remote/Protocol.hs
+@@ -16,6 +16,7 @@ where
+ 
+ import           Data.Bool                      ( bool )
+ import           Control.Exception              ( bracket )
++import           Control.Monad                  ( when, unless )
+ import           Control.Monad.Except
+ import           Control.Monad.Reader
+ import           Control.Monad.State
