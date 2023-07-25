@@ -286,4 +286,5 @@ self: super: {
   # currently stuck on hnix-store-0.5.0.0,
   # which needs changes to work with mtl >=2.3
   hnix-store-remote = appendPatch ./patches/hnix-store-remote-compat-for-ghc-9.6.patch super.hnix-store-remote;
+  hnix = markBroken (doJailbreak super.hnix);  # tricky deriving issues
 }
