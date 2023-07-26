@@ -68,6 +68,12 @@ in {
   # generically needs base-orphans for 9.4 only
   base-orphans = dontCheck (doDistribute super.base-orphans);
 
+  steeloverseer = overrideCabal (drv: {
+    libraryHaskellDepends = lib.remove self.aeson-compat (drv.libraryHaskellDepends or []);
+    executableHaskellDepends = lib.remove self.aeson-compat (drv.executableHaskellDepends or []);
+    testHaskellDepends = lib.remove self.aeson-compat (drv.testHaskellDepends or []);
+  }) super.steeloverseer;
+
   # the dontHaddock is due to a GHC panic. might be this bug, not sure.
   # https://gitlab.haskell.org/ghc/ghc/-/issues/21619
   hedgehog = dontHaddock super.hedgehog;
