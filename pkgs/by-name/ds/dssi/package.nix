@@ -46,6 +46,8 @@ stdenv.mkDerivation rec {
     libICE
   ];
 
+  env.NIX_CFLAGS_COMPILE = "-Wno-error=incompatible-pointer-types";
+
   meta = with lib; {
     description = "Plugin SDK for virtual instruments";
     maintainers = with maintainers; [
