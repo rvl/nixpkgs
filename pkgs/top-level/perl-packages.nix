@@ -112,6 +112,8 @@ with self;
   */
   makeFullPerlPath = deps: makePerlPath (lib.misc.closePropagation deps);
 
+  makePerlHeaders = callPackage ../development/perl-modules/make-perl-headers.nix { };
+
   ack = buildPerlPackage rec {
     pname = "ack";
     version = "3.8.2";
