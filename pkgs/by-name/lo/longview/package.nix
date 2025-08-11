@@ -36,7 +36,6 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [ makeWrapper ];
   buildInputs = [
     perl
-    glibc
   ]
   ++ (with perlPackages; [
     LWP
@@ -55,18 +54,18 @@ stdenv.mkDerivation rec {
 
   dontBuild = true;
 
+  h2ph = perlPackages.makePerlHeaders.override {
+    headerFiles = [ "${glibc.dev}/include/syscall.h" ];
+  };
+
   installPhase = ''
     mkdir -p $out/bin $out/usr
     mv Linode $out
     ln -s ../Linode/Longview.pl $out/bin/longview
-    for h in syscall.h sys/syscall.h asm/unistd.h asm/unistd_32.h asm/unistd_64.h bits/wordsize.h bits/syscall.h; do
-        ${perl}/bin/h2ph -d $out ${glibc.dev}/include/$h
-        mkdir -p $out/usr/include/$(dirname $h)
-        mv $out${glibc.dev}/include/''${h%.h}.ph $out/usr/include/$(dirname $h)
-    done
     wrapProgram $out/Linode/Longview.pl --prefix PATH : ${perl}/bin:$out/bin \
      --suffix PERL5LIB : $out/Linode --suffix PERL5LIB : $PERL5LIB \
      --suffix PERL5LIB : $out --suffix INC : $out
+    ln -s $h2ph/include $out/usr/include
   '';
 
   meta = with lib; {
